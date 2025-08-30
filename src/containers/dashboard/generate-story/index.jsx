@@ -1,19 +1,17 @@
-"use client"
-
-import { useState } from "react"
+import { useState } from "react";
 
 const GenerateStory = () => {
-  const [loading, setLoading] = useState(false)
-  const [story, setStory] = useState(null)
-  const [storyLength, setStoryLength] = useState(3)
+  const [loading, setLoading] = useState(false);
+  const [story, setStory] = useState(null);
+  const [storyLength, setStoryLength] = useState(3);
   const [formData, setFormData] = useState({
     url: "",
     concept: "",
     tone: "",
-  })
+  });
 
   const handleGenerate = async () => {
-    setLoading(true)
+    setLoading(true);
     // Simulate API call
     setTimeout(() => {
       setStory({
@@ -21,16 +19,16 @@ const GenerateStory = () => {
           "Once upon a time in a digital realm where creativity knew no bounds, an AI storyteller began weaving tales that captivated hearts and minds across the world...",
         audio: "audio_url",
         graphics: "/magical-digital-storytelling-scene.png",
-      })
-      setLoading(false)
-    }, 3000)
-  }
+      });
+      setLoading(false);
+    }, 3000);
+  };
 
-  const lengthLabels = ["Brief", "Short", "Medium", "Long", "Epic"]
+  const lengthLabels = ["Brief", "Short", "Medium", "Long", "Epic"];
 
   const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className="min-h-screen">
@@ -39,16 +37,22 @@ const GenerateStory = () => {
         <div className="w-1/2 bg-white border-r border-gray-200 overflow-y-auto  thin-scrollbar ">
           <div className="p-8">
             {/* Header */}
-            <div className="mb-8">  
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Your Story</h1>
-              <p className="text-gray-600 text-xl">Fill in the details to generate your AI-powered story</p>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Create Your Story
+              </h1>
+              <p className="text-gray-600 text-xl">
+                Fill in the details to generate your AI-powered story
+              </p>
             </div>
 
             {/* Form */}
             <form className="space-y-6">
               {/* Reference URL */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Reference URL</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reference URL
+                </label>
                 <input
                   type="url"
                   placeholder="https://example.com/inspiration"
@@ -60,7 +64,9 @@ const GenerateStory = () => {
 
               {/* File Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload File
+                </label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-400 transition-colors">
                   <svg
                     className="mx-auto h-12 w-12 text-gray-400"
@@ -77,18 +83,24 @@ const GenerateStory = () => {
                   </svg>
                   <div className="mt-4">
                     <label className="cursor-pointer">
-                      <span className="text-indigo-600 font-medium">Upload a file</span>
+                      <span className="text-indigo-600 font-medium">
+                        Upload a file
+                      </span>
                       <span className="text-gray-500"> or drag and drop</span>
                       <input type="file" className="sr-only" />
                     </label>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">PNG, JPG, PDF up to 10MB</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    PNG, JPG, PDF up to 10MB
+                  </p>
                 </div>
               </div>
 
               {/* Story Concept */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Story Concept</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Story Concept
+                </label>
                 <textarea
                   placeholder="Describe your story idea, characters, setting, or theme..."
                   value={formData.concept}
@@ -96,12 +108,16 @@ const GenerateStory = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors resize-none"
                   rows="4"
                 />
-                <div className="text-xs text-gray-500 mt-1">{formData.concept.length}/500 characters</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {formData.concept.length}/500 characters
+                </div>
               </div>
 
               {/* Voice Tone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Voice Tone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Voice Tone
+                </label>
                 <select
                   value={formData.tone}
                   onChange={(e) => handleInputChange("tone", e.target.value)}
@@ -111,14 +127,18 @@ const GenerateStory = () => {
                   <option value="excited">Excited & Energetic</option>
                   <option value="calm">Calm & Soothing</option>
                   <option value="mysterious">Mysterious & Intriguing</option>
-                  <option value="professional">Professional & Informative</option>
+                  <option value="professional">
+                    Professional & Informative
+                  </option>
                   <option value="playful">Playful & Fun</option>
                 </select>
               </div>
 
               {/* Story Length */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Story Length</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Story Length
+                </label>
                 <div className="px-2">
                   <input
                     type="range"
@@ -130,7 +150,14 @@ const GenerateStory = () => {
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-2">
                     {lengthLabels.map((label, index) => (
-                      <span key={index} className={storyLength == index + 1 ? "text-indigo-600 font-medium" : ""}>
+                      <span
+                        key={index}
+                        className={
+                          storyLength == index + 1
+                            ? "text-indigo-600 font-medium"
+                            : ""
+                        }
+                      >
                         {label}
                       </span>
                     ))}
@@ -163,8 +190,12 @@ const GenerateStory = () => {
           <div className="p-8">
             {/* Preview Header */}
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Live Preview</h2>
-              <p className="text-gray-600 text-xl">See your story details as you type</p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Live Preview
+              </h2>
+              <p className="text-gray-600 text-xl">
+                See your story details as you type
+              </p>
             </div>
 
             {/* Generated Story Results */}
@@ -173,7 +204,12 @@ const GenerateStory = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        className="w-4 h-4 text-purple-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -196,7 +232,12 @@ const GenerateStory = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        className="w-4 h-4 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -205,10 +246,14 @@ const GenerateStory = () => {
                         />
                       </svg>
                     </div>
-                    <h3 className="font-semibold text-gray-900">Generated Script</h3>
+                    <h3 className="font-semibold text-gray-900">
+                      Generated Script
+                    </h3>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-gray-700 text-sm leading-relaxed">{story.script}</p>
+                    <p className="text-gray-700 text-sm leading-relaxed">
+                      {story.script}
+                    </p>
                   </div>
                 </div>
 
@@ -216,7 +261,12 @@ const GenerateStory = () => {
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center space-x-3 mb-4">
                       <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg
+                          className="w-4 h-4 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -233,8 +283,6 @@ const GenerateStory = () => {
                       </audio>
                     </div>
                   </div>
-
-
                 </div>
 
                 <div className="flex space-x-3">
@@ -251,7 +299,12 @@ const GenerateStory = () => {
             {!story && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-8 h-8 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -266,9 +319,12 @@ const GenerateStory = () => {
                     />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Preview Your Story</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Preview Your Story
+                </h3>
                 <p className="text-gray-500 text-sm">
-                  Fill out the form and generate your story to see the results here
+                  Fill out the form and generate your story to see the results
+                  here
                 </p>
               </div>
             )}
@@ -276,7 +332,7 @@ const GenerateStory = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default GenerateStory
+export default GenerateStory;

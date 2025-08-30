@@ -8,7 +8,9 @@ const Login = lazy(() => import("./containers/common/login"));
 // User Dashboard
 const Overview = lazy(() => import("./containers/dashboard/overview"));
 const Integrations = lazy(() => import("./containers/dashboard/integrations"));
-const GenerateStory = lazy(() => import("./containers/dashboard/generate-story"));
+const GenerateStory = lazy(() =>
+  import("./containers/dashboard/generate-story")
+);
 const Profile = lazy(() => import("./containers/dashboard/profile"));
 
 // Website
@@ -26,13 +28,10 @@ const ScrollToTop = () => {
 };
 
 const websiteRoutes = [
-  // { path: "/", element: <Home /> },
   { path: "/", element: <Login /> },
 ];
 
-const authRoutes = [
-  { path: "/auth/login", element: <Login /> },
-];
+const authRoutes = [{ path: "/auth/login", element: <Login /> }];
 
 const dashboardRoutes = [
   { path: "/dashboard", element: <Overview /> },

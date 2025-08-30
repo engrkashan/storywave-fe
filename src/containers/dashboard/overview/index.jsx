@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import { BiVideo, BiLink, BiTrendingUp, BiHeart } from "react-icons/bi";
 import { Bar } from "react-chartjs-2";
 import {
@@ -14,7 +11,14 @@ import {
 } from "chart.js";
 
 // Register the required components of Chart.js
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const Overview = () => {
   const recentStories = [
@@ -51,10 +55,34 @@ const Overview = () => {
   ];
 
   const stats = [
-    { label: "Total Stories", value: 15, icon: BiVideo, color: "bg-blue-500", bgColor: "bg-blue-50" },
-    { label: "Linked Platforms", value: 4, icon: BiLink, color: "bg-green-500", bgColor: "bg-green-50" },
-    { label: "Total Views", value: "2.5K", icon: BiTrendingUp, color: "bg-purple-500", bgColor: "bg-purple-50" },
-    { label: "Engagements", value: 320, icon: BiHeart, color: "bg-pink-500", bgColor: "bg-pink-50" },
+    {
+      label: "Total Stories",
+      value: 15,
+      icon: BiVideo,
+      color: "bg-blue-500",
+      bgColor: "bg-blue-50",
+    },
+    {
+      label: "Linked Platforms",
+      value: 4,
+      icon: BiLink,
+      color: "bg-green-500",
+      bgColor: "bg-green-50",
+    },
+    {
+      label: "Total Views",
+      value: "2.5K",
+      icon: BiTrendingUp,
+      color: "bg-purple-500",
+      bgColor: "bg-purple-50",
+    },
+    {
+      label: "Engagements",
+      value: 320,
+      icon: BiHeart,
+      color: "bg-pink-500",
+      bgColor: "bg-pink-50",
+    },
   ];
 
   // Data for platform progress
@@ -85,8 +113,12 @@ const Overview = () => {
     <main className="p-8">
       <div className="space-y-8">
         <div className="mb-6">
-          <h2 className="text-4xl font-bold text-gray-900">Welcome back, Muhammad!</h2>
-          <p className="text-gray-700">Here's what's happening with your stories today.</p>
+          <h2 className="text-4xl font-bold text-gray-900">
+            Welcome back, Muhammad!
+          </h2>
+          <p className="text-gray-700">
+            Here's what's happening with your stories today.
+          </p>
         </div>
         <div className="flex justify-between items-center">
           {/* Stats Section */}
@@ -104,8 +136,12 @@ const Overview = () => {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
-                    <h3 className="text-lg font-semibold text-gray-600 ">{stat.label}</h3>
+                    <p className="text-4xl font-bold text-gray-900">
+                      {stat.value}
+                    </p>
+                    <h3 className="text-lg font-semibold text-gray-600 ">
+                      {stat.label}
+                    </h3>
                   </div>
                 </div>
               );
@@ -121,16 +157,36 @@ const Overview = () => {
 
         {/* Recent Stories Section */}
         <div className="mt-8">
-          <h3 className="text-3xl font-bold text-gray-900 mb-6">Recent Stories</h3>
+          <h3 className="text-3xl font-bold text-gray-900 mb-6">
+            Recent Stories
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {recentStories.map((story) => (
-              <div key={story.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 ease-in-out">
-                <video src={story.preview} alt={story.title} className="w-full h-64 object-contain" autoPlay muted loop />
+              <div
+                key={story.id}
+                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 ease-in-out"
+              >
+                <video
+                  src={story.preview}
+                  alt={story.title}
+                  className="w-full h-64 object-contain"
+                  autoPlay
+                  muted
+                  loop
+                />
                 <div className="p-6">
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">{story.title}</h4>
-                  <p className="text-sm text-gray-600 mb-2">Date: {story.date}</p>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">
+                    {story.title}
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Date: {story.date}
+                  </p>
                   <span
-                    className={`inline-flex px-3 py-1 rounded-full text-sm ${story.status === "Published" ? "bg-green-200 text-green-800" : "bg-yellow-200 text-yellow-800"}`}
+                    className={`inline-flex px-3 py-1 rounded-full text-sm ${
+                      story.status === "Published"
+                        ? "bg-green-200 text-green-800"
+                        : "bg-yellow-200 text-yellow-800"
+                    }`}
                   >
                     {story.status}
                   </span>
@@ -141,12 +197,17 @@ const Overview = () => {
                   <div className="mt-3 flex flex-wrap gap-3">
                     {story.platforms.length > 0 ? (
                       story.platforms.map((platform, idx) => (
-                        <span key={idx} className="inline-flex px-3 py-1 rounded-lg text-xs bg-blue-100 text-blue-800">
+                        <span
+                          key={idx}
+                          className="inline-flex px-3 py-1 rounded-lg text-xs bg-blue-100 text-blue-800"
+                        >
                           {platform}
                         </span>
                       ))
                     ) : (
-                      <span className="text-xs text-gray-400">No platforms</span>
+                      <span className="text-xs text-gray-400">
+                        No platforms
+                      </span>
                     )}
                   </div>
                 </div>

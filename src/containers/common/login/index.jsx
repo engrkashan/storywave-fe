@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 const Login = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const navigate = useNavigate();
-  
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isForgotPassword) {
       alert(`Password reset link sent to ${email}`);
-      setIsForgotPassword(false); 
+      setIsForgotPassword(false);
     } else {
-      navigate('/dashboard');
+      navigate("/dashboard");
     }
   };
 
@@ -22,12 +23,19 @@ const Login = () => {
       <div className="w-full flex items-center justify-center md:justify-end h-full col-span-1 md:col-span-2">
         <div className="w-full max-w-lg p-8 bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20">
           <div className="flex items-center justify-center mb-5">
-            <img src="/logo.png" alt="Story Wave" className="w-auto h-32 md:h-40" />
+            <img
+              src="/logo.png"
+              alt="Story Wave"
+              className="w-auto h-32 md:h-40"
+            />
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block font-medium text-gray-900 mb-2">
+              <label
+                htmlFor="email"
+                className="block font-medium text-gray-900 mb-2"
+              >
                 Email address
               </label>
               <input
@@ -42,7 +50,10 @@ const Login = () => {
 
             {!isForgotPassword && (
               <div>
-                <label htmlFor="password" className="block font-medium text-gray-900 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block font-medium text-gray-900 mb-2"
+                >
                   Password
                 </label>
                 <input
@@ -75,7 +86,7 @@ const Login = () => {
                 }}
                 className="text-[#FF007F] hover:text-[#FF3385] font-medium"
               >
-                {isForgotPassword ? 'Back to Login' : 'Forgot password?'}
+                {isForgotPassword ? "Back to Login" : "Forgot password?"}
               </a>
             </div>
 
@@ -83,14 +94,20 @@ const Login = () => {
               type="submit"
               className="w-full py-4 btn-gradient text-white font-semibold rounded-xl hover:from-[#FF3385] hover:to-[#FF007F] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              {isForgotPassword ? 'Send Reset Link' : 'Sign In'}
+              {isForgotPassword ? "Send Reset Link" : "Sign In"}
             </button>
           </form>
         </div>
       </div>
 
       <div className="w-full h-full rounded-2xl overflow-hidden col-span-1 md:col-span-3 shadow-2xl">
-        <video src="/videos/hero.mp4" autoPlay loop muted className="w-full h-full object-cover" />
+        <video
+          src="/videos/hero.mp4"
+          autoPlay
+          loop
+          muted
+          className="w-full h-full object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none rounded-2xl"></div>
       </div>
     </div>
