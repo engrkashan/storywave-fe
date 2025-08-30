@@ -1,16 +1,14 @@
-import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   FileText,
   Mic,
-  Image as ImageIcon,
-  Video,
   Share2,
   User,
   LogOut,
   X,
   Menu,
+  FolderOpen,
 } from "lucide-react";
 
 const sidebarLinks = [
@@ -26,15 +24,11 @@ const sidebarLinks = [
     icon: <Mic className="text-xl" />,
   },
   {
-    to: "/dashboard/visuals",
-    label: "Scene Designer",
-    icon: <ImageIcon className="text-xl" />,
+    to: "/dashboard/my-creations",
+    label: "My Creations",
+    icon: <FolderOpen className="text-xl" />,
   },
-  {
-    to: "/dashboard/final-video",
-    label: "Video Preview",
-    icon: <Video className="text-xl" />,
-  },
+
   {
     to: "/dashboard/integrations",
     label: "Publish & Share",
@@ -52,7 +46,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear auth token / session here
     localStorage.removeItem("token");
     navigate("/login");
   };

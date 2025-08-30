@@ -38,7 +38,7 @@ const GenerateStory = () => {
             {/* Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Create Your Story
+                Story Builder
               </h1>
               <p className="text-gray-600 text-xl">
                 Fill in the details to generate your AI-powered story

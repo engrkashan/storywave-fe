@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Loader from "./components/loader";
 
@@ -12,6 +12,8 @@ const GenerateStory = lazy(() =>
   import("./containers/dashboard/generate-story")
 );
 const Profile = lazy(() => import("./containers/dashboard/profile"));
+const MyCreations = lazy(() => import("./containers/dashboard/my-creations"));
+const NarrationStudio = lazy(() => import("./containers/dashboard/voiceover"));
 
 // Website
 const Home = lazy(() => import("./containers/website/home"));
@@ -27,9 +29,7 @@ const ScrollToTop = () => {
   return null;
 };
 
-const websiteRoutes = [
-  { path: "/", element: <Login /> },
-];
+const websiteRoutes = [{ path: "/", element: <Login /> }];
 
 const authRoutes = [{ path: "/auth/login", element: <Login /> }];
 
@@ -38,6 +38,8 @@ const dashboardRoutes = [
   { path: "/dashboard/integrations", element: <Integrations /> },
   { path: "/dashboard/generate-story", element: <GenerateStory /> },
   { path: "/dashboard/profile", element: <Profile /> },
+  { path: "/dashboard/my-creations", element: <MyCreations /> },
+  { path: "/dashboard/voiceover", element: <NarrationStudio /> },
 ];
 
 const App = () => {
@@ -62,7 +64,7 @@ const App = () => {
             <Route key={path} path={path} element={element} />
           ))}
 
-          {/*  Dashboard Routes */}
+          {/* Dashboard Routes */}
           <Route element={<DashboardLayout />}>
             {dashboardRoutes.map(({ path, element }) => (
               <Route key={path} path={path} element={element} />

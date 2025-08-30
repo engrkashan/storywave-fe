@@ -1,23 +1,4 @@
 import { BiVideo, BiLink, BiTrendingUp, BiHeart } from "react-icons/bi";
-import { Bar } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 const Overview = () => {
   const recentStories = [
@@ -83,30 +64,6 @@ const Overview = () => {
       bgColor: "bg-pink-50",
     },
   ];
-
-  // Data for platform progress
-  const platformData = {
-    labels: ["YouTube", "Instagram", "TikTok", "Spotify"],
-    datasets: [
-      {
-        label: "Engagement",
-        data: [85, 70, 72, 65],
-        backgroundColor: "rgba(44, 43, 42, 0.6)",
-        borderColor: "rgb(43, 43, 43)",
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const options = {
-    responsive: true,
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 100,
-      },
-    },
-  };
 
   return (
     <main className="p-8">
