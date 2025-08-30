@@ -1,4 +1,5 @@
-import { BiVideo, BiBook, BiTrendingUp, BiHeart } from "react-icons/bi";
+import { useState } from "react";
+import { BiPlayCircle, BiX } from "react-icons/bi";
 
 const MyCreations = () => {
   const creations = [
@@ -33,6 +34,8 @@ const MyCreations = () => {
       preview: "/videos/video-one.mp4",
     },
   ];
+
+  const [selectedStory, setSelectedStory] = useState(null);
 
   return (
     <main className="p-8">
@@ -84,12 +87,51 @@ const MyCreations = () => {
                     <span>Views: {item.views}</span>
                     <span>Engagement: {item.engagement}</span>
                   </div>
+
+                  {/* Play Story Button */}
+                  <button
+                    onClick={() => setSelectedStory(item)}
+                    className="mt-4 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <BiPlayCircle className="text-lg" />
+                    Play {item.type}
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      {/* Modal for playing story */}
+      {selectedStory && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-black rounded-2xl shadow-lg w-full sm:w-[90%] md:w-[80%] lg:max-w-3xl max-h-[90vh] p-4 relative overflow-y-auto">
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedStory(null)}
+              className="absolute top-4 right-4 text-white hover:text-gray-300"
+            >
+              <BiX className="w-7 h-7" />
+            </button>
+
+            {/* Title */}
+            <h3 className="text-white text-lg mb-4 pr-10">
+              {selectedStory.title}
+            </h3>
+
+            {/* Responsive Video */}
+            <div className="w-full aspect-video">
+              <video
+                src={selectedStory.preview}
+                controls
+                autoPlay
+                className="w-full h-full rounded-lg object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
