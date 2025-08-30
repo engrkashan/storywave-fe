@@ -1,64 +1,133 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { FiX, FiMenu, FiHome, FiSettings, FiShare2, FiUser } from "react-icons/fi";
-import { RiAiGenerate } from "react-icons/ri";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Home,
+  FileText,
+  Mic,
+  Image as ImageIcon,
+  Video,
+  Share2,
+  User,
+  LogOut,
+  X,
+  Menu,
+} from "lucide-react";
 
 const sidebarLinks = [
-  { to: "/dashboard", label: "Overview", icon: <FiHome className="text-xl" /> },
-  { to: "/dashboard/generate-story", label: "Generate Story", icon: <RiAiGenerate className="text-xl" /> },
-
-  { to: "/dashboard/integrations", label: "Integrations", icon: <FiShare2 className="text-xl" /> },
-  { to: "/dashboard/settings", label: "Settings", icon: <FiSettings className="text-xl" /> },
-  { to: "/dashboard/profile", label: "Profile", icon: <FiUser className="text-xl" /> },
+  { to: "/overview", label: "Overview", icon: <Home className="text-xl" /> },
+  {
+    to: "/dashboard/generate-story",
+    label: "Story Builder",
+    icon: <FileText className="text-xl" />,
+  },
+  {
+    to: "/dashboard/voiceover",
+    label: "Narration Studio",
+    icon: <Mic className="text-xl" />,
+  },
+  {
+    to: "/dashboard/visuals",
+    label: "Scene Designer",
+    icon: <ImageIcon className="text-xl" />,
+  },
+  {
+    to: "/dashboard/final-video",
+    label: "Video Preview",
+    icon: <Video className="text-xl" />,
+  },
+  {
+    to: "/dashboard/integrations",
+    label: "Publish & Share",
+    icon: <Share2 className="text-xl" />,
+  },
+  {
+    to: "/dashboard/profile",
+    label: "My Account",
+    icon: <User className="text-xl" />,
+  },
 ];
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
-  const location = useLocation();  // Get the current URL path
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear auth token / session here
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
   return (
     <>
       {/* Mobile Toggle Button */}
       <button
         onClick={toggleSidebar}
-        className="md:hidden fixed top-6 left-6 z-50 bg-indigo-600 text-white p-3 rounded-full shadow-lg transition-all hover:bg-indigo-700"
+        className="md:hidden fixed top-6 left-6 z-50 bg-gradient-to-r from-[#f8be4c] to-[#f0498f] text-white p-3 rounded-full shadow-lg transition-all hover:scale-105"
       >
-        <FiMenu className="text-2xl" />
+        <Menu className="text-2xl" />
       </button>
 
       {/* Sidebar */}
       <div
-        className={`${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-          } transform transition-transform duration-300 ease-in-out w-72 h-full bg-secondary-dark text-white fixed left-0 top-0 p-6 pr-0 z-40`}
+        className={`${
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        } transform transition-transform duration-300 ease-in-out 
+        w-72 h-full fixed left-0 top-0 z-40
+        bg-white/20 backdrop-blur-2xl border-r border-white/30
+        shadow-2xl rounded-r-3xl flex flex-col justify-between`}
       >
+        {/* Close button on mobile */}
         <button
           onClick={toggleSidebar}
           className="text-white text-3xl absolute top-6 right-6 md:hidden"
         >
-          <FiX />
+          <X />
         </button>
 
-        <div className="flex items-center justify-center space-x-2 mb-10">
-          <img src="/logo.png" alt="logo" className="w-auto h-32" />
+        <div>
+          {/* Logo */}
+          <div className="flex items-center justify-center mb-10 mt-8">
+            <img
+              src="/logo.png"
+              alt="logo"
+              className="w-auto h-24 drop-shadow-lg"
+            />
+          </div>
+
+          {/* Navigation */}
+          <nav>
+            <ul className="space-y-4 px-4">
+              {sidebarLinks.map((link, index) => (
+                <li key={index}>
+                  <Link
+                    to={link.to}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-lg font-medium transition-all
+                      ${
+                        location.pathname === link.to
+                          ? "bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg scale-[1.02]"
+                          : "text-white/90 hover:bg-white/20 hover:text-white hover:scale-[1.02]"
+                      }`}
+                  >
+                    {link.icon}
+                    <span>{link.label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
 
-        <nav>
-          <ul className="space-y-6">
-            {sidebarLinks.map((link, index) => (
-              <li key={index}>
-                <Link
-                  to={link.to}
-                  className={`${location.pathname === link.to
-                    ? "bg-secondary-light text-secondary-dark rounded-l-full"
-                    : "text-white hover:scale-105"
-                    } flex items-center space-x-3 text-xl font-medium px-4 py-2 transition-colors`}
-                >
-                  {link.icon}
-                  <span>{link.label}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        {/* Logout Button */}
+        <div className="px-4 pb-6">
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center space-x-3 w-full px-4 py-3 rounded-xl text-lg font-semibold
+              bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg hover:scale-[1.03] transition-all"
+          >
+            <LogOut className="text-xl" />
+            <span>Logout</span>
+          </button>
+        </div>
       </div>
     </>
   );

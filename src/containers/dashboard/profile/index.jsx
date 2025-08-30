@@ -1,6 +1,12 @@
-
-import { useState } from "react"
-import { BiTrash, BiEdit, BiUser, BiLock, BiShield, BiLink } from "react-icons/bi"
+import { useState } from "react";
+import {
+  BiTrash,
+  BiEdit,
+  BiUser,
+  BiLock,
+  BiShield,
+  BiLink,
+} from "react-icons/bi";
 
 const Profile = () => {
   const [user, setUser] = useState({
@@ -9,19 +15,22 @@ const Profile = () => {
     password: "********",
     twoFactor: "Disabled",
     associatedAccounts: ["Google"],
-  })
+  });
 
   const [editMode, setEditMode] = useState({
     general: false,
     password: false,
-  })
+  });
 
   return (
     <div className="min-h-screen p-8">
-
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">Profile Settings</h1>
-        <p className="text-gray-600">Manage your account settings and preferences</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-1">
+          Profile Settings
+        </h1>
+        <p className="text-gray-600">
+          Manage your account settings and preferences
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -31,40 +40,52 @@ const Profile = () => {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
                 <BiUser className="text-blue-500 text-xl" />
-                <h2 className="text-xl font-semibold text-gray-900">General Information</h2>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  General Information
+                </h2>
               </div>
               <button
-                onClick={() => setEditMode({ ...editMode, general: !editMode.general })}
+                onClick={() =>
+                  setEditMode({ ...editMode, general: !editMode.general })
+                }
                 className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 <BiEdit className="text-xl" />
-                <span className=" font-medium">{editMode.general ? "Save" : "Edit"}</span>
+                <span className=" font-medium">
+                  {editMode.general ? "Save" : "Edit"}
+                </span>
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block  font-medium text-gray-700 mb-2">Full Name</label>
+                <label className="block  font-medium text-gray-700 mb-2">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   value={user.name}
                   readOnly={!editMode.general}
-                  className={`w-full p-3 border rounded-lg transition-colors ${editMode.general
-                    ? "border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    : "border-gray-200 bg-gray-50"
-                    }`}
+                  className={`w-full p-3 border rounded-lg transition-colors ${
+                    editMode.general
+                      ? "border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      : "border-gray-200 bg-gray-50"
+                  }`}
                 />
               </div>
               <div>
-                <label className="block font-medium text-gray-700 mb-2">Email Address</label>
+                <label className="block font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   value={user.email}
                   readOnly={!editMode.general}
-                  className={`w-full p-3 border rounded-lg transition-colors ${editMode.general
-                    ? "border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    : "border-gray-200 bg-gray-50"
-                    }`}
+                  className={`w-full p-3 border rounded-lg transition-colors ${
+                    editMode.general
+                      ? "border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      : "border-gray-200 bg-gray-50"
+                  }`}
                 />
               </div>
             </div>
@@ -75,20 +96,26 @@ const Profile = () => {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
                 <BiLock className="text-green-500 text-xl" />
-                <h2 className="text-xl font-semibold text-gray-900">Password & Security</h2>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Password & Security
+                </h2>
               </div>
               <button
-                onClick={() => setEditMode({ ...editMode, password: !editMode.password })}
+                onClick={() =>
+                  setEditMode({ ...editMode, password: !editMode.password })
+                }
                 className="flex items-center space-x-2 px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
               >
-                <BiEdit className="text-xl"/>
+                <BiEdit className="text-xl" />
                 <span className=" font-medium">Change Password</span>
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block  font-medium text-gray-700 mb-2">Current Password</label>
+                <label className="block  font-medium text-gray-700 mb-2">
+                  Current Password
+                </label>
                 <input
                   type="password"
                   value={user.password}
@@ -103,14 +130,21 @@ const Profile = () => {
                   <div className="flex items-center space-x-3">
                     <BiShield className="text-orange-500 text-lg" />
                     <div>
-                      <h3 className="font-medium text-gray-900">Two-Factor Authentication</h3>
-                      <p className=" text-gray-600">Add an extra layer of security to your account</p>
+                      <h3 className="font-medium text-gray-900">
+                        Two-Factor Authentication
+                      </h3>
+                      <p className=" text-gray-600">
+                        Add an extra layer of security to your account
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${user.twoFactor === "Enabled" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                        }`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        user.twoFactor === "Enabled"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
                     >
                       {user.twoFactor}
                     </span>
@@ -128,7 +162,9 @@ const Profile = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center space-x-3 mb-6">
               <BiLink className="text-purple-500 text-xl" />
-              <h2 className="text-xl font-semibold text-gray-900">Connected Accounts</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Connected Accounts
+              </h2>
             </div>
 
             <div className="space-y-3">
@@ -139,7 +175,11 @@ const Profile = () => {
                 >
                   <div className="flex items-center space-x-3">
                     {account === "Google" && (
-                      <img src="https://www.google.com/favicon.ico" alt="Google" className="w-6 h-6" />
+                      <img
+                        src="https://www.google.com/favicon.ico"
+                        alt="Google"
+                        className="w-6 h-6"
+                      />
                     )}
                     <div>
                       <h3 className="font-medium text-gray-900">{account}</h3>
@@ -166,7 +206,9 @@ const Profile = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className=" text-gray-600">Account Type</span>
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Premium</span>
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                  Premium
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className=" text-gray-600">Member Since</span>
@@ -200,7 +242,7 @@ const Profile = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Profile
+export default Profile;

@@ -34,7 +34,7 @@ const websiteRoutes = [
 const authRoutes = [{ path: "/auth/login", element: <Login /> }];
 
 const dashboardRoutes = [
-  { path: "/dashboard", element: <Overview /> },
+  { path: "/overview", element: <Overview /> },
   { path: "/dashboard/integrations", element: <Integrations /> },
   { path: "/dashboard/generate-story", element: <GenerateStory /> },
   { path: "/dashboard/profile", element: <Profile /> },

@@ -12,7 +12,6 @@ const GenerateStory = () => {
 
   const handleGenerate = async () => {
     setLoading(true);
-    // Simulate API call
     setTimeout(() => {
       setStory({
         script:

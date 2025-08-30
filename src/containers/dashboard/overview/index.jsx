@@ -10,7 +10,6 @@ import {
   Legend,
 } from "chart.js";
 
-// Register the required components of Chart.js
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -30,7 +29,7 @@ const Overview = () => {
       platforms: ["YouTube", "Instagram"],
       views: "1.2K",
       engagement: "85%",
-      preview: "/videos/hero.mp4", // Placeholder for video preview
+      preview: "/videos/hero.mp4",
     },
     {
       id: 2,
@@ -40,7 +39,7 @@ const Overview = () => {
       platforms: [],
       views: "0",
       engagement: "0%",
-      preview: "/videos/video-two.mp4", // Placeholder for video preview
+      preview: "/videos/video-two.mp4",
     },
     {
       id: 3,
@@ -50,7 +49,7 @@ const Overview = () => {
       platforms: ["Twitter", "TikTok"],
       views: "890",
       engagement: "72%",
-      preview: "/videos/video-one.mp4", // Placeholder for video preview
+      preview: "/videos/video-one.mp4",
     },
   ];
 
@@ -91,7 +90,7 @@ const Overview = () => {
     datasets: [
       {
         label: "Engagement",
-        data: [85, 70, 72, 65], // Example engagement percentages for each platform
+        data: [85, 70, 72, 65],
         backgroundColor: "rgba(44, 43, 42, 0.6)",
         borderColor: "rgb(43, 43, 43)",
         borderWidth: 1,
@@ -122,7 +121,7 @@ const Overview = () => {
         </div>
         <div className="flex justify-between items-center">
           {/* Stats Section */}
-          <div className="W-1/2 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="W-1/2 grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, index) => {
               const IconComponent = stat.icon;
               return (
@@ -139,19 +138,13 @@ const Overview = () => {
                     <p className="text-4xl font-bold text-gray-900">
                       {stat.value}
                     </p>
-                    <h3 className="text-lg font-semibold text-gray-600 ">
+                    <h3 className="text-md whitespace-nowrap font-semibold text-gray-600 ">
                       {stat.label}
                     </h3>
                   </div>
                 </div>
               );
             })}
-          </div>
-          {/* Platform Progress Graph */}
-          <div className="w-1/2">
-            <div className="bg-white p-6 rounded-xl shadow-lg h-[400px]">
-              <Bar data={platformData} options={options} />
-            </div>
           </div>
         </div>
 
@@ -169,7 +162,7 @@ const Overview = () => {
                 <video
                   src={story.preview}
                   alt={story.title}
-                  className="w-full h-64 object-contain"
+                  className="w-full h-64 object-cover"
                   autoPlay
                   muted
                   loop

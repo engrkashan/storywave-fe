@@ -1,8 +1,6 @@
-import { useState } from "react"
 import { BiLinkExternal } from "react-icons/bi";
 
 export default function Integrations() {
-
   const integrations = [
     {
       name: "YouTube",
@@ -41,13 +39,15 @@ export default function Integrations() {
     },
   ];
 
-
-
   return (
     <div className="flex-1 px-8 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-semibold text-gray-900 mb-2">Integrations</h2>
-        <p className="text-gray-600 text-xl">Connect StoryWave with your favorite tools</p>
+        <h2 className="text-3xl font-semibold text-gray-900 mb-2">
+          Integrations
+        </h2>
+        <p className="text-gray-600 text-xl">
+          Connect StoryWave with your favorite tools
+        </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {integrations.map((integration, index) => (
@@ -56,8 +56,11 @@ export default function Integrations() {
             className="bg-white rounded-3xl border border-gray-300 hover:border-gray-400 p-4 hover:shadow-lg transition-shadow relative group"
           >
             <div className="flex items-start justify-between mb-4">
-
-              <img src={integration.icon} alt={integration.name} className="w-14 h-auto" />
+              <img
+                src={integration.icon}
+                alt={integration.name}
+                className="w-14 h-auto"
+              />
 
               <button className=" transition-opacity p-1 hover:bg-gray-100 rounded">
                 <BiLinkExternal className="text-2xl" />
@@ -69,11 +72,15 @@ export default function Integrations() {
               )}
             </div>
 
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{integration.name}</h3>
-            <p className="text-gray-600 text-lg leading-relaxed">{integration.description}</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {integration.name}
+            </h3>
+            <p className="text-gray-600 text-lg leading-relaxed">
+              {integration.description}
+            </p>
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }

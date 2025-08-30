@@ -13,7 +13,7 @@ const Login = () => {
       alert(`Password reset link sent to ${email}`);
       setIsForgotPassword(false);
     } else {
-      navigate("/dashboard");
+      navigate("/overview");
     }
   };
 
