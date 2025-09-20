@@ -1,21 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import Cookies from "js-cookie";
+import { loginAdmin } from "../../../redux/slices/auth.slice";
 
 const Login = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const { status, error, user, token } = useSelector((state) => state.auth);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (isForgotPassword) {
-      alert(`Password reset link sent to ${email}`);
+      toast.success(`Password reset link sent to ${email}`);
       setIsForgotPassword(false);
     } else {
-      navigate("/overview");
+      dispatch(loginAdmin({ email, password: newPassword }));
     }
   };
+
+  // Handle login result
+  useEffect(() => {
+    if (status === "succeeded" && user && token) {
+      Cookies.set("token", token, { expires: 7, secure: true });
+      Cookies.set("userId", user.id, { expires: 7, secure: true });
+      Cookies.set("userRole", user.role, { expires: 7, secure: true });
+      Cookies.set("fullName", user.fullName, { expires: 7, secure: true });
+      toast.success("Welcome Onboard!");
+      navigate("/overview");
+    }
+
+    if (status === "failed" && error) {
+      toast.error(error.message || "Oops! Login failed. Please try again.");
+    }
+  }, [status, error, user, token, navigate]);
 
   return (
     <div className="relative h-screen w-full p-4 md:p-20 grid grid-cols-1 md:grid-cols-5 items-center justify-center gap-6 md:gap-10 bg-gradient-to-b from-[#f8be4c]/60 to-[#f0498f]/60">
@@ -93,8 +117,13 @@ const Login = () => {
             <button
               type="submit"
               className="w-full py-4 btn-gradient text-white font-semibold rounded-xl hover:from-[#FF3385] hover:to-[#FF007F] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              disabled={status === "loading"}
             >
-              {isForgotPassword ? "Send Reset Link" : "Sign In"}
+              {status === "loading"
+                ? "Signing In..."
+                : isForgotPassword
+                  ? "Send Reset Link"
+                  : "Sign In"}
             </button>
           </form>
         </div>

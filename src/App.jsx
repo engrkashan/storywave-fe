@@ -15,11 +15,9 @@ const Profile = lazy(() => import("./containers/dashboard/profile"));
 const MyCreations = lazy(() => import("./containers/dashboard/my-creations"));
 const NarrationStudio = lazy(() => import("./containers/dashboard/voiceover"));
 
-// Website
-const Home = lazy(() => import("./containers/website/home"));
-
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout";
+import { Toaster } from "react-hot-toast";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -45,6 +43,7 @@ const dashboardRoutes = [
 const App = () => {
   return (
     <>
+      <Toaster position="top-center" reverseOrder={false} />
       <ScrollToTop />
       <Suspense
         fallback={
@@ -75,14 +74,29 @@ const App = () => {
           <Route
             path="*"
             element={
-              <div className="flex items-center justify-center h-screen">
-                <div className="p-8 custom-border rounded-[24px] shadow-lg w-96 text-center">
-                  <h1 className="text-3xl font-bold custom-text-gradient">
-                    404 - Page Not Found
+              <div className="flex items-center justify-center h-screen bg-gradient-to-br from-amber-100 to-amber-200">
+                <div className="p-10 custom-border rounded-[24px] shadow-2xl w-[420px] text-center bg-white/80 backdrop-blur-md">
+                  <h1 className="text-5xl font-extrabold custom-text-gradient">
+                    404
                   </h1>
-                  <p className="mt-4 text-white">
-                    Oops! The page you&apos;re looking for doesn&apos;t exist.
+                  <h2 className="text-2xl font-semibold mt-2 text-gray-800">
+                    Page Not Found
+                  </h2>
+                  <p className="mt-4 text-gray-600">
+                    Oops! The page you&apos;re looking for doesn&apos;t exist or has been moved.
                   </p>
+
+                  {/* Button */}
+                  <div className="mt-6">
+                    <a
+                      href="/overview"
+                      className="inline-block px-6 py-3 rounded-xl text-lg font-semibold 
+          bg-gradient-to-r from-[#f8be4c] to-[#f0498f] text-white 
+          shadow-md hover:shadow-lg hover:scale-[1.05] transition-all"
+                    >
+                      Go Back Home
+                    </a>
+                  </div>
                 </div>
               </div>
             }

@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -28,7 +29,6 @@ const sidebarLinks = [
     label: "My Creations",
     icon: <FolderOpen className="text-xl" />,
   },
-
   {
     to: "/dashboard/integrations",
     label: "Publish & Share",
@@ -43,11 +43,13 @@ const sidebarLinks = [
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+    Cookies.remove("token");
+    Cookies.remove("userId");
+    Cookies.remove("userRole");
+    Cookies.remove("fullName");
+    window.location.href = "/";
   };
 
   return (
@@ -62,9 +64,8 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
       {/* Sidebar */}
       <div
-        className={`${
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        } transform transition-transform duration-300 ease-in-out 
+        className={`${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          } transform transition-transform duration-300 ease-in-out 
         w-72 h-full fixed left-0 top-0 z-40
         bg-white/20 backdrop-blur-2xl border-r border-white/30
         shadow-2xl rounded-r-3xl flex flex-col justify-between`}
@@ -95,10 +96,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   <Link
                     to={link.to}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-lg font-medium transition-all
-                      ${
-                        location.pathname === link.to
-                          ? "bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg scale-[1.02]"
-                          : "text-white/90 hover:bg-white/20 hover:text-white hover:scale-[1.02]"
+                      ${location.pathname === link.to
+                        ? "bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg scale-[1.02]"
+                        : "text-white/90 hover:bg-white/20 hover:text-white hover:scale-[1.02]"
                       }`}
                   >
                     {link.icon}
