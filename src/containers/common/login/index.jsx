@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import Cookies from "js-cookie";
+import React, { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
-import Cookies from "js-cookie";
 import { loginAdmin } from "../../../redux/slices/auth.slice";
 
 const Login = () => {

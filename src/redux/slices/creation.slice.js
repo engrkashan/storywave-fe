@@ -15,7 +15,7 @@ export const createCreation = createAsyncThunk(
   async (data, thunkAPI) => {
     try {
       const response = await axiosInstance.post("/creations", data);
-      return response.data; 
+      return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
     }
@@ -67,7 +67,7 @@ export const deleteCreation = createAsyncThunk(
   async (id, thunkAPI) => {
     try {
       await axiosInstance.delete(`/creations/${id}`);
-      return id; 
+      return id;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
     }

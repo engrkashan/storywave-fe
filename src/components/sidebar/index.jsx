@@ -1,16 +1,16 @@
 import Cookies from "js-cookie";
-import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Home,
   FileText,
+  FolderOpen,
+  Home,
+  LogOut,
+  Menu,
   Mic,
   Share2,
   User,
-  LogOut,
   X,
-  Menu,
-  FolderOpen,
 } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
 const sidebarLinks = [
   { to: "/overview", label: "Overview", icon: <Home className="text-xl" /> },

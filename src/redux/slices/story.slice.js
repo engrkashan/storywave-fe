@@ -14,7 +14,7 @@ export const generateStory = createAsyncThunk(
     "story/generate",
     async (storyData, thunkAPI) => {
         try {
-            const response = await axiosInstance.post("/story", storyData);
+            const response = await axiosInstance.post("/story/workflow", storyData);
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue(error.response?.data || error.message);
