@@ -18,6 +18,7 @@ const GeneratePodcast = () => {
     episodes: 1,
     length: 3,
   });
+  const [showFullScript, setShowFullScript] = useState(false);
 
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
@@ -49,8 +50,8 @@ const GeneratePodcast = () => {
       toast.error("Podcast topic must be at least 5 characters long");
       return;
     }
-    if (formData.topic.length > 500) {
-      toast.error("Podcast topic is too long (max 500 chars)");
+    if (formData.topic.length > 1500) {
+      toast.error("Podcast topic is too long (max 1500 chars)");
       return;
     }
     if (!formData.tone || !formData.type || !formData.audience) {
@@ -72,6 +73,7 @@ const GeneratePodcast = () => {
       setLoading(true);
       await dispatch(generatePodcast(payload)).unwrap();
       toast.success("Podcast generated successfully");
+      setShowFullScript(false); // Reset script expansion on new generation
     } catch (err) {
       toast.error(err?.message || "Failed to generate podcast");
     } finally {
@@ -219,6 +221,55 @@ const GeneratePodcast = () => {
     label: `${i + 1} Episode${i + 1 > 1 ? "s" : ""}`,
   }));
 
+  // Handle script truncation
+  const renderScript = () => {
+    if (!podcast?.script) return null;
+
+    // Convert array to string if it's an array
+    const scriptText = Array.isArray(podcast.script)
+      ? podcast.script.join("\n")
+      : podcast.script;
+
+    const scriptLines = scriptText
+      .split("\n")
+      .filter((line) => line.trim() !== "");
+    const maxVisibleLines = 4;
+
+    if (showFullScript) {
+      return (
+        <>
+          <p className="text-gray-700 whitespace-pre-line mb-2">{scriptText}</p>
+          <button
+            onClick={() => setShowFullScript(false)}
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors"
+          >
+            Show less
+          </button>
+        </>
+      );
+    } else {
+      const visibleLines = scriptLines.slice(0, maxVisibleLines);
+      const displayText =
+        visibleLines.join("\n") +
+        (scriptLines.length > maxVisibleLines ? "..." : "");
+      return (
+        <>
+          <p className="text-gray-700 whitespace-pre-line mb-2 max-h-20 overflow-hidden">
+            {displayText}
+          </p>
+          {scriptLines.length > maxVisibleLines && (
+            <button
+              onClick={() => setShowFullScript(true)}
+              className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors"
+            >
+              Show more
+            </button>
+          )}
+        </>
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="flex h-screen">
@@ -248,7 +299,7 @@ const GeneratePodcast = () => {
                   rows="4"
                 />
                 <div className="text-xs text-gray-500 mt-1">
-                  {formData.topic.length}/500 characters
+                  {formData.topic.length}/1500 characters
                 </div>
               </div>
 
@@ -438,8 +489,11 @@ const GeneratePodcast = () => {
               ) : podcast ? (
                 <>
                   <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                    {podcast.title}
+                    {podcast.title.length > 60
+                      ? podcast.title.slice(0, 60) + "..."
+                      : podcast.title}
                   </h3>
+
                   <audio controls className="w-full mb-4 rounded-lg ">
                     <source
                       src={`${
@@ -456,13 +510,11 @@ const GeneratePodcast = () => {
                   >
                     Download Podcast
                   </button>
-                  <div className="text-left max-h-64 overflow-y-auto thin-scrollbar border-t pt-4">
+                  <div className="text-left border-t pt-4">
                     <h4 className="font-bold text-lg mb-2 text-gray-800">
                       Script
                     </h4>
-                    <p className="text-gray-700 whitespace-pre-line">
-                      {podcast.script}
-                    </p>
+                    {renderScript()}
                   </div>
                 </>
               ) : (
