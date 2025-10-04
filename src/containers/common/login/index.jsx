@@ -14,6 +14,9 @@ const Login = () => {
 
   const { status, error, user, token } = useSelector((state) => state.auth);
 
+  console.log("user", user);
+  console.log("token", token);
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -28,10 +31,11 @@ const Login = () => {
   // Handle login result
   useEffect(() => {
     if (status === "succeeded" && user && token) {
-      Cookies.set("token", token, { expires: 7, secure: true });
-      Cookies.set("userId", user.id, { expires: 7, secure: true });
-      Cookies.set("userRole", user.role, { expires: 7, secure: true });
-      Cookies.set("fullName", user.fullName, { expires: 7, secure: true });
+      Cookies.set("token", token, { expires: 7, sameSite: "Lax" });
+      Cookies.set("userId", user.id, { expires: 7, sameSite: "Lax" });
+      Cookies.set("userRole", user.role, { expires: 7, sameSite: "Lax" });
+      Cookies.set("fullName", user.fullName, { expires: 7, sameSite: "Lax" });
+
       toast.success("Welcome Onboard!");
       navigate("/overview");
     }
@@ -122,8 +126,8 @@ const Login = () => {
               {status === "loading"
                 ? "Signing In..."
                 : isForgotPassword
-                  ? "Send Reset Link"
-                  : "Sign In"}
+                ? "Send Reset Link"
+                : "Sign In"}
             </button>
           </form>
         </div>
