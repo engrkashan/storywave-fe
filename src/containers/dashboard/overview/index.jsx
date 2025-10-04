@@ -1,4 +1,6 @@
 import { BiVideo, BiLink, BiTrendingUp, BiHeart } from "react-icons/bi";
+import Cookies from "js-cookie";
+import { motion } from "framer-motion";
 
 const Overview = () => {
   const recentStories = [
@@ -39,131 +41,140 @@ const Overview = () => {
       label: "Total Stories",
       value: 15,
       icon: BiVideo,
-      color: "bg-blue-500",
-      bgColor: "bg-blue-50",
+      color: "from-blue-500 to-blue-400",
+      description: "Generated narratives and scripts",
     },
     {
-      label: "Linked Platforms",
-      value: 4,
-      icon: BiLink,
-      color: "bg-green-500",
-      bgColor: "bg-green-50",
-    },
-    {
-      label: "Total Views",
-      value: "2.5K",
+      label: "Videos Created",
+      value: 8,
       icon: BiTrendingUp,
-      color: "bg-purple-500",
-      bgColor: "bg-purple-50",
+      color: "from-purple-500 to-indigo-400",
+      description: "Completed video outputs",
     },
     {
-      label: "Engagements",
-      value: 320,
+      label: "Voiceovers",
+      value: 12,
       icon: BiHeart,
-      color: "bg-pink-500",
-      bgColor: "bg-pink-50",
+      color: "from-pink-500 to-rose-400",
+      description: "Generated AI voice narrations",
+    },
+    {
+      label: "Podcasts",
+      value: 5,
+      icon: BiLink,
+      color: "from-green-500 to-emerald-400",
+      description: "Published audio series",
     },
   ];
 
   return (
-    <main className="p-8">
-      <div className="space-y-8">
-        <div className="mb-6">
-          <h2 className="text-4xl font-bold text-gray-900">
-            Welcome back, Muhammad!
-          </h2>
-          <p className="text-gray-700">
-            Here's what's happening with your stories today.
-          </p>
-        </div>
-        <div className="flex justify-between items-center">
-          {/* Stats Section */}
-          <div className="W-1/2 grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((stat, index) => {
-              const IconComponent = stat.icon;
-              return (
-                <div
-                  key={index}
-                  className={`${stat.bgColor} flex items-start gap-5 p-6 rounded-xl border border-gray-200 hover:shadow-xl transition-all duration-300 ease-in-out`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className={`${stat.color} p-3 rounded-full`}>
-                      <IconComponent className="text-white w-12 h-12" />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <p className="text-4xl font-bold text-gray-900">
-                      {stat.value}
-                    </p>
-                    <h3 className="text-md whitespace-nowrap font-semibold text-gray-600 ">
-                      {stat.label}
-                    </h3>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+    <main className="p-8 min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* Header */}
+      <div className="mb-10">
+        <h2 className="text-4xl font-bold text-gray-900">
+          Welcome back, {Cookies.get("fullName")}
+        </h2>
+        <p className="text-gray-600 text-lg mt-2">
+          Here's what's happening with your stories today.
+        </p>
+      </div>
 
-        {/* Recent Stories Section */}
-        <div className="mt-8">
-          <h3 className="text-3xl font-bold text-gray-900 mb-6">
-            Recent Stories
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {recentStories.map((story) => (
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {stats.map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <motion.div
+              key={i}
+              whileHover={{ scale: 1.03 }}
+              className="relative overflow-hidden rounded-2xl p-6 shadow-md bg-white hover:shadow-xl transition-all duration-300 border border-gray-100"
+            >
               <div
-                key={story.id}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 ease-in-out"
-              >
+                className={`absolute inset-0 bg-gradient-to-r ${stat.color} opacity-10`}
+              ></div>
+              <div className="relative z-10 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">
+                    {stat.label}
+                  </p>
+                  <h3 className="text-4xl font-extrabold text-gray-900 mt-1">
+                    {stat.value}
+                  </h3>
+                </div>
+                <div
+                  className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} text-white`}
+                >
+                  <Icon className="w-8 h-8" />
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Recent Stories */}
+      <div>
+        <h3 className="text-3xl font-bold text-gray-900 mb-6">
+          Recent Stories
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {recentStories.map((story) => (
+            <motion.div
+              key={story.id}
+              whileHover={{ y: -5 }}
+              className="relative bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="relative group">
                 <video
                   src={story.preview}
-                  alt={story.title}
-                  className="w-full h-64 object-cover"
+                  className="w-full h-64 object-cover brightness-90 group-hover:brightness-75 transition-all duration-300"
                   autoPlay
                   muted
                   loop
                 />
-                <div className="p-6">
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
+                  <h4 className="text-lg font-bold text-white">
                     {story.title}
                   </h4>
-                  <p className="text-sm text-gray-600 mb-2">
-                    Date: {story.date}
-                  </p>
+                  <p className="text-sm text-gray-200">{story.date}</p>
+                </div>
+              </div>
+
+              <div className="p-5">
+                <div className="flex justify-between items-center mb-3">
                   <span
-                    className={`inline-flex px-3 py-1 rounded-full text-sm ${
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       story.status === "Published"
-                        ? "bg-green-200 text-green-800"
-                        : "bg-yellow-200 text-yellow-800"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
                     }`}
                   >
                     {story.status}
                   </span>
-                  <div className="mt-4 flex space-x-6 text-sm text-gray-600">
-                    <span>Views: {story.views}</span>
-                    <span>Engagement: {story.engagement}</span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-3">
-                    {story.platforms.length > 0 ? (
-                      story.platforms.map((platform, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex px-3 py-1 rounded-lg text-xs bg-blue-100 text-blue-800"
-                        >
-                          {platform}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-gray-400">
-                        No platforms
-                      </span>
-                    )}
+                  <div className="text-sm text-gray-500 flex gap-4">
+                    <span>👁 {story.views}</span>
+                    <span>❤️ {story.engagement}</span>
                   </div>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  {story.platforms.length > 0 ? (
+                    story.platforms.map((platform, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-xs font-medium"
+                      >
+                        {platform}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-400">
+                      No linked platforms
+                    </span>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
+            </motion.div>
+          ))}
         </div>
       </div>
     </main>
