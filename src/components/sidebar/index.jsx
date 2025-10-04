@@ -20,8 +20,8 @@ const sidebarLinks = [
     icon: <FileText className="text-xl" />,
   },
   {
-    to: "/dashboard/voiceover",
-    label: "Narration Studio",
+    to: "/dashboard/podcast-studio",
+    label: "Podcast Studio",
     icon: <Mic className="text-xl" />,
   },
   {

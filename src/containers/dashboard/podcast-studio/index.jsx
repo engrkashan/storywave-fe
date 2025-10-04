@@ -1,28 +1,27 @@
-import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
-import { useDispatch } from "react-redux";
-import { generateStory } from "../../../redux/slices/story.slice";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { generatePodcast } from "../../../redux/slices/podcast.slice";
 
-const GenerateStory = () => {
+const GeneratePodcast = () => {
   const dispatch = useDispatch();
 
   const [loading, setLoading] = useState(false);
-  const [storyLength, setStoryLength] = useState(3);
+  const [podcastLength, setPodcastLength] = useState(3);
   const [formData, setFormData] = useState({
-    url: "",
-    concept: "",
+    topic: "",
     tone: "",
-    storyType: "",
+    audience: "",
   });
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   const loadingMessages = [
-    "Weaving an epic tale just for you 📜...",
-    "Crafting characters that come to life ✍️...",
-    "Building a world full of wonder 🌌...",
-    "Spinning a story with a touch of magic ✨...",
-    "Setting the stage for your adventure 🎭...",
+    "Mixing the perfect podcast vibes 🎶...",
+    "Tuning the mic for your epic show 🎙️...",
+    "Crafting a story that captivates 📖...",
+    "Adding some AI magic to your podcast ✨...",
+    "Getting the soundwaves ready 🌊...",
   ];
 
   useEffect(() => {
@@ -36,32 +35,35 @@ const GenerateStory = () => {
   }, [loading]);
 
   const handleGenerate = async () => {
-    if (!formData.concept && !formData.url) {
-      toast.error("Please provide a story concept or URL");
+    if (!formData.topic) {
+      toast.error("Please provide a podcast topic");
+      return;
+    }
+    if (!formData.tone || !formData.audience) {
+      toast.error("Tone and Audience are required");
       return;
     }
 
     const payload = {
-      textIdea: formData.concept,
-      url: formData.url,
-      storyType: formData.storyType,
-      voiceTone: formData.tone,
-      storyLength,
-      adminId: Cookies.get("userId"),
+      topic: formData.topic,
+      tone: formData.tone,
+      length: podcastLength,
+      audience: formData.audience,
+      adminId: Cookies.get("userId"), // optional, backend ignores this for now
     };
 
     try {
       setLoading(true);
-      await dispatch(generateStory(payload)).unwrap();
-      toast.success("Story generated successfully 🎉");
+      await dispatch(generatePodcast(payload)).unwrap();
+      toast.success("Podcast generated successfully 🎙️");
     } catch (err) {
-      toast.error(err?.error || "Failed to generate story ❌");
+      toast.error(err?.message || "Failed to generate podcast ❌");
     } finally {
       setLoading(false);
     }
   };
 
-  const lengthLabels = ["Brief", "Short", "Medium", "Long", "Epic"];
+  const lengthLabels = ["Brief", "Short", "Medium", "Long", "Extended"];
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -76,43 +78,29 @@ const GenerateStory = () => {
             {/* Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Story Builder
+                Podcast Studio
               </h1>
               <p className="text-gray-600 text-xl">
-                Fill in the details to generate your AI-powered story
+                Fill in the details to generate your AI-powered podcast
               </p>
             </div>
 
             {/* Form */}
             <form className="space-y-6">
-              {/* Reference URL */}
+              {/* Podcast Topic */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Reference URL <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://example.com/inspiration"
-                  value={formData.url}
-                  onChange={(e) => handleInputChange("url", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
-                />
-              </div>
-
-              {/* Story Concept */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Story Concept (optional)
+                  Podcast Topic
                 </label>
                 <textarea
-                  placeholder="Describe your story idea..."
-                  value={formData.concept}
-                  onChange={(e) => handleInputChange("concept", e.target.value)}
+                  placeholder="Describe your podcast topic..."
+                  value={formData.topic}
+                  onChange={(e) => handleInputChange("topic", e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors resize-none"
                   rows="4"
                 />
                 <div className="text-xs text-gray-500 mt-1">
-                  {formData.concept.length}/500 characters
+                  {formData.topic.length}/500 characters
                 </div>
               </div>
 
@@ -127,52 +115,50 @@ const GenerateStory = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
                 >
                   <option value="">Select tone...</option>
-                  <option value="excited">Excited & Energetic</option>
-                  <option value="calm">Calm & Soothing</option>
-                  <option value="mysterious">Mysterious & Intriguing</option>
-                  <option value="professional">
-                    Professional & Informative
+                  <option value="conversational">
+                    Conversational & Engaging
                   </option>
-                  <option value="playful">Playful & Fun</option>
+                  <option value="informative">Informative & Clear</option>
+                  <option value="humorous">Humorous & Lighthearted</option>
+                  <option value="serious">Serious & Thoughtful</option>
+                  <option value="inspirational">
+                    Inspirational & Motivating
+                  </option>
                 </select>
               </div>
 
-              {/* Story Type */}
+              {/* Audience */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Story Type <span className="text-red-500">*</span>
+                  Audience <span className="text-red-500">*</span>
                 </label>
                 <select
-                  value={formData.storyType}
+                  value={formData.audience}
                   onChange={(e) =>
-                    handleInputChange("storyType", e.target.value)
+                    handleInputChange("audience", e.target.value)
                   }
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
                 >
-                  <option value="">Select story type...</option>
-                  <option value="fantasy">Fantasy</option>
-                  <option value="sci-fi">Sci-Fi</option>
-                  <option value="mystery">Mystery</option>
-                  <option value="adventure">Adventure</option>
-                  <option value="romance">Romance</option>
-                  <option value="horror">Horror</option>
-                  <option value="comedy">Comedy</option>
-                  <option value="educational">Educational</option>
+                  <option value="">Select audience...</option>
+                  <option value="students">Students</option>
+                  <option value="professionals">Professionals</option>
+                  <option value="general">General Public</option>
+                  <option value="entrepreneurs">Entrepreneurs</option>
                 </select>
               </div>
 
-              {/* Story Length */}
+              {/* Podcast Length */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Story Length <span className="text-red-500">*</span>
+                  Podcast Length <span className="text-red-500">*</span>
                 </label>
                 <div className="px-2">
                   <input
                     type="range"
                     min="1"
                     max="5"
-                    value={storyLength}
-                    onChange={(e) => setStoryLength(e.target.value)}
+                    value={podcastLength}
+                    onChange={(e) => setPodcastLength(e.target.value)}
                     className="w-full h-2 bg-gradient rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-2">
@@ -180,7 +166,7 @@ const GenerateStory = () => {
                       <span
                         key={index}
                         className={
-                          storyLength == index + 1
+                          podcastLength == index + 1
                             ? "text-indigo-600 font-medium"
                             : ""
                         }
@@ -199,15 +185,15 @@ const GenerateStory = () => {
                 disabled={
                   loading ||
                   !formData.tone ||
-                  !formData.storyType ||
-                  !storyLength
+                  !formData.audience ||
+                  !podcastLength
                 }
                 className={`w-full py-3 rounded-lg font-medium transition-all duration-200 
                   ${
                     loading ||
                     !formData.tone ||
-                    !formData.storyType ||
-                    !storyLength
+                    !formData.audience ||
+                    !podcastLength
                       ? "bg-gray-400 cursor-not-allowed text-white"
                       : "bg-gradient-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-md"
                   }`}
@@ -218,7 +204,7 @@ const GenerateStory = () => {
                     <span>Generating...</span>
                   </div>
                 ) : (
-                  "Generate Story"
+                  "Generate Podcast"
                 )}
               </button>
             </form>
@@ -233,7 +219,7 @@ const GenerateStory = () => {
                 Live Preview
               </h2>
               <p className="text-gray-600 text-xl">
-                See your story details as you type
+                See your podcast details as you type
               </p>
             </div>
 
@@ -251,18 +237,12 @@ const GenerateStory = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
                       />
                     </svg>
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Creating Your Story
+                    Creating Your Podcast
                   </h3>
                   <p className="text-gray-500 text-sm transition-all duration-500">
                     {loadingMessages[currentMessageIndex]}
@@ -281,22 +261,16 @@ const GenerateStory = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
                       />
                     </svg>
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Preview Your Story
+                    Preview Your Podcast
                   </h3>
                   <p className="text-gray-500 text-sm">
-                    Fill out the form and generate your story to see the results
-                    here
+                    Fill out the form and generate your podcast to see the
+                    results here
                   </p>
                 </>
               )}
@@ -308,4 +282,4 @@ const GenerateStory = () => {
   );
 };
 
-export default GenerateStory;
+export default GeneratePodcast;

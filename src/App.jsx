@@ -13,7 +13,9 @@ const GenerateStory = lazy(() =>
 );
 const Profile = lazy(() => import("./containers/dashboard/profile"));
 const MyCreations = lazy(() => import("./containers/dashboard/my-creations"));
-const NarrationStudio = lazy(() => import("./containers/dashboard/voiceover"));
+const PodcastStudio = lazy(() =>
+  import("./containers/dashboard/podcast-studio")
+);
 
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -37,7 +39,7 @@ const dashboardRoutes = [
   { path: "/dashboard/generate-story", element: <GenerateStory /> },
   { path: "/dashboard/profile", element: <Profile /> },
   { path: "/dashboard/my-creations", element: <MyCreations /> },
-  { path: "/dashboard/voiceover", element: <NarrationStudio /> },
+  { path: "/dashboard/podcast-studio", element: <PodcastStudio /> },
 ];
 
 const App = () => {
@@ -83,7 +85,8 @@ const App = () => {
                     Page Not Found
                   </h2>
                   <p className="mt-4 text-gray-600">
-                    Oops! The page you&apos;re looking for doesn&apos;t exist or has been moved.
+                    Oops! The page you&apos;re looking for doesn&apos;t exist or
+                    has been moved.
                   </p>
 
                   {/* Button */}
