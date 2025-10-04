@@ -3,6 +3,7 @@ import voiceoverSlice from "./slices/voiceover.slice.js";
 import authSlice from "./slices/auth.slice.js";
 import creationSlice from "./slices/creation.slice.js";
 import adminSlice from "./slices/admin.slice.js";
+import podcastSlice from "./slices/podcast.slice.js";
 
 export const store = configureStore({
   reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
     auth: authSlice,
     creation: creationSlice,
     admin: adminSlice,
+    podcast: podcastSlice,
   },
 });

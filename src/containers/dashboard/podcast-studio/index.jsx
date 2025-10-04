@@ -1,19 +1,24 @@
 import Cookies from "js-cookie";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import Select from "react-select";
 import { generatePodcast } from "../../../redux/slices/podcast.slice";
 
 const GeneratePodcast = () => {
   const dispatch = useDispatch();
+  const { podcast } = useSelector((state) => state.podcast);
 
   const [loading, setLoading] = useState(false);
-  const [podcastLength, setPodcastLength] = useState(3);
   const [formData, setFormData] = useState({
     topic: "",
     tone: "",
+    type: "",
     audience: "",
+    episodes: 1,
+    length: 3,
   });
+
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   const loadingMessages = [
@@ -29,74 +34,217 @@ const GeneratePodcast = () => {
     if (loading) {
       interval = setInterval(() => {
         setCurrentMessageIndex((prev) => (prev + 1) % loadingMessages.length);
-      }, 2000); // Change message every 2 seconds
+      }, 2000);
     }
     return () => clearInterval(interval);
   }, [loading]);
-
-  const handleGenerate = async () => {
-    if (!formData.topic) {
-      toast.error("Please provide a podcast topic");
-      return;
-    }
-    if (!formData.tone || !formData.audience) {
-      toast.error("Tone and Audience are required");
-      return;
-    }
-
-    const payload = {
-      topic: formData.topic,
-      tone: formData.tone,
-      length: podcastLength,
-      audience: formData.audience,
-      adminId: Cookies.get("userId"), // optional, backend ignores this for now
-    };
-
-    try {
-      setLoading(true);
-      await dispatch(generatePodcast(payload)).unwrap();
-      toast.success("Podcast generated successfully 🎙️");
-    } catch (err) {
-      toast.error(err?.message || "Failed to generate podcast ❌");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const lengthLabels = ["Brief", "Short", "Medium", "Long", "Extended"];
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleGenerate = async () => {
+    // Validation
+    if (!formData.topic || formData.topic.trim().length < 5) {
+      toast.error("Podcast topic must be at least 5 characters long");
+      return;
+    }
+    if (formData.topic.length > 500) {
+      toast.error("Podcast topic is too long (max 500 chars)");
+      return;
+    }
+    if (!formData.tone || !formData.type || !formData.audience) {
+      toast.error("Tone, Type, and Audience are required");
+      return;
+    }
+
+    const payload = {
+      topic: formData.topic.trim(),
+      tone: formData.tone,
+      type: formData.type,
+      audience: formData.audience,
+      episodes: Math.min(Math.max(Number(formData.episodes), 1), 12),
+      length: Number(formData.length),
+      adminId: Cookies.get("userId") || null,
+    };
+
+    try {
+      setLoading(true);
+      await dispatch(generatePodcast(payload)).unwrap();
+      toast.success("Podcast generated successfully");
+    } catch (err) {
+      toast.error(err?.message || "Failed to generate podcast");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (podcast?.audioURL) {
+      try {
+        const response = await fetch(
+          `${
+            import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"
+          }/static${podcast.audioURL}`
+        );
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${podcast.title || "podcast"}.mp3`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        window.URL.revokeObjectURL(url);
+        toast.success("Podcast downloaded!");
+      } catch (err) {
+        toast.error("Failed to download podcast");
+      }
+    } else {
+      toast.error("No podcast available to download");
+    }
+  };
+
+  const lengthLabels = ["Brief", "Short", "Medium", "Long", "Extended"];
+
+  const customSelectStyles = {
+    control: (base, state) => ({
+      ...base,
+      borderRadius: "0.75rem",
+      padding: "0.25rem",
+      borderColor: state.isFocused ? "#6366f1" : "#d1d5db",
+      boxShadow: state.isFocused ? "0 0 0 2px #6366f1" : "none",
+      "&:hover": { borderColor: "#6366f1" },
+    }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: "0.75rem",
+      zIndex: 9999,
+    }),
+  };
+
+  const toneOptions = [
+    {
+      label: "Professional / Neutral",
+      options: [
+        { value: "conversational", label: "Conversational & Engaging" },
+        { value: "informative", label: "Informative & Clear" },
+        { value: "serious", label: "Serious & Thoughtful" },
+        { value: "inspirational", label: "Inspirational & Motivating" },
+        { value: "humorous", label: "Humorous & Lighthearted" },
+      ],
+    },
+    {
+      label: "Creative / Expressive",
+      options: [
+        { value: "satirical", label: "Satirical / Comedic" },
+        { value: "casual", label: "Casual / Chill Vibes" },
+        { value: "motivational", label: "Motivational Speech" },
+      ],
+    },
+    {
+      label: "Atmospheric / Genre-based",
+      options: [
+        { value: "storytelling", label: "Narrative / Storytelling" },
+        { value: "horror", label: "Horror & Suspense" },
+        { value: "mystery", label: "Mystery / Thriller" },
+      ],
+    },
+  ];
+
+  const typeOptions = [
+    {
+      label: "Discussion Formats",
+      options: [
+        { value: "interview", label: "Interview" },
+        { value: "debate", label: "Debate / Discussion" },
+        { value: "panel", label: "Panel / Roundtable" },
+      ],
+    },
+    {
+      label: "Narrative Formats",
+      options: [
+        { value: "documentary", label: "Documentary" },
+        {
+          value: "storytelling",
+          label: "Storytelling (Fiction / Non-fiction)",
+        },
+        { value: "true-crime", label: "True Crime" },
+      ],
+    },
+    {
+      label: "Solo Formats",
+      options: [
+        { value: "solo", label: "Solo Commentary" },
+        { value: "educational", label: "Educational / Tutorial" },
+        { value: "motivational", label: "Motivational / Inspirational Talk" },
+      ],
+    },
+  ];
+
+  const audienceOptions = [
+    {
+      label: "Education & Career",
+      options: [
+        { value: "students", label: "Students & Learners" },
+        { value: "professionals", label: "Professionals / Industry Experts" },
+        { value: "entrepreneurs", label: "Entrepreneurs / Startups" },
+      ],
+    },
+    {
+      label: "General",
+      options: [
+        { value: "general", label: "General Public" },
+        { value: "youth", label: "Kids / Young Adults" },
+        { value: "casual", label: "Casual Listeners" },
+      ],
+    },
+    {
+      label: "Interests & Niche",
+      options: [
+        { value: "tech", label: "Tech Enthusiasts" },
+        { value: "fitness", label: "Health & Fitness" },
+        { value: "story", label: "Story Lovers (Fiction / Drama)" },
+        { value: "true-crime", label: "True Crime Fans" },
+        { value: "motivational", label: "Motivational Seekers" },
+        { value: "spiritual", label: "Spiritual / Self-growth" },
+      ],
+    },
+  ];
+
+  const episodeOptions = [...Array(12)].map((_, i) => ({
+    value: i + 1,
+    label: `${i + 1} Episode${i + 1 > 1 ? "s" : ""}`,
+  }));
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="flex h-screen">
         {/* Left Panel - Forms */}
-        <div className="w-1/2 bg-white border-r border-gray-200 overflow-y-auto thin-scrollbar">
+        <div className="w-1/2 bg-white border-r border-gray-200 overflow-y-auto thin-scrollbar shadow-xl">
           <div className="p-8">
-            {/* Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 Podcast Studio
               </h1>
-              <p className="text-gray-600 text-xl">
-                Fill in the details to generate your AI-powered podcast
+              <p className="text-gray-600 text-lg font-medium">
+                Craft your AI-powered podcast with ease
               </p>
             </div>
 
-            {/* Form */}
             <form className="space-y-6">
               {/* Podcast Topic */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
                   Podcast Topic
                 </label>
                 <textarea
                   placeholder="Describe your podcast topic..."
                   value={formData.topic}
                   onChange={(e) => handleInputChange("topic", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 resize-none "
                   rows="4"
                 />
                 <div className="text-xs text-gray-500 mt-1">
@@ -106,50 +254,87 @@ const GeneratePodcast = () => {
 
               {/* Voice Tone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
                   Voice Tone <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formData.tone}
-                  onChange={(e) => handleInputChange("tone", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
-                >
-                  <option value="">Select tone...</option>
-                  <option value="conversational">
-                    Conversational & Engaging
-                  </option>
-                  <option value="informative">Informative & Clear</option>
-                  <option value="humorous">Humorous & Lighthearted</option>
-                  <option value="serious">Serious & Thoughtful</option>
-                  <option value="inspirational">
-                    Inspirational & Motivating
-                  </option>
-                </select>
+                <Select
+                  options={toneOptions}
+                  styles={customSelectStyles}
+                  value={toneOptions
+                    .flatMap((group) => group.options)
+                    .find((opt) => opt.value === formData.tone)}
+                  onChange={(selected) =>
+                    handleInputChange("tone", selected.value)
+                  }
+                  placeholder="Select tone..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
               </div>
 
-              {/* Audience */}
+              {/* Podcast Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Audience <span className="text-red-500">*</span>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Podcast Type <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formData.audience}
-                  onChange={(e) =>
-                    handleInputChange("audience", e.target.value)
+                <Select
+                  options={typeOptions}
+                  styles={customSelectStyles}
+                  value={typeOptions
+                    .flatMap((group) => group.options)
+                    .find((opt) => opt.value === formData.type)}
+                  onChange={(selected) =>
+                    handleInputChange("type", selected.value)
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
-                >
-                  <option value="">Select audience...</option>
-                  <option value="students">Students</option>
-                  <option value="professionals">Professionals</option>
-                  <option value="general">General Public</option>
-                  <option value="entrepreneurs">Entrepreneurs</option>
-                </select>
+                  placeholder="Select type..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
+              </div>
+
+              {/* Target Audience */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Target Audience <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  options={audienceOptions}
+                  styles={customSelectStyles}
+                  value={audienceOptions
+                    .flatMap((group) => group.options)
+                    .find((opt) => opt.value === formData.audience)}
+                  onChange={(selected) =>
+                    handleInputChange("audience", selected.value)
+                  }
+                  placeholder="Select audience..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
+              </div>
+
+              {/* Number of Episodes */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Number of Episodes <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  options={episodeOptions}
+                  styles={customSelectStyles}
+                  value={episodeOptions.find(
+                    (opt) => opt.value === formData.episodes
+                  )}
+                  onChange={(selected) =>
+                    handleInputChange("episodes", selected.value)
+                  }
+                  placeholder="Select number of episodes..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
               </div>
 
               {/* Podcast Length */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
                   Podcast Length <span className="text-red-500">*</span>
                 </label>
                 <div className="px-2">
@@ -157,17 +342,19 @@ const GeneratePodcast = () => {
                     type="range"
                     min="1"
                     max="5"
-                    value={podcastLength}
-                    onChange={(e) => setPodcastLength(e.target.value)}
-                    className="w-full h-2 bg-gradient rounded-lg appearance-none cursor-pointer"
+                    value={formData.length}
+                    onChange={(e) =>
+                      handleInputChange("length", Number(e.target.value))
+                    }
+                    className="w-full h-2 bg-gradient-to-r from-amber-400 to-pink-500 rounded-lg appearance-none cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-gray-500 mt-2">
+                  <div className="flex justify-between text-xs text-gray-600 mt-2 font-medium">
                     {lengthLabels.map((label, index) => (
                       <span
                         key={index}
                         className={
-                          podcastLength == index + 1
-                            ? "text-indigo-600 font-medium"
+                          formData.length === index + 1
+                            ? "text-indigo-600 font-semibold"
                             : ""
                         }
                       >
@@ -186,21 +373,21 @@ const GeneratePodcast = () => {
                   loading ||
                   !formData.tone ||
                   !formData.audience ||
-                  !podcastLength
+                  !formData.type
                 }
-                className={`w-full py-3 rounded-lg font-medium transition-all duration-200 
+                className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 
                   ${
                     loading ||
                     !formData.tone ||
                     !formData.audience ||
-                    !podcastLength
+                    !formData.type
                       ? "bg-gray-400 cursor-not-allowed text-white"
-                      : "bg-gradient-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-md"
+                      : "bg-gradient-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-lg hover:shadow-xl"
                   }`}
               >
                 {loading ? (
                   <div className="flex items-center justify-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>Generating...</span>
                   </div>
                 ) : (
@@ -218,17 +405,17 @@ const GeneratePodcast = () => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
                 Live Preview
               </h2>
-              <p className="text-gray-600 text-xl">
-                See your podcast details as you type
+              <p className="text-gray-600 text-lg font-medium">
+                Preview your podcast in real-time
               </p>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center">
               {loading ? (
                 <div className="animate-pulse">
-                  <div className="w-16 h-16 bg-gradient-to-r from-amber-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-20 h-20 bg-gradient-to-r from-amber-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
                     <svg
-                      className="w-8 h-8 text-white"
+                      className="w-10 h-10 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -241,18 +428,48 @@ const GeneratePodcast = () => {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     Creating Your Podcast
                   </h3>
                   <p className="text-gray-500 text-sm transition-all duration-500">
                     {loadingMessages[currentMessageIndex]}
                   </p>
                 </div>
+              ) : podcast ? (
+                <>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                    {podcast.title}
+                  </h3>
+                  <audio controls className="w-full mb-4 rounded-lg ">
+                    <source
+                      src={`${
+                        import.meta.env.VITE_API_BASE_URL ||
+                        "http://localhost:5002"
+                      }/static${podcast.audioURL}`}
+                      type="audio/mpeg"
+                    />
+                    Your browser does not support the audio element.
+                  </audio>
+                  <button
+                    onClick={handleDownload}
+                    className="mb-4 px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:scale-105 transition-all duration-200 shadow-md"
+                  >
+                    Download Podcast
+                  </button>
+                  <div className="text-left max-h-64 overflow-y-auto thin-scrollbar border-t pt-4">
+                    <h4 className="font-bold text-lg mb-2 text-gray-800">
+                      Script
+                    </h4>
+                    <p className="text-gray-700 whitespace-pre-line">
+                      {podcast.script}
+                    </p>
+                  </div>
+                </>
               ) : (
                 <>
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 ">
                     <svg
-                      className="w-8 h-8 text-gray-400"
+                      className="w-10 h-10 text-gray-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -265,7 +482,7 @@ const GeneratePodcast = () => {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     Preview Your Podcast
                   </h3>
                   <p className="text-gray-500 text-sm">
