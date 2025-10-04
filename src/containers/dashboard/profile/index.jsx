@@ -1,4 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  getAdminProfile,
+  updateAdminProfile,
+  changeAdminPassword,
+  deleteAdminUser,
+} from "../../../redux/slices/admin.slice";
 import {
   User,
   Lock,
@@ -8,121 +15,138 @@ import {
   Plus,
   X,
 } from "lucide-react";
+import { timeAgo } from "../../../utils/timeAgo";
+import DeleteModal from "../../../components/modals/DeleteModal";
 
 const integrations = [
   {
     name: "YouTube",
-    description: "Upload and manage your video content directly to YouTube",
+    description: "Upload and manage videos",
     icon: "/apps/youtube.svg",
     status: "connected",
-    category: "Video",
   },
   {
     name: "Spotify",
-    description: "Share your music and podcasts on Spotify",
+    description: "Share music and podcasts",
     icon: "/apps/spotify.svg",
     status: "disconnected",
-    category: "Music",
   },
   {
     name: "Instagram",
-    description: "Post stories and content to your Instagram account",
+    description: "Post stories",
     icon: "/apps/instagram.svg",
     status: "connected",
-    category: "Social Media",
   },
   {
     name: "TikTok",
-    description: "Share short-form videos and stories on TikTok",
+    description: "Share short-form videos",
     icon: "/apps/tiktok.svg",
     status: "disconnected",
-    category: "Social Media",
   },
   {
     name: "Twitter",
-    description: "Post updates and engage with your Twitter audience",
+    description: "Post updates",
     icon: "/apps/x.svg",
     status: "connected",
-    category: "Social Media",
   },
 ];
 
 const Profile = () => {
-  const [user, setUser] = useState({
-    name: "Muhammad Qasim",
-    email: "muhammadqasimbhatti4@gmail.com",
-    password: "********",
-    twoFactor: "Disabled",
-    associatedAccounts: ["Google"],
+  const dispatch = useDispatch();
+  const { profile, status } = useSelector((state) => state.admin);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editMode, setEditMode] = useState({ general: false, password: false });
+  const [formData, setFormData] = useState({ fullName: "", email: "" });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
   });
-
-  const [editMode, setEditMode] = useState({
-    general: false,
-    password: false,
-  });
-
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    dispatch(getAdminProfile());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (profile)
+      setFormData({ fullName: profile.fullName, email: profile.email });
+  }, [profile]);
+
+  const handleGeneralSave = () => {
+    dispatch(updateAdminProfile(formData)).then(() =>
+      setEditMode({ ...editMode, general: false })
+    );
+  };
+
+  const handlePasswordChange = () => {
+    dispatch(changeAdminPassword(passwordData)).then(() =>
+      setEditMode({ ...editMode, password: false })
+    );
+  };
+
+  const handleConfirmDelete = () => {
+    if (!profile?.id) return;
+    dispatch(deleteAdminUser(profile.id));
+    setShowDeleteModal(false);
+  };
 
   return (
     <div className="min-h-screen p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">
-          Profile Settings
-        </h1>
-        <p className="text-gray-600">
-          Manage your account settings and preferences
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold mb-2">Profile Settings</h1>
+      <p className="text-gray-600 mb-6">
+        Manage your account settings and preferences
+      </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          {/* General Information */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <User className="text-blue-500 w-5 h-5" />
-                <h2 className="text-xl font-semibold text-gray-900">
-                  General Information
-                </h2>
-              </div>
+          {/* General Info */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex justify-between mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <User /> General Information
+              </h2>
               <button
-                onClick={() =>
-                  setEditMode({ ...editMode, general: !editMode.general })
-                }
-                className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                onClick={() => {
+                  if (editMode.general) handleGeneralSave();
+                  setEditMode({ ...editMode, general: !editMode.general });
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg"
               >
-                <Edit className="w-5 h-5" />
-                <span>{editMode.general ? "Save" : "Edit"}</span>
+                <Edit /> {editMode.general ? "Save" : "Edit"}
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block font-medium text-gray-700 mb-2">
+                <label className="block font-medium text-gray-700">
                   Full Name
                 </label>
                 <input
                   type="text"
-                  value={user.name}
+                  value={formData.fullName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
                   readOnly={!editMode.general}
-                  className={`w-full p-3 border rounded-lg transition-colors ${
+                  className={`w-full p-3 border rounded-lg ${
                     editMode.general
-                      ? "border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      ? "border-blue-300 focus:ring-blue-200"
                       : "border-gray-200 bg-gray-50"
                   }`}
                 />
               </div>
               <div>
-                <label className="block font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
+                <label className="block font-medium text-gray-700">Email</label>
                 <input
                   type="email"
-                  value={user.email}
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   readOnly={!editMode.general}
-                  className={`w-full p-3 border rounded-lg transition-colors ${
+                  className={`w-full p-3 border rounded-lg ${
                     editMode.general
-                      ? "border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      ? "border-blue-300 focus:ring-blue-200"
                       : "border-gray-200 bg-gray-50"
                   }`}
                 />
@@ -130,152 +154,159 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Password & Security */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <Lock className="text-green-500 w-5 h-5" />
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Password & Security
-                </h2>
-              </div>
+          {/* Password */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex justify-between mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Lock /> Password & Security
+              </h2>
               <button
                 onClick={() =>
                   setEditMode({ ...editMode, password: !editMode.password })
                 }
-                className="flex items-center space-x-2 px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg"
               >
-                <Edit className="w-5 h-5" />
-                <span>Change Password</span>
+                <Edit /> Change Password
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block font-medium text-gray-700 mb-2">
-                  Current Password
-                </label>
-                <input
-                  type="password"
-                  value={user.password}
-                  readOnly
-                  className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50"
-                />
+            {editMode.password && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block font-medium text-gray-700">
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        currentPassword: e.target.value,
+                      })
+                    }
+                    className="w-full p-3 border rounded-lg border-gray-200"
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium text-gray-700">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        newPassword: e.target.value,
+                      })
+                    }
+                    className="w-full p-3 border rounded-lg border-gray-200"
+                  />
+                </div>
+                <button
+                  onClick={handlePasswordChange}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg"
+                >
+                  Save Password
+                </button>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Connected Accounts */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <LinkIcon className="text-purple-500 w-5 h-5" />
-              <h2 className="text-xl font-semibold text-gray-900">
-                Connected Accounts
-              </h2>
-            </div>
-
-            <div className="space-y-3">
-              {user.associatedAccounts.map((account, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    {account === "Google" && (
-                      <img
-                        src="https://www.google.com/favicon.ico"
-                        alt="Google"
-                        className="w-6 h-6"
-                      />
-                    )}
-                    <div>
-                      <h3 className="font-medium text-gray-900">{account}</h3>
-                      <p className="text-gray-600">Connected account</p>
-                    </div>
-                  </div>
-                  <button className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors">
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              ))}
-
-              {/* Open modal button */}
-              <button
-                onClick={() => setShowModal(true)}
-                className="w-full flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
+              <LinkIcon /> Connected Accounts
+            </h2>
+            {profile?.associatedAccounts?.map((acc) => (
+              <div
+                key={acc}
+                className="flex justify-between p-3 border rounded-lg mb-2"
               >
-                <Plus className="w-5 h-5" />
-                Connect Another Account
-              </button>
-            </div>
+                <span>{acc}</span>
+                <button className="text-red-500">
+                  <Trash2 />
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 px-4 py-2 border-2 border-dashed rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600"
+            >
+              <Plus /> Connect Account
+            </button>
           </div>
         </div>
 
+        {/* Right Panel */}
         <div className="space-y-6">
           {/* Account Status */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Account Status</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Last Login</span>
-                <span className="font-medium text-gray-900">2 hours ago</span>
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Last Login</span>
+              <span className="font-medium text-gray-900">
+                {profile?.lastLoginAt ? timeAgo(profile.lastLoginAt) : "Never"}
+              </span>
             </div>
           </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div className="space-y-2">
-              <button className="w-full text-[18px] font-black p-3 bg-red-600 flex items-center gap-2 text-white cursor-pointer rounded-lg transition-colors">
-                <Trash2 className="w-6 h-6" /> Delete Account
-              </button>
-            </div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <h3 className="font-semibold mb-4">Quick Actions</h3>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="w-full p-3 bg-red-600 text-white flex items-center gap-2 rounded-lg"
+            >
+              <Trash2 /> Delete Account
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Modal for connecting another account */}
+      {/* Modal for adding integration */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-lg w-full max-w-lg p-6 relative">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg relative">
             <button
               onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              className="absolute top-4 right-4 text-gray-500"
             >
-              <X className="w-5 h-5" />
+              <X />
             </button>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-xl font-semibold mb-4">
               Connect a New Account
             </h2>
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-              {integrations.map((app, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <img src={app.icon} alt={app.name} className="w-6 h-6" />
-                    <div>
-                      <h3 className="font-medium text-gray-900">{app.name}</h3>
-                      <p className="text-sm text-gray-600">{app.description}</p>
-                    </div>
-                  </div>
-                  <button
-                    className={`px-3 py-1 text-sm rounded-lg ${
-                      app.status === "connected"
-                        ? "bg-gray-200 text-gray-700 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
-                    }`}
-                  >
-                    {app.status === "connected" ? "Connected" : "Connect"}
-                  </button>
+            {integrations.map((app) => (
+              <div
+                key={app.name}
+                className="flex justify-between p-3 border rounded-lg mb-2"
+              >
+                <div className="flex items-center gap-3">
+                  <img src={app.icon} alt={app.name} className="w-6 h-6" />
+                  <span>{app.name}</span>
                 </div>
-              ))}
-            </div>
+                <button
+                  className={`px-3 py-1 rounded-lg ${
+                    app.status === "connected"
+                      ? "bg-gray-200"
+                      : "bg-blue-600 text-white"
+                  }`}
+                >
+                  {app.status === "connected" ? "Connected" : "Connect"}
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
+
+      <DeleteModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Account?"
+        description="This action will permanently delete your account."
+      />
     </div>
   );
 };
