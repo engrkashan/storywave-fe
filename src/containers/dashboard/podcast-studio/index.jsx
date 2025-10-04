@@ -280,7 +280,7 @@ const GeneratePodcast = () => {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 Podcast Studio
               </h1>
-              <p className="text-gray-600 text-lg font-medium">
+              <p className="text-gray-600 text-md font-medium">
                 Craft your AI-powered podcast with ease
               </p>
             </div>
@@ -456,7 +456,7 @@ const GeneratePodcast = () => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
                 Live Preview
               </h2>
-              <p className="text-gray-600 text-lg font-medium">
+              <p className="text-gray-600 text-md font-medium">
                 Preview your podcast in real-time
               </p>
             </div>
