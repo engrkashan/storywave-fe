@@ -36,9 +36,9 @@ const overviewSlice = createSlice({
       .addCase(fetchOverview.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.totalStories = action.payload.totalStories;
-        state.videosCreated = action.payload.videosCreated;
-        state.voiceovers = action.payload.voiceovers;
-        state.podcasts = action.payload.podcasts;
+        state.videosCreated = action.payload.totalVideos;
+        state.voiceovers = action.payload.totalVoiceovers;
+        state.podcasts = action.payload.totalPodcasts;
         state.stories = action.payload.stories;
       })
       .addCase(fetchOverview.rejected, (state, action) => {

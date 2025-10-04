@@ -14,8 +14,12 @@ const Login = () => {
 
   const { status, error, user, token } = useSelector((state) => state.auth);
 
-  console.log("user", user);
-  console.log("token", token);
+  useEffect(() => {
+    const savedToken = Cookies.get("token");
+    if (savedToken) {
+      navigate("/overview");
+    }
+  }, [navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

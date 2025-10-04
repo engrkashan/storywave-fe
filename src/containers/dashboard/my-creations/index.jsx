@@ -71,7 +71,9 @@ const MyCreations = () => {
                   />
                   <div className="p-6">
                     <h4 className="text-xl font-bold text-gray-900 mb-2">
-                      {item.title}
+                      {item.title.length > 60
+                        ? item.title.slice(0, 60) + "..."
+                        : item.title}
                     </h4>
                     <p className="text-sm text-gray-600 mb-2">
                       {item.type} • {item.date || "N/A"}
