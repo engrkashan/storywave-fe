@@ -1,66 +1,53 @@
 import { BiVideo, BiLink, BiTrendingUp, BiHeart } from "react-icons/bi";
 import Cookies from "js-cookie";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchOverview } from "../../../redux/slices/overview.slice";
 
 const Overview = () => {
-  const recentStories = [
-    {
-      id: 1,
-      title: "My First Story",
-      date: "Aug 28, 2025",
-      status: "Published",
-      platforms: ["YouTube", "Instagram"],
-      views: "1.2K",
-      engagement: "85%",
-      preview: "/videos/hero.mp4",
-    },
-    {
-      id: 2,
-      title: "Adventure Tale",
-      date: "Aug 25, 2025",
-      status: "Draft",
-      platforms: [],
-      views: "0",
-      engagement: "0%",
-      preview: "/videos/video-two.mp4",
-    },
-    {
-      id: 3,
-      title: "Tech Review",
-      date: "Aug 20, 2025",
-      status: "Published",
-      platforms: ["Twitter", "TikTok"],
-      views: "890",
-      engagement: "72%",
-      preview: "/videos/video-one.mp4",
-    },
-  ];
+  const dispatch = useDispatch();
+  const {
+    totalStories,
+    videosCreated,
+    voiceovers,
+    podcasts,
+    stories,
+    status,
+    error,
+  } = useSelector((state) => state.overview);
 
+  // Fetch overview on mount
+  useEffect(() => {
+    dispatch(fetchOverview());
+  }, [dispatch]);
+
+  // Stat cards data from API
   const stats = [
     {
       label: "Total Stories",
-      value: 15,
+      value: totalStories,
       icon: BiVideo,
       color: "from-blue-500 to-blue-400",
       description: "Generated narratives and scripts",
     },
     {
       label: "Videos Created",
-      value: 8,
+      value: videosCreated,
       icon: BiTrendingUp,
       color: "from-purple-500 to-indigo-400",
       description: "Completed video outputs",
     },
     {
       label: "Voiceovers",
-      value: 12,
+      value: voiceovers,
       icon: BiHeart,
       color: "from-pink-500 to-rose-400",
       description: "Generated AI voice narrations",
     },
     {
       label: "Podcasts",
-      value: 5,
+      value: podcasts,
       icon: BiLink,
       color: "from-green-500 to-emerald-400",
       description: "Published audio series",
@@ -75,7 +62,7 @@ const Overview = () => {
           Welcome back, {Cookies.get("fullName")}
         </h2>
         <p className="text-gray-600 text-lg mt-2">
-          Here's what's happening with your stories today.
+          Here's an overview of all your creations.
         </p>
       </div>
 
@@ -117,8 +104,23 @@ const Overview = () => {
         <h3 className="text-3xl font-bold text-gray-900 mb-6">
           Recent Stories
         </h3>
+
+        {status === "loading" && <p className="text-gray-500">Loading...</p>}
+        {status === "failed" && <p className="text-red-500">{error}</p>}
+
+        {status === "succeeded" && stories.length === 0 && (
+            <div className="flex flex-col items-center justify-center text-center mt-40">
+              <p className="text-2xl font-semibold text-gray-700 mb-4">
+                😢 Oops! You haven’t created anything yet.
+              </p>
+              <p className="text-gray-500">
+                Start generating stories and they will appear here.
+              </p>
+            </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {recentStories.map((story) => (
+          {stories.map((story) => (
             <motion.div
               key={story.id}
               whileHover={{ y: -5 }}
@@ -126,7 +128,7 @@ const Overview = () => {
             >
               <div className="relative group">
                 <video
-                  src={story.preview}
+                  src={story.mediaURL || "/videos/hero.mp4"}
                   className="w-full h-64 object-cover brightness-90 group-hover:brightness-75 transition-all duration-300"
                   autoPlay
                   muted
@@ -136,41 +138,9 @@ const Overview = () => {
                   <h4 className="text-lg font-bold text-white">
                     {story.title}
                   </h4>
-                  <p className="text-sm text-gray-200">{story.date}</p>
-                </div>
-              </div>
-
-              <div className="p-5">
-                <div className="flex justify-between items-center mb-3">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      story.status === "Published"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {story.status}
-                  </span>
-                  <div className="text-sm text-gray-500 flex gap-4">
-                    <span>👁 {story.views}</span>
-                    <span>❤️ {story.engagement}</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {story.platforms.length > 0 ? (
-                    story.platforms.map((platform, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-xs font-medium"
-                      >
-                        {platform}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-xs text-gray-400">
-                      No linked platforms
-                    </span>
-                  )}
+                  <p className="text-sm text-gray-200">
+                    {new Date(story.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
             </motion.div>
