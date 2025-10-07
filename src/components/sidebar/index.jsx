@@ -9,6 +9,7 @@ import {
   Share2,
   User,
   X,
+  Speech,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -23,6 +24,11 @@ const sidebarLinks = [
     to: "/dashboard/podcast-studio",
     label: "Podcast Studio",
     icon: <Mic className="text-xl" />,
+  },
+  {
+    to: "/dashboard/voice-cloning",
+    label: "Voice Cloning",
+    icon: <Speech className="text-xl rotate-12" />,
   },
   {
     to: "/dashboard/my-creations",
@@ -64,8 +70,9 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
       {/* Sidebar */}
       <div
-        className={`${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-          } transform transition-transform duration-300 ease-in-out 
+        className={`${
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        } transform transition-transform duration-300 ease-in-out 
         w-72 h-full fixed left-0 top-0 z-40
         bg-white/20 backdrop-blur-2xl border-r border-white/30
         shadow-2xl rounded-r-3xl flex flex-col justify-between`}
@@ -96,9 +103,10 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
                   <Link
                     to={link.to}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-lg font-medium transition-all
-                      ${location.pathname === link.to
-                        ? "bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg scale-[1.02]"
-                        : "text-white/90 hover:bg-white/20 hover:text-white hover:scale-[1.02]"
+                      ${
+                        location.pathname === link.to
+                          ? "bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg scale-[1.02]"
+                          : "text-white/90 hover:bg-white/20 hover:text-white hover:scale-[1.02]"
                       }`}
                   >
                     {link.icon}

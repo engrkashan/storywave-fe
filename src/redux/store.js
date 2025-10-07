@@ -5,6 +5,7 @@ import adminSlice from "./slices/admin.slice.js";
 import podcastSlice from "./slices/podcast.slice.js";
 import creationsSlice from "./slices/creations.slice.js";
 import overviewSlice from "./slices/overview.slice.js";
+import voiceCloneSlice from "./slices/voice.clone.slice.js";
 
 export const store = configureStore({
   reducer: {
@@ -14,5 +15,6 @@ export const store = configureStore({
     admin: adminSlice,
     podcast: podcastSlice,
     overview: overviewSlice,
+    voiceClone: voiceCloneSlice,
   },
 });

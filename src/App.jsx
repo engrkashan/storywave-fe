@@ -16,6 +16,7 @@ const MyCreations = lazy(() => import("./containers/dashboard/my-creations"));
 const PodcastStudio = lazy(() =>
   import("./containers/dashboard/podcast-studio")
 );
+const VoiceCloning = lazy(() => import("./containers/dashboard/voice-cloning"));
 
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -37,6 +38,7 @@ const dashboardRoutes = [
   { path: "/overview", element: <Overview /> },
   { path: "/dashboard/integrations", element: <Integrations /> },
   { path: "/dashboard/generate-story", element: <GenerateStory /> },
+  { path: "/dashboard/voice-cloning", element: <VoiceCloning /> },
   { path: "/dashboard/profile", element: <Profile /> },
   { path: "/dashboard/my-creations", element: <MyCreations /> },
   { path: "/dashboard/podcast-studio", element: <PodcastStudio /> },
