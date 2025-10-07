@@ -41,8 +41,6 @@ const MyCreations = () => {
         {/* All Creations */}
         <div className="mt-8">
           {status === "loading" && <p>Loading your creations...</p>}
-          {status === "failed" && <p className="text-red-500">{error}</p>}
-
           {status === "succeeded" && creations.length === 0 && (
             <div className="flex flex-col items-center justify-center text-center mt-40">
               <p className="text-2xl font-semibold text-gray-700 mb-4">

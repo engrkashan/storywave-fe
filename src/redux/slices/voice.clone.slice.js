@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosInstance from "../../middleware/axiosInstance";
+import Cookies from "js-cookie";
 
 // =================== INITIAL STATE ===================
 const initialState = {
@@ -14,13 +15,24 @@ const initialState = {
 // Upload & Clone Voice
 export const cloneVoice = createAsyncThunk(
   "voiceClone/clone",
-  async (file, thunkAPI) => {
+  async ({ file, text }, thunkAPI) => {
     try {
+      const token = Cookies.get("token");
+      if (!token) throw new Error("No token found");
+
+      const adminId = Cookies.get("userId");
+      if (!adminId) throw new Error("Missing adminId in cookies");
+
       const formData = new FormData();
+      formData.append("adminId", adminId);
       formData.append("voice_sample", file);
+      formData.append("text", text);
 
       const response = await axiosInstance.post("/voice-clone", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       return response.data;
@@ -36,7 +48,7 @@ export const getClonedVoices = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       const response = await axiosInstance.get("/voice-clone");
-      return response.data?.data;
+      return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
     }
@@ -78,6 +90,7 @@ const voiceCloneSlice = createSlice({
       .addCase(getClonedVoices.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.clones = action.payload?.data || [];
+        console.log(action.payload.data)
       })
       .addCase(getClonedVoices.rejected, (state, action) => {
         state.status = "failed";
@@ -86,6 +99,5 @@ const voiceCloneSlice = createSlice({
   },
 });
 
-// =================== EXPORTS ===================
 export const { clearVoiceClone } = voiceCloneSlice.actions;
 export default voiceCloneSlice.reducer;
