@@ -19,6 +19,7 @@ const GeneratePodcast = () => {
     length: 3,
   });
   const [showFullScript, setShowFullScript] = useState(false);
+  const [selectedEpisode, setSelectedEpisode] = useState(0);
 
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
@@ -39,6 +40,13 @@ const GeneratePodcast = () => {
     }
     return () => clearInterval(interval);
   }, [loading]);
+
+  useEffect(() => {
+    if (podcast && podcast.episodes) {
+      setSelectedEpisode(0);
+      setShowFullScript(false);
+    }
+  }, [podcast]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -73,7 +81,6 @@ const GeneratePodcast = () => {
       setLoading(true);
       await dispatch(generatePodcast(payload)).unwrap();
       toast.success("Podcast generated successfully");
-      setShowFullScript(false); // Reset script expansion on new generation
     } catch (err) {
       toast.error(err?.message || "Failed to generate podcast");
     } finally {
@@ -81,31 +88,75 @@ const GeneratePodcast = () => {
     }
   };
 
+  // Get current episode data
+  const currentEpisode = podcast?.episodes?.[selectedEpisode];
+
   const handleDownload = async () => {
-    if (podcast?.audioURL) {
+    if (currentEpisode?.audioURL) {
       try {
-        const response = await fetch(
-          `${
-            import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"
-          }/static${podcast.audioURL}`
-        );
+        const response = await fetch(currentEpisode.audioURL);
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
 
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${podcast.title || "podcast"}.mp3`;
+        link.download = `${currentEpisode.title || "episode"}.mp3`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
 
         window.URL.revokeObjectURL(url);
-        toast.success("Podcast downloaded!");
+        toast.success(`Episode ${selectedEpisode + 1} downloaded!`);
       } catch (err) {
-        toast.error("Failed to download podcast");
+        toast.error("Failed to download episode");
       }
     } else {
-      toast.error("No podcast available to download");
+      toast.error("No episode available to download");
+    }
+  };
+
+  // Handle script truncation for current episode
+  const renderScript = () => {
+    if (!currentEpisode?.script) return null;
+
+    const scriptText = currentEpisode.script;
+    const scriptLines = scriptText
+      .split("\n")
+      .filter((line) => line.trim() !== "");
+    const maxVisibleLines = 4;
+
+    if (showFullScript) {
+      return (
+        <>
+          <p className="text-gray-700 whitespace-pre-line mb-2">{scriptText}</p>
+          <button
+            onClick={() => setShowFullScript(false)}
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors"
+          >
+            Show less
+          </button>
+        </>
+      );
+    } else {
+      const visibleLines = scriptLines.slice(0, maxVisibleLines);
+      const displayText =
+        visibleLines.join("\n") +
+        (scriptLines.length > maxVisibleLines ? "..." : "");
+      return (
+        <>
+          <p className="text-gray-700 whitespace-pre-line mb-2 max-h-20 overflow-hidden">
+            {displayText}
+          </p>
+          {scriptLines.length > maxVisibleLines && (
+            <button
+              onClick={() => setShowFullScript(true)}
+              className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors"
+            >
+              Show more
+            </button>
+          )}
+        </>
+      );
     }
   };
 
@@ -221,55 +272,6 @@ const GeneratePodcast = () => {
     label: `${i + 1} Episode${i + 1 > 1 ? "s" : ""}`,
   }));
 
-  // Handle script truncation
-  const renderScript = () => {
-    if (!podcast?.script) return null;
-
-    // Convert array to string if it's an array
-    const scriptText = Array.isArray(podcast.script)
-      ? podcast.script.join("\n")
-      : podcast.script;
-
-    const scriptLines = scriptText
-      .split("\n")
-      .filter((line) => line.trim() !== "");
-    const maxVisibleLines = 4;
-
-    if (showFullScript) {
-      return (
-        <>
-          <p className="text-gray-700 whitespace-pre-line mb-2">{scriptText}</p>
-          <button
-            onClick={() => setShowFullScript(false)}
-            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors"
-          >
-            Show less
-          </button>
-        </>
-      );
-    } else {
-      const visibleLines = scriptLines.slice(0, maxVisibleLines);
-      const displayText =
-        visibleLines.join("\n") +
-        (scriptLines.length > maxVisibleLines ? "..." : "");
-      return (
-        <>
-          <p className="text-gray-700 whitespace-pre-line mb-2 max-h-20 overflow-hidden">
-            {displayText}
-          </p>
-          {scriptLines.length > maxVisibleLines && (
-            <button
-              onClick={() => setShowFullScript(true)}
-              className="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition-colors"
-            >
-              Show more
-            </button>
-          )}
-        </>
-      );
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="flex h-screen">
@@ -295,7 +297,7 @@ const GeneratePodcast = () => {
                   placeholder="Describe your podcast topic..."
                   value={formData.topic}
                   onChange={(e) => handleInputChange("topic", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 resize-none "
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 resize-none"
                   rows="4"
                 />
                 <div className="text-xs text-gray-500 mt-1">
@@ -457,13 +459,13 @@ const GeneratePodcast = () => {
                 Live Preview
               </h2>
               <p className="text-gray-600 text-md font-medium">
-                Preview your podcast in real-time
+                Preview your podcast episodes
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
               {loading ? (
-                <div className="animate-pulse">
+                <div className="animate-pulse text-center">
                   <div className="w-20 h-20 bg-gradient-to-r from-amber-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
                     <svg
                       className="w-10 h-10 text-white"
@@ -486,61 +488,114 @@ const GeneratePodcast = () => {
                     {loadingMessages[currentMessageIndex]}
                   </p>
                 </div>
-              ) : podcast ? (
+              ) : podcast && podcast.episodes ? (
                 <>
+                  {/* Podcast Title */}
                   <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                    {podcast.title.length > 60
+                    {podcast.title?.length > 60
                       ? podcast.title.slice(0, 60) + "..."
                       : podcast.title}
                   </h3>
 
-                  <audio controls className="w-full mb-4 rounded-lg ">
-                    <source
-                      src={`${
-                        import.meta.env.VITE_API_BASE_URL ||
-                        "http://localhost:5002"
-                      }/static${podcast.audioURL}`}
-                      type="audio/mpeg"
+                  {/* Episode Selector */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Select Episode:
+                    </label>
+                    <Select
+                      options={podcast.episodes.map((ep, index) => ({
+                        value: index,
+                        label: `Episode ${index + 1}: ${
+                          ep.title?.length > 30
+                            ? ep.title.slice(0, 30) + "..."
+                            : ep.title
+                        }`,
+                      }))}
+                      value={{
+                        value: selectedEpisode,
+                        label: `Episode ${selectedEpisode + 1}: ${
+                          podcast.episodes[selectedEpisode].title?.length > 30
+                            ? podcast.episodes[selectedEpisode].title.slice(
+                                0,
+                                30
+                              ) + "..."
+                            : podcast.episodes[selectedEpisode].title
+                        }`,
+                      }}
+                      onChange={(selected) =>
+                        setSelectedEpisode(selected.value)
+                      }
+                      styles={customSelectStyles}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
                     />
-                    Your browser does not support the audio element.
-                  </audio>
-                  <button
-                    onClick={handleDownload}
-                    className="mb-4 px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:scale-105 transition-all duration-200 shadow-md"
-                  >
-                    Download Podcast
-                  </button>
-                  <div className="text-left border-t pt-4">
-                    <h4 className="font-bold text-lg mb-2 text-gray-800">
-                      Script
-                    </h4>
-                    {renderScript()}
                   </div>
+
+                  {/* Current Episode Details */}
+                  {currentEpisode && (
+                    <>
+                      <div className="text-center mb-4">
+                        <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                          Episode {selectedEpisode + 1}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          {Math.floor(currentEpisode.duration / 60)}:
+                          {(currentEpisode.duration % 60)
+                            .toString()
+                            .padStart(2, "0")}
+                        </p>
+                      </div>
+
+                      <audio controls className="w-full mb-4 rounded-lg">
+                        <source
+                          src={currentEpisode.audioURL}
+                          type="audio/mpeg"
+                        />
+                        Your browser does not support the audio element.
+                      </audio>
+
+                      <button
+                        onClick={handleDownload}
+                        className="mb-4 w-full px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:scale-105 transition-all duration-200 shadow-md"
+                      >
+                        ⬇️ Download Episode {selectedEpisode + 1}
+                      </button>
+
+                      <div className="text-left border-t pt-4">
+                        <h4 className="font-bold text-lg mb-2 text-gray-800">
+                          Script
+                        </h4>
+                        {renderScript()}
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 <>
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 ">
-                    <svg
-                      className="w-10 h-10 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                      />
-                    </svg>
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        className="w-10 h-10 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      Preview Your Podcast
+                    </h3>
+                    <p className="text-gray-500 text-sm">
+                      Fill out the form and generate your podcast to see the
+                      episodes here
+                    </p>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Preview Your Podcast
-                  </h3>
-                  <p className="text-gray-500 text-sm">
-                    Fill out the form and generate your podcast to see the
-                    results here
-                  </p>
                 </>
               )}
             </div>
