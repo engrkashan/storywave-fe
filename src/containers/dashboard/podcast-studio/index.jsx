@@ -42,7 +42,7 @@ const GeneratePodcast = () => {
   }, [loading]);
 
   useEffect(() => {
-    if (podcast && podcast.episodes) {
+    if (podcast && podcast.episode) {
       setSelectedEpisode(0);
       setShowFullScript(false);
     }
@@ -58,8 +58,8 @@ const GeneratePodcast = () => {
       toast.error("Podcast topic must be at least 5 characters long");
       return;
     }
-    if (formData.topic.length > 1500) {
-      toast.error("Podcast topic is too long (max 1500 chars)");
+    if (formData.topic.length > 15000) {
+      toast.error("Podcast topic is too long (max 15000 chars)");
       return;
     }
     if (!formData.tone || !formData.type || !formData.audience) {
@@ -72,7 +72,7 @@ const GeneratePodcast = () => {
       tone: formData.tone,
       type: formData.type,
       audience: formData.audience,
-      episodes: Math.min(Math.max(Number(formData.episodes), 1), 12),
+      episodes: formData.episodes,
       length: Number(formData.length),
       adminId: Cookies.get("userId") || null,
     };
@@ -88,8 +88,14 @@ const GeneratePodcast = () => {
     }
   };
 
+  const episodes = podcast?.episode
+    ? Array.isArray(podcast.episode)
+      ? podcast.episode
+      : [podcast.episode]
+    : [];
+
   // Get current episode data
-  const currentEpisode = podcast?.episodes?.[selectedEpisode];
+  const currentEpisode = episodes[selectedEpisode];
 
   const handleDownload = async () => {
     if (currentEpisode?.audioURL) {
@@ -301,7 +307,7 @@ const GeneratePodcast = () => {
                   rows="4"
                 />
                 <div className="text-xs text-gray-500 mt-1">
-                  {formData.topic.length}/1500 characters
+                  {formData.topic.length}/15000 characters
                 </div>
               </div>
 
@@ -374,7 +380,7 @@ const GeneratePodcast = () => {
                   options={episodeOptions}
                   styles={customSelectStyles}
                   value={episodeOptions.find(
-                    (opt) => opt.value === formData.episodes
+                    (opt) => opt.value === formData.episode
                   )}
                   onChange={(selected) =>
                     handleInputChange("episodes", selected.value)
@@ -488,7 +494,7 @@ const GeneratePodcast = () => {
                     {loadingMessages[currentMessageIndex]}
                   </p>
                 </div>
-              ) : podcast && podcast.episodes ? (
+              ) : podcast && podcast.episode ? (
                 <>
                   {/* Podcast Title */}
                   <h3 className="text-2xl font-bold text-gray-900 mb-4">
@@ -503,7 +509,7 @@ const GeneratePodcast = () => {
                       Select Episode:
                     </label>
                     <Select
-                      options={podcast.episodes.map((ep, index) => ({
+                      options={episodes.map((ep, index) => ({
                         value: index,
                         label: `Episode ${index + 1}: ${
                           ep.title?.length > 30
@@ -514,12 +520,12 @@ const GeneratePodcast = () => {
                       value={{
                         value: selectedEpisode,
                         label: `Episode ${selectedEpisode + 1}: ${
-                          podcast.episodes[selectedEpisode].title?.length > 30
-                            ? podcast.episodes[selectedEpisode].title.slice(
+                          podcast?.episode[selectedEpisode]?.title?.length > 30
+                            ? podcast?.episode[selectedEpisode]?.title.slice(
                                 0,
                                 30
                               ) + "..."
-                            : podcast.episodes[selectedEpisode].title
+                            : podcast?.episode[selectedEpisode]?.title
                         }`,
                       }}
                       onChange={(selected) =>
