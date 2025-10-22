@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { generateStory } from "../../../redux/slices/story.slice";
-import toast from "react-hot-toast";
 
 const GenerateStory = () => {
   const dispatch = useDispatch();
-
+  const [storyData, setStoryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [storyLength, setStoryLength] = useState(3);
   const [formData, setFormData] = useState({
@@ -52,7 +52,8 @@ const GenerateStory = () => {
 
     try {
       setLoading(true);
-      await dispatch(generateStory(payload)).unwrap();
+      const response = await dispatch(generateStory(payload)).unwrap();
+      setStoryData(response);
       toast.success("Story generated successfully 🎉");
     } catch (err) {
       toast.error(err?.error || "Failed to generate story ❌");
@@ -267,6 +268,74 @@ const GenerateStory = () => {
                   <p className="text-gray-500 text-sm transition-all duration-500">
                     {loadingMessages[currentMessageIndex]}
                   </p>
+                </div>
+              ) : storyData ? (
+                <div className="space-y-6 animate-fadeIn">
+                  {/* Title */}
+                  <h3 className="text-2xl font-semibold text-gray-900 capitalize">
+                    {storyData.story?.title || "Your Story"}
+                  </h3>
+
+                  {/* Video Section */}
+                  {storyData.video ? (
+                    <div className="space-y-3">
+                      <video
+                        src={storyData.video}
+                        controls
+                        className="w-full rounded-2xl shadow-lg border border-gray-200 transition-all hover:shadow-xl"
+                      />
+                      <button
+                        onClick={() => {
+                          const link = document.createElement("a");
+                          link.href = storyData.video;
+                          link.download = storyData.story?.title
+                            ? `${storyData.story.title}.mp4`
+                            : "story-video.mp4";
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-amber-400 text-white font-medium hover:scale-[1.02] shadow-md transition-transform"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"
+                          />
+                        </svg>
+                        Download Video
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 italic">No video available.</p>
+                  )}
+
+                  {/* Story Script */}
+                  <div className="text-left text-gray-700 space-y-4">
+                    <p className="font-semibold text-lg">Story Script:</p>
+                    <pre className="whitespace-pre-wrap text-gray-600 text-sm bg-gray-50 p-4 rounded-lg border max-h-60 overflow-y-auto thin-scrollbar">
+                      {storyData.story?.script}
+                    </pre>
+                  </div>
+
+                  {/* Audio Player */}
+                  {storyData.voiceover && (
+                    <div className="mt-4">
+                      <audio
+                        controls
+                        src={storyData.voiceover}
+                        className="w-full rounded-md"
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>

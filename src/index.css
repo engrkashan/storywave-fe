@@ -12,12 +12,10 @@
   /* Orange */
   --primary-dark: #f0498f;
   /* Violet */
-  --primary-gradient: linear-gradient(
-    90deg,
-    var(--primary),
-    var(--primary-light),
-    var(--primary-dark)
-  );
+  --primary-gradient: linear-gradient(90deg,
+      var(--primary),
+      var(--primary-light),
+      var(--primary-dark));
   /* Gradient */
 
   /* Secondary Colors */
@@ -153,23 +151,19 @@
 }
 
 .btn-gradient {
-  background: linear-gradient(
-    to right,
-    var(--primary),
-    var(--primary-light),
-    var(--primary-dark)
-  );
+  background: linear-gradient(to right,
+      var(--primary),
+      var(--primary-light),
+      var(--primary-dark));
   color: var(--white);
   border: none;
 }
 
 .btn-gradient:hover {
-  background: linear-gradient(
-    to right,
-    var(--primary-dark),
-    var(--primary-light),
-    var(--primary)
-  );
+  background: linear-gradient(to right,
+      var(--primary-dark),
+      var(--primary-light),
+      var(--primary));
 }
 
 /* Glassmorphism Class */
@@ -191,6 +185,7 @@
 .thin-scrollbar::-webkit-scrollbar {
   width: 3px;
 }
+
 .thin-scrollbar::-webkit-scrollbar-thumb {
   background: #888;
   border-radius: 4px;
@@ -246,18 +241,15 @@
 }
 
 .loader .ground div {
-  transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px)
-    translateZ(100px) scale(0);
+  transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
   width: 200px;
   height: 200px;
   background: var(--primary);
-  background: linear-gradient(
-    45deg,
-    var(--primary) 0%,
-    var(--primary) 50%,
-    var(--primary-light) 50%,
-    var(--primary-light) 100%
-  );
+  background: linear-gradient(45deg,
+      var(--primary) 0%,
+      var(--primary) 50%,
+      var(--primary-light) 50%,
+      var(--primary-light) 100%);
   transform-style: preserve-3d;
   -webkit-animation: ground var(--duration) linear forwards infinite;
   animation: ground var(--duration) linear forwards infinite;
@@ -276,8 +268,7 @@
   opacity: 0;
   background: linear-gradient(var(--primary), var(--primary-rgba));
   position: absolute;
-  transform: rotateX(var(--rx)) rotateY(var(--ry)) translate(var(--x), var(--y))
-    translateZ(var(--z));
+  transform: rotateX(var(--rx)) rotateY(var(--ry)) translate(var(--x), var(--y)) translateZ(var(--z));
   -webkit-animation: ground-shine var(--duration) linear forwards infinite;
   animation: ground-shine var(--duration) linear forwards infinite;
 }
@@ -322,8 +313,7 @@
   background-color: inherit;
   width: inherit;
   height: inherit;
-  transform: rotateX(var(--rx)) rotateY(var(--ry)) translate(var(--x), var(--y))
-    translateZ(var(--z));
+  transform: rotateX(var(--rx)) rotateY(var(--ry)) translate(var(--x), var(--y)) translateZ(var(--z));
   filter: brightness(var(--b, 1.2));
 }
 
@@ -968,44 +958,41 @@
 }
 
 @-webkit-keyframes ground {
+
   0%,
   65% {
-    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px)
-      translateZ(100px) scale(0);
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
   }
 
   75%,
   90% {
-    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px)
-      translateZ(100px) scale(1);
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(1);
   }
 
   100% {
-    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px)
-      translateZ(100px) scale(0);
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
   }
 }
 
 @keyframes ground {
+
   0%,
   65% {
-    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px)
-      translateZ(100px) scale(0);
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
   }
 
   75%,
   90% {
-    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px)
-      translateZ(100px) scale(1);
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(1);
   }
 
   100% {
-    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px)
-      translateZ(100px) scale(0);
+    transform: rotateX(90deg) rotateY(0deg) translate(-48px, -120px) translateZ(100px) scale(0);
   }
 }
 
 @-webkit-keyframes ground-shine {
+
   0%,
   70% {
     opacity: 0;
@@ -1022,6 +1009,7 @@
 }
 
 @keyframes ground-shine {
+
   0%,
   70% {
     opacity: 0;
@@ -1038,6 +1026,7 @@
 }
 
 @-webkit-keyframes mask {
+
   0%,
   65% {
     opacity: 0;
@@ -1050,6 +1039,7 @@
 }
 
 @keyframes mask {
+
   0%,
   65% {
     opacity: 0;
@@ -1059,4 +1049,21 @@
   100% {
     opacity: 1;
   }
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out;
 }
