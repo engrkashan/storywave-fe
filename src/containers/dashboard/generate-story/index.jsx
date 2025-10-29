@@ -1,3 +1,4 @@
+
 import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -8,8 +9,9 @@ const GenerateStory = () => {
   const dispatch = useDispatch();
   const [storyData, setStoryData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [storyLength, setStoryLength] = useState(3);
+  const [lengthLevel, setLengthLevel] = useState(3);
   const [formData, setFormData] = useState({
+    title: "",
     url: "",
     concept: "",
     tone: "",
@@ -35,6 +37,10 @@ const GenerateStory = () => {
     return () => clearInterval(interval);
   }, [loading]);
 
+  const lengthMinutes = [10, 15, 30, 45, 60];
+  const lengthLabels = ["Brief", "Short", "Medium", "Long", "Epic"];
+  const storyLengthStr = `${lengthMinutes[lengthLevel - 1]} minutes`;
+
   const handleGenerate = async () => {
     if (!formData.concept && !formData.url) {
       toast.error("Please provide a story concept or URL");
@@ -42,11 +48,12 @@ const GenerateStory = () => {
     }
 
     const payload = {
+      title: formData.title,
       textIdea: formData.concept,
       url: formData.url,
       storyType: formData.storyType,
       voiceTone: formData.tone,
-      storyLength,
+      storyLength: storyLengthStr,
       adminId: Cookies.get("userId"),
     };
 
@@ -61,8 +68,6 @@ const GenerateStory = () => {
       setLoading(false);
     }
   };
-
-  const lengthLabels = ["Brief", "Short", "Medium", "Long", "Epic"];
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -86,6 +91,20 @@ const GenerateStory = () => {
 
             {/* Form */}
             <form className="space-y-6">
+              {/* Story Title */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Story Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter story title..."
+                  value={formData.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
+                />
+              </div>
+
               {/* Reference URL */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -128,6 +147,7 @@ const GenerateStory = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
                 >
                   <option value="">Select tone...</option>
+                  <option value="neutral">Neutral</option>
                   <option value="excited">Excited & Energetic</option>
                   <option value="calm">Calm & Soothing</option>
                   <option value="mysterious">Mysterious & Intriguing</option>
@@ -151,14 +171,17 @@ const GenerateStory = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
                 >
                   <option value="">Select story type...</option>
-                  <option value="fantasy">Fantasy</option>
-                  <option value="sci-fi">Sci-Fi</option>
-                  <option value="mystery">Mystery</option>
-                  <option value="adventure">Adventure</option>
-                  <option value="romance">Romance</option>
-                  <option value="horror">Horror</option>
-                  <option value="comedy">Comedy</option>
-                  <option value="educational">Educational</option>
+                  <option value="true_crime_fiction_cinematic">True Crime - Fiction Cinematic (Netflix-Style)</option>
+                  <option value="true_crime_nonfiction_forensic">True Crime - Nonfiction Forensic (Forensic Files)</option>
+                  <option value="manipulation_sexual_manipulation">Manipulation - Sexual Manipulation (Mature)</option>
+                  <option value="cultural_history_documentary">Cultural History - Documentary (National Geographic)</option>
+                  <option value="homesteading_howto_field_guide">Homesteading - How-To Field Guide</option>
+                  <option value="work_and_trades_shop_manual">Work & Trades - Shop Manual (How-To)</option>
+                  <option value="work_and_trades_shopfloordoc">Work & Trades - Shopfloor Doc (Profile)</option>
+                  <option value="investigative_discovery_journalistic">Investigative Discovery - Journalistic</option>
+                  <option value="storytelling_cinematic">Storytelling - Cinematic (Movie-Style)</option>
+                  <option value="conversation_narrated_documentary">Conversation - Narrated Documentary (Blended)</option>
+                  <option value="education_howto_trades">Education - How-To (Trades)</option>
                 </select>
               </div>
 
@@ -172,8 +195,8 @@ const GenerateStory = () => {
                     type="range"
                     min="1"
                     max="5"
-                    value={storyLength}
-                    onChange={(e) => setStoryLength(e.target.value)}
+                    value={lengthLevel}
+                    onChange={(e) => setLengthLevel(e.target.value)}
                     className="w-full h-2 bg-gradient rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-2">
@@ -181,12 +204,12 @@ const GenerateStory = () => {
                       <span
                         key={index}
                         className={
-                          storyLength == index + 1
+                          lengthLevel == index + 1
                             ? "text-indigo-600 font-medium"
                             : ""
                         }
                       >
-                        {label}
+                        {label} ({lengthMinutes[index]} min)
                       </span>
                     ))}
                   </div>
@@ -199,16 +222,16 @@ const GenerateStory = () => {
                 onClick={handleGenerate}
                 disabled={
                   loading ||
+                  !formData.title ||
                   !formData.tone ||
-                  !formData.storyType ||
-                  !storyLength
+                  !formData.storyType
                 }
                 className={`w-full py-3 rounded-lg font-medium transition-all duration-200 
                   ${
                     loading ||
+                    !formData.title ||
                     !formData.tone ||
-                    !formData.storyType ||
-                    !storyLength
+                    !formData.storyType
                       ? "bg-gray-400 cursor-not-allowed text-white"
                       : "bg-gradient-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-md"
                   }`}
