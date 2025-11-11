@@ -2,19 +2,21 @@ import { useEffect, useState } from "react"
 import { BiPlayCircle, BiX, BiHeadphone, BiVideo, BiBook } from "react-icons/bi"
 import { useDispatch, useSelector } from "react-redux"
 import { fetchMyCreations } from "../../../redux/slices/creations.slice";
+import { BiTrash } from "react-icons/bi";
+import { deleteStory } from "../../../redux/slices/story.slice";
 
 const MyCreations = () => {
   const dispatch = useDispatch()
   const { stories, podcasts, status } = useSelector((state) => state.creations)
   const [selectedCreation, setSelectedCreation] = useState(null)
-
+  const [deletingId, setDeletingId] = useState(null)
   // Fetch creations on mount
   useEffect(() => {
     dispatch(fetchMyCreations())
   }, [dispatch])
 
   // Merge both types
-  const creations = [...stories, ...podcasts].map((item) => ({
+  const creations = [...stories].map((item) => ({
     id: item.id,
     title: item.title,
     type: item.type,
@@ -24,7 +26,19 @@ const MyCreations = () => {
     duration: item.video?.duration || item.episode?.duration || null,
     createdAt: new Date(item.createdAt).toLocaleDateString(),
   }))
-
+  // Handle delete
+  const handleDelete = async (e, id) => {
+    e.stopPropagation() // prevent card click
+    setDeletingId(id)
+    try {
+      await dispatch(deleteStory(id))
+      await dispatch(fetchMyCreations())
+    } catch (err) {
+      console.error("Delete failed", err)
+    } finally {
+      setDeletingId(null)
+    }
+  }
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -39,14 +53,14 @@ const MyCreations = () => {
 
 
       {/* Loading / Empty States */}
-      {status === "loading" && (
+      {/* {status === "loading" && (
         <div className="flex items-center justify-center min-h-96">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600 text-lg">Loading your creations...</p>
           </div>
         </div>
-      )}
+      )} */}
 
       {status === "succeeded" && creations.length === 0 && (
         <div className="flex flex-col items-center justify-center text-center min-h-96">
@@ -82,12 +96,6 @@ const MyCreations = () => {
                     alt={item.title}
                   />
                 )}
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <div className="bg-emerald-500 rounded-full p-4 transform scale-0 group-hover:scale-100 transition-transform duration-300">
-                    <BiPlayCircle className="w-8 h-8 text-white" />
-                  </div>
-                </div>
               </div>
 
               {/* Content */}
@@ -97,10 +105,20 @@ const MyCreations = () => {
                   <p className="text-base text-gray-600">
                     {item.type} • {item.createdAt}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     {item.video && <BiVideo className="w-5 h-5 text-emerald-500" />}
                     {item.audio && <BiHeadphone className="w-5 h-5 text-emerald-500" />}
                     {item.content && <BiBook className="w-5 h-5 text-emerald-500" />}
+                    <button
+                      onClick={(e) => handleDelete(e, item.id)}
+                      className="relative"
+                    >
+                      {deletingId === item.id ? (
+                        <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <BiTrash className="w-5 h-5 text-red-500 cursor-pointer" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -108,7 +126,6 @@ const MyCreations = () => {
           ))}
         </div>
       )}
-
       {/* Modal - Side by Side Layout */}
       {selectedCreation && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">

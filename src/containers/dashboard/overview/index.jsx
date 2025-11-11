@@ -20,6 +20,7 @@ const Overview = () => {
   // Fetch overview on mount
   useEffect(() => {
     dispatch(fetchOverview());
+    
   }, [dispatch]);
 
   // Stat cards data from API
