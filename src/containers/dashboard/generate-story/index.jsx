@@ -108,7 +108,7 @@ const GenerateStory = () => {
               {/* Reference URL */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Reference URL <span className="text-red-500">*</span>
+                  Reference URL
                 </label>
                 <input
                   type="url"
@@ -129,11 +129,11 @@ const GenerateStory = () => {
                   value={formData.concept}
                   onChange={(e) => handleInputChange("concept", e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors resize-none"
-                  rows="4"
+                  rows="5"
                 />
-                <div className="text-xs text-gray-500 mt-1">
+                {/* <div className="text-xs text-gray-500 mt-1">
                   {formData.concept.length}/500 characters
-                </div>
+                </div> */}
               </div>
 
               {/* Voice Tone */}

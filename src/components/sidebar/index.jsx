@@ -20,16 +20,16 @@ const sidebarLinks = [
     label: "Story Builder",
     icon: <FileText className="text-xl" />,
   },
-  {
-    to: "/dashboard/podcast-studio",
-    label: "Podcast Studio",
-    icon: <Mic className="text-xl" />,
-  },
-  {
-    to: "/dashboard/voice-cloning",
-    label: "Voice Cloning",
-    icon: <Speech className="text-xl rotate-12" />,
-  },
+  // {
+  //   to: "/dashboard/podcast-studio",
+  //   label: "Podcast Studio",
+  //   icon: <Mic className="text-xl" />,
+  // },
+  // {
+  //   to: "/dashboard/voice-cloning",
+  //   label: "Voice Cloning",
+  //   icon: <Speech className="text-xl rotate-12" />,
+  // },
   {
     to: "/dashboard/my-creations",
     label: "My Creations",
