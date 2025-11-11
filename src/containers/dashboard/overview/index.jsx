@@ -16,7 +16,7 @@ const Overview = () => {
     status,
     error,
   } = useSelector((state) => state.overview);
-
+  
   // Fetch overview on mount
   useEffect(() => {
     dispatch(fetchOverview());
@@ -129,7 +129,7 @@ const Overview = () => {
             >
               <div className="relative group">
                 <video
-                  src={story.mediaURL || "/videos/hero.mp4"}
+                  src={story.video?.url || "/videos/hero.mp4"}
                   className="w-full h-64 object-cover brightness-90 group-hover:brightness-75 transition-all duration-300"
                   autoPlay
                   muted
