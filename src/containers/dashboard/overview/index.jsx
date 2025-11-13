@@ -109,7 +109,7 @@ const Overview = () => {
         {status === "loading" && <p className="text-gray-500">Loading...</p>}
         {status === "failed" && <p className="text-red-500">{error}</p>}
 
-        {status === "succeeded" && stories.length === 0 && (
+        {status === "succeeded" && videos.length === 0 && (
             <div className="flex flex-col items-center justify-center text-center mt-40">
               <p className="text-2xl font-semibold text-gray-700 mb-4">
                 😢 Oops! You haven’t created anything yet.
@@ -121,7 +121,7 @@ const Overview = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {stories.map((story) => (
+          {videos.map((story) => (
             <motion.div
               key={story.id}
               whileHover={{ y: -5 }}
@@ -129,7 +129,7 @@ const Overview = () => {
             >
               <div className="relative group">
                 <video
-                  src={story.video?.url || "/videos/hero.mp4"}
+                  src={story.fileUrl || "/videos/hero.mp4"}
                   className="w-full h-64 object-cover brightness-90 group-hover:brightness-75 transition-all duration-300"
                   autoPlay
                   muted
