@@ -118,11 +118,11 @@ const GenerateStory = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
                 />
               </div>
-
+              <p className="font-semibold text-center">OR</p>
               {/* Story Concept */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Story Concept (optional)
+                  Story Script
                 </label>
                 <textarea
                   placeholder="Describe your story idea..."
