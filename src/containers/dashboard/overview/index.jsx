@@ -107,7 +107,6 @@ const Overview = () => {
         </h3>
 
         {status === "loading" && <p className="text-gray-500">Loading...</p>}
-        {status === "failed" && <p className="text-red-500">{error}</p>}
 
         {status === "succeeded" && stories.length === 0 && (
             <div className="flex flex-col items-center justify-center text-center mt-40">
