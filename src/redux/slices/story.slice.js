@@ -4,20 +4,17 @@ import axiosInstance from "../../middleware/axiosInstance";
 const initialState = {
   outline: null,
   script: null,
-  scheduled: null,
+  scheduled: [],
   status: "idle",
   error: null,
 };
 
-// Schedule Workflow
-export const scheduleWorkflow = createAsyncThunk(
-  "story/scheduleWorkflow",
-  async ({ workflowId, runAt }, thunkAPI) => {
+// Get Scheduled Stories
+export const getScheduledStories = createAsyncThunk(
+  "story/getScheduledStories",
+  async (_, thunkAPI) => {
     try {
-      const res = await axiosInstance.post("/schedule", {
-        workflowId,
-        runAt,
-      });
+      const res = await axiosInstance.get("/story/scheduled");
       return res.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
@@ -80,6 +77,20 @@ const storySlice = createSlice({
         state.error = action.payload;
       })
 
+      // getScheduledStories
+      .addCase(getScheduledStories.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(getScheduledStories.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.scheduled = action.payload;
+      })
+      .addCase(getScheduledStories.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+
       // deleteStory
       .addCase(deleteStory.pending, (state) => {
         state.status = "loading";
@@ -92,20 +103,6 @@ const storySlice = createSlice({
         }
       })
       .addCase(deleteStory.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload;
-      })
-
-      // scheduleWorkflow
-      .addCase(scheduleWorkflow.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-      })
-      .addCase(scheduleWorkflow.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.scheduled = action.payload.schedule;
-      })
-      .addCase(scheduleWorkflow.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
       });

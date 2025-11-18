@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useDispatch } from "react-redux";
-import { generateStory } from "../../../redux/slices/story.slice";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  generateStory,
+  getScheduledStories,
+} from "../../../redux/slices/story.slice";
 
 const GenerateStory = () => {
   const dispatch = useDispatch();
+  const scheduled = useSelector((state) => state.stories.scheduled);
   const [voice, setVoice] = useState("");
   const [storyData, setStoryData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,6 +34,10 @@ const GenerateStory = () => {
     "Spinning a story with a touch of magic ✨...",
     "Setting the stage for your adventure 🎭...",
   ];
+
+  useEffect(() => {
+    dispatch(getScheduledStories());
+  }, [dispatch]);
 
   useEffect(() => {
     let interval;
@@ -469,57 +477,62 @@ const GenerateStory = () => {
             {/* ---------------------------- */}
             {/* Scheduled Stories Section    */}
             {/* ---------------------------- */}
-            <div className="mt-12">
+            <div className="mt-10">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 Scheduled Stories
               </h2>
 
-              <div className="space-y-4">
-                {/* Static Item 1 */}
-                <div className="bg-white p-5 border rounded-xl shadow-sm flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      The Midnight Encounter
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Scheduled for: Jan 22, 2025 — 7:30 PM
-                    </p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
-                    Pending
-                  </span>
+              {!scheduled || scheduled.length === 0 ? (
+                <div className="bg-white p-8 border rounded-xl shadow-sm text-center">
+                  <p className="text-gray-500 text-sm">No scheduled stories.</p>
                 </div>
+              ) : (
+                <div className="space-y-4">
+                  {scheduled.map((item) => (
+                    <div
+                      key={item.workflowId}
+                      className="group bg-white p-5 border rounded-xl shadow-sm flex items-center justify-between 
+                     hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer"
+                    >
+                      {/* Left */}
+                      <div className="flex flex-col">
+                        <p className="font-semibold text-gray-900 group-hover:text-gray-800">
+                          {item.title}
+                        </p>
 
-                {/* Static Item 2 */}
-                <div className="bg-white p-5 border rounded-xl shadow-sm flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      Mystery at Old Harbor
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Scheduled for: Jan 25, 2025 — 3:00 PM
-                    </p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600">
-                    Waiting
-                  </span>
-                </div>
+                        <p className="text-sm text-gray-500">
+                          <span className="font-medium text-gray-600">
+                            Scheduled for:
+                          </span>{" "}
+                          {new Date(item.scheduledAt).toLocaleString()}
+                        </p>
+                      </div>
 
-                {/* Static Item 3 */}
-                <div className="bg-white p-5 border rounded-xl shadow-sm flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      The Hidden Passage
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Scheduled for: Feb 1, 2025 — 10:15 AM
-                    </p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600">
-                    Confirmed
-                  </span>
+                      {/* Right */}
+                      <div className="flex items-center space-x-3">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
+                          Pending
+                        </span>
+
+                        {/* subtle chevron */}
+                        <svg
+                          className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
