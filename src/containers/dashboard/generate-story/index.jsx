@@ -1,5 +1,3 @@
-
-import Cookies from "js-cookie";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
@@ -7,17 +5,23 @@ import { generateStory } from "../../../redux/slices/story.slice";
 
 const GenerateStory = () => {
   const dispatch = useDispatch();
+  const [voice, setVoice] = useState("");
   const [storyData, setStoryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lengthLevel, setLengthLevel] = useState(3);
+
+  const [mode, setMode] = useState("now");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
   const [formData, setFormData] = useState({
     title: "",
     url: "",
     concept: "",
     tone: "",
     storyType: "",
+    voice: "",
   });
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   const loadingMessages = [
     "Weaving an epic tale just for you 📜...",
@@ -32,7 +36,7 @@ const GenerateStory = () => {
     if (loading) {
       interval = setInterval(() => {
         setCurrentMessageIndex((prev) => (prev + 1) % loadingMessages.length);
-      }, 2000); // Change message every 2 seconds
+      }, 2000);
     }
     return () => clearInterval(interval);
   }, [loading]);
@@ -41,9 +45,23 @@ const GenerateStory = () => {
   const lengthLabels = ["Brief", "Short", "Medium", "Long", "Epic"];
   const storyLengthStr = `${lengthMinutes[lengthLevel - 1]} minutes`;
 
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   const handleGenerate = async () => {
     if (!formData.concept && !formData.url) {
       toast.error("Please provide a story concept or URL");
+      return;
+    }
+
+    if (!formData.title || !formData.tone || !formData.storyType) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (mode === "schedule" && !scheduleTime) {
+      toast.error("Please select a schedule time");
       return;
     }
 
@@ -54,44 +72,74 @@ const GenerateStory = () => {
       storyType: formData.storyType,
       voiceTone: formData.tone,
       storyLength: storyLengthStr,
-      adminId: Cookies.get("userId"),
+      voice: voice,
+      scheduledAt: mode === "schedule" ? scheduleTime : null,
     };
 
     try {
       setLoading(true);
+
       const response = await dispatch(generateStory(payload)).unwrap();
-      setStoryData(response);
-      toast.success("Story generated successfully 🎉");
+
+      if (mode === "now") {
+        setStoryData(response);
+        toast.success("Story generated successfully 🎉");
+      } else {
+        setStoryData(null);
+        toast.success("Story scheduled successfully ⏰");
+      }
     } catch (err) {
-      toast.error(err?.error || "Failed to generate story ❌");
+      toast.error(err?.error || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
   return (
     <div className="min-h-screen">
       <div className="flex h-screen">
-        {/* Left Panel - Forms */}
+        {/* Left Panel */}
         <div className="w-1/2 bg-white border-r border-gray-200 overflow-y-auto thin-scrollbar">
           <div className="p-8">
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Story Builder
-              </h1>
-              <p className="text-gray-600 text-xl">
-                Fill in the details to generate your AI-powered story
-              </p>
-            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Story Builder
+            </h1>
+            <p className="text-gray-600 text-xl mb-8">
+              Generate or schedule your AI-powered story
+            </p>
 
-            {/* Form */}
             <form className="space-y-6">
-              {/* Story Title */}
+              {/* Mode */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Generation Mode
+                </label>
+                <select
+                  value={mode}
+                  onChange={(e) => setMode(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                >
+                  <option value="now">Generate Now</option>
+                  <option value="schedule">Schedule for Later</option>
+                </select>
+              </div>
+
+              {mode === "schedule" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Date & Time <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduleTime}
+                    min={new Date().toISOString().slice(0, 16)}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                  />
+                </div>
+              )}
+
+              {/* Title */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Story Title <span className="text-red-500">*</span>
@@ -101,25 +149,27 @@ const GenerateStory = () => {
                   placeholder="Enter story title..."
                   value={formData.title}
                   onChange={(e) => handleInputChange("title", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 />
               </div>
 
-              {/* Reference URL */}
+              {/* URL */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Reference URL
                 </label>
                 <input
                   type="url"
-                  placeholder="https://example.com/inspiration"
+                  placeholder="https://example.com"
                   value={formData.url}
                   onChange={(e) => handleInputChange("url", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 />
               </div>
+
               <p className="font-semibold text-center">OR</p>
-              {/* Story Concept */}
+
+              {/* Concept */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Story Script
@@ -128,12 +178,33 @@ const GenerateStory = () => {
                   placeholder="Describe your story idea..."
                   value={formData.concept}
                   onChange={(e) => handleInputChange("concept", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none"
                   rows="5"
                 />
-                {/* <div className="text-xs text-gray-500 mt-1">
-                  {formData.concept.length}/500 characters
-                </div> */}
+              </div>
+
+              {/* Voices */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Voice <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={voice}
+                  onChange={(e) => setVoice(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select voice...</option>
+                  <option value="alloy">Alloy</option>
+                  <option value="ash">Ash</option>
+                  <option value="ballad">Ballad</option>
+                  <option value="coral">Coral</option>
+                  <option value="echo">Echo</option>
+                  <option value="fable">Fable</option>
+                  <option value="nova">Nova</option>
+                  <option value="onyx">Onyx</option>
+                  <option value="sage">Sage</option>
+                  <option value="shimmer">Shimmer</option>
+                </select>
               </div>
 
               {/* Voice Tone */}
@@ -144,7 +215,7 @@ const GenerateStory = () => {
                 <select
                   value={formData.tone}
                   onChange={(e) => handleInputChange("tone", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 >
                   <option value="">Select tone...</option>
                   <option value="neutral">Neutral</option>
@@ -168,20 +239,42 @@ const GenerateStory = () => {
                   onChange={(e) =>
                     handleInputChange("storyType", e.target.value)
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 >
                   <option value="">Select story type...</option>
-                  <option value="true_crime_fiction_cinematic">True Crime - Fiction Cinematic (Netflix-Style)</option>
-                  <option value="true_crime_nonfiction_forensic">True Crime - Nonfiction Forensic (Forensic Files)</option>
-                  <option value="manipulation_sexual_manipulation">Manipulation - Sexual Manipulation (Mature)</option>
-                  <option value="cultural_history_documentary">Cultural History - Documentary (National Geographic)</option>
-                  <option value="homesteading_howto_field_guide">Homesteading - How-To Field Guide</option>
-                  <option value="work_and_trades_shop_manual">Work & Trades - Shop Manual (How-To)</option>
-                  <option value="work_and_trades_shopfloordoc">Work & Trades - Shopfloor Doc (Profile)</option>
-                  <option value="investigative_discovery_journalistic">Investigative Discovery - Journalistic</option>
-                  <option value="storytelling_cinematic">Storytelling - Cinematic (Movie-Style)</option>
-                  <option value="conversation_narrated_documentary">Conversation - Narrated Documentary (Blended)</option>
-                  <option value="education_howto_trades">Education - How-To (Trades)</option>
+                  <option value="true_crime_fiction_cinematic">
+                    True Crime - Fiction Cinematic (Netflix-Style)
+                  </option>
+                  <option value="true_crime_nonfiction_forensic">
+                    True Crime - Nonfiction Forensic (Forensic Files)
+                  </option>
+                  <option value="manipulation_sexual_manipulation">
+                    Manipulation - Sexual Manipulation (Mature)
+                  </option>
+                  <option value="cultural_history_documentary">
+                    Cultural History - Documentary (National Geographic)
+                  </option>
+                  <option value="homesteading_howto_field_guide">
+                    Homesteading - How-To Field Guide
+                  </option>
+                  <option value="work_and_trades_shop_manual">
+                    Work & Trades - Shop Manual (How-To)
+                  </option>
+                  <option value="work_and_trades_shopfloordoc">
+                    Work & Trades - Shopfloor Doc (Profile)
+                  </option>
+                  <option value="investigative_discovery_journalistic">
+                    Investigative Discovery - Journalistic
+                  </option>
+                  <option value="storytelling_cinematic">
+                    Storytelling - Cinematic (Movie-Style)
+                  </option>
+                  <option value="conversation_narrated_documentary">
+                    Conversation - Narrated Documentary (Blended)
+                  </option>
+                  <option value="education_howto_trades">
+                    Education - How-To (Trades)
+                  </option>
                 </select>
               </div>
 
@@ -190,33 +283,30 @@ const GenerateStory = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Story Length <span className="text-red-500">*</span>
                 </label>
-                <div className="px-2">
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={lengthLevel}
-                    onChange={(e) => setLengthLevel(e.target.value)}
-                    className="w-full h-2 bg-gradient rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-2">
-                    {lengthLabels.map((label, index) => (
-                      <span
-                        key={index}
-                        className={
-                          lengthLevel == index + 1
-                            ? "text-indigo-600 font-medium"
-                            : ""
-                        }
-                      >
-                        {label} ({lengthMinutes[index]} min)
-                      </span>
-                    ))}
-                  </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={lengthLevel}
+                  onChange={(e) => setLengthLevel(e.target.value)}
+                  className="w-full h-2 bg-gradient rounded-lg appearance-none cursor-pointer"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-2">
+                  {lengthLabels.map((label, index) => (
+                    <span
+                      key={index}
+                      className={
+                        lengthLevel == index + 1
+                          ? "text-indigo-600 font-medium"
+                          : ""
+                      }
+                    >
+                      {label} ({lengthMinutes[index]} min)
+                    </span>
+                  ))}
                 </div>
               </div>
 
-              {/* Generate Button */}
               <button
                 type="button"
                 onClick={handleGenerate}
@@ -233,25 +323,25 @@ const GenerateStory = () => {
                     !formData.tone ||
                     !formData.storyType
                       ? "bg-gray-400 cursor-not-allowed text-white"
-                      : "bg-gradient-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-md"
+                      : "bg-linear-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-md"
                   }`}
               >
-                {loading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Generating...</span>
-                  </div>
-                ) : (
-                  "Generate Story"
-                )}
+                {loading
+                  ? mode === "now"
+                    ? "Generating..."
+                    : "Scheduling..."
+                  : mode === "now"
+                  ? "Generate Now"
+                  : "Schedule Story"}
               </button>
             </form>
           </div>
         </div>
 
-        {/* Right Panel - Preview */}
+        {/* Right Panel */}
         <div className="w-1/2 bg-gray-50 overflow-y-auto thin-scrollbar">
           <div className="p-8">
+            {/* Preview Block */}
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
                 Live Preview
@@ -264,7 +354,7 @@ const GenerateStory = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
               {loading ? (
                 <div className="animate-pulse">
-                  <div className="w-16 h-16 bg-gradient-to-r from-amber-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-linear-to-r from-amber-400 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <svg
                       className="w-8 h-8 text-white"
                       fill="none"
@@ -286,7 +376,9 @@ const GenerateStory = () => {
                     </svg>
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Creating Your Story
+                    {mode === "now"
+                      ? "Creating Your Story"
+                      : "Scheduling Story"}
                   </h3>
                   <p className="text-gray-500 text-sm transition-all duration-500">
                     {loadingMessages[currentMessageIndex]}
@@ -294,18 +386,17 @@ const GenerateStory = () => {
                 </div>
               ) : storyData ? (
                 <div className="space-y-6 animate-fadeIn">
-                  {/* Title */}
                   <h3 className="text-2xl font-semibold text-gray-900 capitalize">
-                    {storyData.story?.title || "Your Story"}
+                    {storyData.story?.title}
                   </h3>
 
-                  {/* Video Section */}
+                  {/* Video */}
                   {storyData.video ? (
                     <div className="space-y-3">
                       <video
                         src={storyData.video}
                         controls
-                        className="w-full rounded-2xl shadow-lg border border-gray-200 transition-all hover:shadow-xl"
+                        className="w-full rounded-2xl shadow-lg border border-gray-200"
                       />
                       <button
                         onClick={() => {
@@ -314,26 +405,10 @@ const GenerateStory = () => {
                           link.download = storyData.story?.title
                             ? `${storyData.story.title}.mp4`
                             : "story-video.mp4";
-                          document.body.appendChild(link);
                           link.click();
-                          document.body.removeChild(link);
                         }}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-amber-400 text-white font-medium hover:scale-[1.02] shadow-md transition-transform"
+                        className="px-4 py-2 rounded-lg bg-linear-to-r from-pink-500 to-amber-400 text-white font-medium hover:scale-[1.02] shadow-md"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"
-                          />
-                        </svg>
                         Download Video
                       </button>
                     </div>
@@ -341,7 +416,7 @@ const GenerateStory = () => {
                     <p className="text-gray-400 italic">No video available.</p>
                   )}
 
-                  {/* Story Script */}
+                  {/* Script */}
                   <div className="text-left text-gray-700 space-y-4">
                     <p className="font-semibold text-lg">Story Script:</p>
                     <pre className="whitespace-pre-wrap text-gray-600 text-sm bg-gray-50 p-4 rounded-lg border max-h-60 overflow-y-auto thin-scrollbar">
@@ -349,20 +424,17 @@ const GenerateStory = () => {
                     </pre>
                   </div>
 
-                  {/* Audio Player */}
                   {storyData.voiceover && (
-                    <div className="mt-4">
-                      <audio
-                        controls
-                        src={storyData.voiceover}
-                        className="w-full rounded-md"
-                      />
-                    </div>
+                    <audio
+                      controls
+                      src={storyData.voiceover}
+                      className="w-full rounded-md"
+                    />
                   )}
                 </div>
               ) : (
                 <>
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <svg
                       className="w-8 h-8 text-gray-400"
                       fill="none"
@@ -387,11 +459,67 @@ const GenerateStory = () => {
                     Preview Your Story
                   </h3>
                   <p className="text-gray-500 text-sm">
-                    Fill out the form and generate your story to see the results
-                    here
+                    Fill the form and generate or schedule your story to preview
+                    it here.
                   </p>
                 </>
               )}
+            </div>
+
+            {/* ---------------------------- */}
+            {/* Scheduled Stories Section    */}
+            {/* ---------------------------- */}
+            <div className="mt-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Scheduled Stories
+              </h2>
+
+              <div className="space-y-4">
+                {/* Static Item 1 */}
+                <div className="bg-white p-5 border rounded-xl shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      The Midnight Encounter
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Scheduled for: Jan 22, 2025 — 7:30 PM
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
+                    Pending
+                  </span>
+                </div>
+
+                {/* Static Item 2 */}
+                <div className="bg-white p-5 border rounded-xl shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      Mystery at Old Harbor
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Scheduled for: Jan 25, 2025 — 3:00 PM
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600">
+                    Waiting
+                  </span>
+                </div>
+
+                {/* Static Item 3 */}
+                <div className="bg-white p-5 border rounded-xl shadow-sm flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      The Hidden Passage
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Scheduled for: Feb 1, 2025 — 10:15 AM
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600">
+                    Confirmed
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

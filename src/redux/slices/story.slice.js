@@ -1,15 +1,31 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosInstance from "../../middleware/axiosInstance";
 
-// Initial State
 const initialState = {
   outline: null,
   script: null,
+  scheduled: null,
   status: "idle",
   error: null,
 };
 
-// Generate Story
+// Schedule Workflow
+export const scheduleWorkflow = createAsyncThunk(
+  "story/scheduleWorkflow",
+  async ({ workflowId, runAt }, thunkAPI) => {
+    try {
+      const res = await axiosInstance.post("/schedule", {
+        workflowId,
+        runAt,
+      });
+      return res.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+// generate story
 export const generateStory = createAsyncThunk(
   "story/generate",
   async (storyData, thunkAPI) => {
@@ -22,11 +38,12 @@ export const generateStory = createAsyncThunk(
   }
 );
 
+// delete story
 export const deleteStory = createAsyncThunk(
   "story/delete",
   async (storyId, thunkAPI) => {
     try {
-      const res = await axiosInstance.delete(`/story/${storyId}`);
+      await axiosInstance.delete(`/story/${storyId}`);
       return { storyId };
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
@@ -41,12 +58,14 @@ const storySlice = createSlice({
     clearStory: (state) => {
       state.outline = null;
       state.script = null;
+      state.scheduled = null;
       state.status = "idle";
       state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
+      // generateStory
       .addCase(generateStory.pending, (state) => {
         state.status = "loading";
         state.error = null;
@@ -60,19 +79,33 @@ const storySlice = createSlice({
         state.status = "failed";
         state.error = action.payload;
       })
+
+      // deleteStory
       .addCase(deleteStory.pending, (state) => {
         state.status = "loading";
       })
       .addCase(deleteStory.fulfilled, (state, action) => {
         state.status = "succeeded";
         const id = action.payload.storyId;
-
-        // remove from UI state if needed
         if (state.stories) {
           state.stories = state.stories.filter((s) => s.id !== id);
         }
       })
       .addCase(deleteStory.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+
+      // scheduleWorkflow
+      .addCase(scheduleWorkflow.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(scheduleWorkflow.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.scheduled = action.payload.schedule;
+      })
+      .addCase(scheduleWorkflow.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
       });

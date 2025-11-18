@@ -7,23 +7,13 @@ import { fetchOverview } from "../../../redux/slices/overview.slice";
 
 const Overview = () => {
   const dispatch = useDispatch();
-  const {
-    totalStories,
-    videosCreated,
-    voiceovers,
-    podcasts,
-    stories,
-    status,
-    error,
-  } = useSelector((state) => state.overview);
-  
-  // Fetch overview on mount
+  const { totalStories, videosCreated, voiceovers, podcasts, stories } =
+    useSelector((state) => state.overview);
+
   useEffect(() => {
     dispatch(fetchOverview());
-    
   }, [dispatch]);
 
-  // Stat cards data from API
   const stats = [
     {
       label: "Total Stories",
@@ -56,7 +46,7 @@ const Overview = () => {
   ];
 
   return (
-    <main className="p-8 min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <main className="p-8 min-h-screen bg-linear-to-b from-gray-50 to-white">
       {/* Header */}
       <div className="mb-10">
         <h2 className="text-4xl font-bold text-gray-900">
@@ -78,7 +68,7 @@ const Overview = () => {
               className="relative overflow-hidden rounded-2xl p-6 shadow-md bg-white hover:shadow-xl transition-all duration-300 border border-gray-100"
             >
               <div
-                className={`absolute inset-0 bg-gradient-to-r ${stat.color} opacity-10`}
+                className={`absolute inset-0 bg-linear-to-r ${stat.color} opacity-10`}
               ></div>
               <div className="relative z-10 flex items-center justify-between">
                 <div>
@@ -90,7 +80,7 @@ const Overview = () => {
                   </h3>
                 </div>
                 <div
-                  className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} text-white`}
+                  className={`p-3 rounded-xl bg-linear-to-br ${stat.color} text-white`}
                 >
                   <Icon className="w-8 h-8" />
                 </div>
@@ -106,17 +96,15 @@ const Overview = () => {
           Recent Stories
         </h3>
 
-        {status === "loading" && <p className="text-gray-500">Loading...</p>}
-
-        {status === "succeeded" && stories.length === 0 && (
-            <div className="flex flex-col items-center justify-center text-center mt-40">
-              <p className="text-2xl font-semibold text-gray-700 mb-4">
-                😢 Oops! You haven’t created anything yet.
-              </p>
-              <p className="text-gray-500">
-                Start generating stories and they will appear here.
-              </p>
-            </div>
+        {stories.length === 0 && (
+          <div className="flex flex-col items-center justify-center text-center mt-40">
+            <p className="text-2xl font-semibold text-gray-700 mb-4">
+              😢 Oops! You haven’t created anything yet.
+            </p>
+            <p className="text-gray-500">
+              Start generating stories and they will appear here.
+            </p>
+          </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -134,7 +122,7 @@ const Overview = () => {
                   muted
                   loop
                 />
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-linear-to-t from-black/70 to-transparent">
                   <h4 className="text-lg font-bold text-white">
                     {story.title}
                   </h4>

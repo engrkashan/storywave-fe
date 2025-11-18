@@ -1,19 +1,19 @@
-import { useEffect, useState } from "react"
-import { BiPlayCircle, BiX, BiHeadphone, BiVideo, BiBook } from "react-icons/bi"
-import { useDispatch, useSelector } from "react-redux"
+import { useEffect, useState } from "react";
+import { BiBook, BiHeadphone, BiTrash, BiVideo, BiX } from "react-icons/bi";
+import { useDispatch, useSelector } from "react-redux";
 import { fetchMyCreations } from "../../../redux/slices/creations.slice";
-import { BiTrash } from "react-icons/bi";
 import { deleteStory } from "../../../redux/slices/story.slice";
 
 const MyCreations = () => {
-  const dispatch = useDispatch()
-  const { stories, podcasts, status } = useSelector((state) => state.creations)
-  const [selectedCreation, setSelectedCreation] = useState(null)
-  const [deletingId, setDeletingId] = useState(null)
+  const dispatch = useDispatch();
+  const { stories } = useSelector((state) => state.creations);
+  const [selectedCreation, setSelectedCreation] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+
   // Fetch creations on mount
   useEffect(() => {
-    dispatch(fetchMyCreations())
-  }, [dispatch])
+    dispatch(fetchMyCreations());
+  }, [dispatch]);
 
   // Merge both types
   const creations = [...stories].map((item) => ({
@@ -25,32 +25,30 @@ const MyCreations = () => {
     audio: item.voiceover?.audioURL || item.episode?.audioURL || null,
     duration: item.video?.duration || item.episode?.duration || null,
     createdAt: new Date(item.createdAt).toLocaleDateString(),
-  }))
+  }));
+
   // Handle delete
   const handleDelete = async (e, id) => {
-    e.stopPropagation() // prevent card click
-    setDeletingId(id)
+    e.stopPropagation();
+    setDeletingId(id);
     try {
-      await dispatch(deleteStory(id))
-      await dispatch(fetchMyCreations())
+      await dispatch(deleteStory(id));
+      await dispatch(fetchMyCreations());
     } catch (err) {
-      console.error("Delete failed", err)
+      console.error("Delete failed", err);
     } finally {
-      setDeletingId(null)
+      setDeletingId(null);
     }
-  }
+  };
   return (
     <div className="min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          My Creations
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">My Creations</h1>
         <p className="text-gray-600 text-xl">
           Explore your stories and podcasts in an immersive experience
         </p>
       </div>
-
 
       {/* Loading / Empty States */}
       {/* {status === "loading" && (
@@ -62,11 +60,15 @@ const MyCreations = () => {
         </div>
       )} */}
 
-      {status === "succeeded" && creations.length === 0 && (
+      {creations.length === 0 && (
         <div className="flex flex-col items-center justify-center text-center min-h-96">
           <div className="text-6xl mb-4">✨</div>
-          <p className="text-3xl font-semibold text-gray-900 mb-2">No creations yet</p>
-          <p className="text-gray-600 text-lg">Start generating stories or podcasts and they will appear here.</p>
+          <p className="text-3xl font-semibold text-gray-900 mb-2">
+            No creations yet
+          </p>
+          <p className="text-gray-600 text-lg">
+            Start generating stories or podcasts and they will appear here.
+          </p>
         </div>
       )}
 
@@ -91,7 +93,11 @@ const MyCreations = () => {
                   />
                 ) : (
                   <img
-                    src={item.type === "PODCAST" ? "/podcast.jpeg" : "/placeholder.jpg"}
+                    src={
+                      item.type === "PODCAST"
+                        ? "/podcast.jpeg"
+                        : "/placeholder.jpg"
+                    }
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     alt={item.title}
                   />
@@ -100,15 +106,23 @@ const MyCreations = () => {
 
               {/* Content */}
               <div className="p-6">
-                <h4 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-2">{item.title}</h4>
+                <h4 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-2">
+                  {item.title}
+                </h4>
                 <div className="flex items-center justify-between">
                   <p className="text-base text-gray-600">
                     {item.type} • {item.createdAt}
                   </p>
                   <div className="flex gap-2 items-center">
-                    {item.video && <BiVideo className="w-5 h-5 text-emerald-500" />}
-                    {item.audio && <BiHeadphone className="w-5 h-5 text-emerald-500" />}
-                    {item.content && <BiBook className="w-5 h-5 text-emerald-500" />}
+                    {item.video && (
+                      <BiVideo className="w-5 h-5 text-emerald-500" />
+                    )}
+                    {item.audio && (
+                      <BiHeadphone className="w-5 h-5 text-emerald-500" />
+                    )}
+                    {item.content && (
+                      <BiBook className="w-5 h-5 text-emerald-500" />
+                    )}
                     <button
                       onClick={(e) => handleDelete(e, item.id)}
                       className="relative"
@@ -142,10 +156,15 @@ const MyCreations = () => {
             <div className="flex-1 bg-gray-50 flex flex-col items-center justify-center p-6 lg:p-8 min-h-96 lg:min-h-auto">
               {selectedCreation.video ? (
                 <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-lg">
-                  <video src={selectedCreation.video} controls autoPlay className="w-full h-full" />
+                  <video
+                    src={selectedCreation.video}
+                    controls
+                    autoPlay
+                    className="w-full h-full"
+                  />
                 </div>
               ) : (
-                <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-lg bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                   <div className="text-center">
                     <BiVideo className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500 text-lg">No video available</p>
@@ -158,7 +177,9 @@ const MyCreations = () => {
             <div className="flex-1 flex flex-col p-6 lg:p-8 border-t lg:border-t-0 lg:border-l border-gray-200">
               {/* Header */}
               <div className="mb-6 pb-6 border-b border-gray-200">
-                <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{selectedCreation.title}</h3>
+                <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                  {selectedCreation.title}
+                </h3>
                 <p className="text-base text-gray-600">
                   {selectedCreation.type} • {selectedCreation.createdAt}
                 </p>
@@ -168,17 +189,24 @@ const MyCreations = () => {
               <div className="flex-1 overflow-y-auto space-y-6 pr-4">
                 {/* Audio Player */}
                 {selectedCreation.audio && (
-                  <div className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 rounded-2xl p-6 border border-emerald-200">
+                  <div className="bg-linear-to-r from-emerald-50 to-emerald-100/50 rounded-2xl p-6 border border-emerald-200">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="bg-emerald-500 rounded-full p-2">
                         <BiHeadphone className="w-5 h-5 text-white" />
                       </div>
-                      <h4 className="font-semibold text-gray-900 text-lg">Audio</h4>
+                      <h4 className="font-semibold text-gray-900 text-lg">
+                        Audio
+                      </h4>
                     </div>
-                    <audio controls src={selectedCreation.audio} className="w-full accent-emerald-500" />
+                    <audio
+                      controls
+                      src={selectedCreation.audio}
+                      className="w-full accent-emerald-500"
+                    />
                     {selectedCreation.duration && (
                       <p className="text-sm text-gray-600 mt-3">
-                        Duration: {Math.floor(selectedCreation.duration / 60)} min
+                        Duration: {Math.floor(selectedCreation.duration / 60)}{" "}
+                        min
                       </p>
                     )}
                   </div>
@@ -186,12 +214,14 @@ const MyCreations = () => {
 
                 {/* Content/Script */}
                 {selectedCreation.content && (
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-2xl p-6 border border-blue-200">
+                  <div className="bg-linear-to-r from-blue-50 to-blue-100/50 rounded-2xl p-6 border border-blue-200">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="bg-blue-500 rounded-full p-2">
                         <BiBook className="w-5 h-5 text-white" />
                       </div>
-                      <h4 className="font-semibold text-gray-900 text-lg">Content</h4>
+                      <h4 className="font-semibold text-gray-900 text-lg">
+                        Content
+                      </h4>
                     </div>
                     <div className="text-gray-700 text-base leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto pr-3">
                       {selectedCreation.content}
@@ -210,7 +240,8 @@ const MyCreations = () => {
           </div>
         </div>
       )}
-    </div>)
-}
+    </div>
+  );
+};
 
-export default MyCreations
+export default MyCreations;
