@@ -49,7 +49,7 @@ const GenerateStory = () => {
     return () => clearInterval(interval);
   }, [loading]);
 
-  const lengthMinutes = [10, 15, 30, 45, 60];
+  const lengthMinutes = [10, 20, 30];
   const lengthLabels = ["Brief", "Short", "Medium", "Long", "Epic"];
   const storyLengthStr = `${lengthMinutes[lengthLevel - 1]} minutes`;
 
@@ -294,7 +294,7 @@ const GenerateStory = () => {
                 <input
                   type="range"
                   min="1"
-                  max="5"
+                  max="3"
                   value={lengthLevel}
                   onChange={(e) => setLengthLevel(e.target.value)}
                   className="w-full h-2 bg-gradient rounded-lg appearance-none cursor-pointer"
