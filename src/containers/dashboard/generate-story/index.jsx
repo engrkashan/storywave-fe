@@ -50,7 +50,7 @@ const GenerateStory = () => {
   }, [loading]);
 
   const lengthMinutes = [10, 20, 30];
-  const lengthLabels = ["Brief", "Short", "Medium", "Long", "Epic"];
+  const lengthLabels = ["Brief", "Medium", "Long"];
   const storyLengthStr = `${lengthMinutes[lengthLevel - 1]} minutes`;
 
   const handleInputChange = (field, value) => {
