@@ -15,6 +15,7 @@ const GenerateStory = () => {
   const [lengthLevel, setLengthLevel] = useState(3);
 
   const [mode, setMode] = useState("now");
+  const [scheduleInput, setScheduleInput] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
@@ -141,14 +142,17 @@ const GenerateStory = () => {
                   </label>
                   <input
                     type="datetime-local"
-                    value={scheduleTime}
+                    value={scheduleInput}
                     min={new Date().toISOString().slice(0, 16)}
                     onChange={(e) => {
-                      // Convert to ISO string with timezone before sending to backend
-                      const localDateTime = e.target.value;
-                      const isoString = new Date(localDateTime).toISOString();
-                      setScheduleTime(isoString);
-                    }} className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                      const value = e.target.value; // local date-time
+                      setScheduleInput(value);
+
+                      // Convert to ISO for backend
+                      const iso = new Date(value).toISOString();
+                      setScheduleTime(iso);
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                   />
                 </div>
               )}
