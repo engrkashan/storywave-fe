@@ -23,6 +23,7 @@ const GenerateStory = () => {
     url: "",
     concept: "",
     tone: "",
+    imagePrompt: "",
     storyType: "",
     voice: "",
   });
@@ -79,6 +80,7 @@ const GenerateStory = () => {
       url: formData.url,
       storyType: formData.storyType,
       voiceTone: formData.tone,
+      imagePrompt: formData.imagePrompt,
       storyLength: storyLengthStr,
       voice: voice,
       scheduledAt: mode === "schedule" ? scheduleTime : null,
@@ -188,6 +190,21 @@ const GenerateStory = () => {
                   onChange={(e) => handleInputChange("concept", e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none"
                   rows="5"
+                />
+              </div>
+
+
+              {/* Image Prompt */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Image Prompt
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter image prompt..."
+                  value={formData.imagePrompt}
+                  onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 />
               </div>
 
