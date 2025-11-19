@@ -79,6 +79,7 @@ const GenerateStory = () => {
       textIdea: formData.concept,
       url: formData.url,
       storyType: formData.storyType,
+      voice: formData.voice,
       voiceTone: formData.tone,
       imagePrompt: formData.imagePrompt,
       storyLength: storyLengthStr,
@@ -143,8 +144,12 @@ const GenerateStory = () => {
                     type="datetime-local"
                     value={scheduleTime}
                     min={new Date().toISOString().slice(0, 16)}
-                    onChange={(e) => setScheduleTime(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    onChange={(e) => {
+                      // Convert to ISO string with timezone before sending to backend
+                      const localDateTime = e.target.value;
+                      const isoString = new Date(localDateTime).toISOString();
+                      setScheduleTime(isoString);
+                    }} className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                   />
                 </div>
               )}
@@ -214,8 +219,8 @@ const GenerateStory = () => {
                   Voice <span className="text-red-500">*</span>
                 </label>
                 <select
-                  value={voice}
-                  onChange={(e) => setVoice(e.target.value)}
+                  value={formData.voice}
+                  onChange={(e) => handleInputChange("voice", e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 >
                   <option value="">Select voice...</option>
@@ -342,13 +347,12 @@ const GenerateStory = () => {
                   !formData.storyType
                 }
                 className={`w-full py-3 rounded-lg font-medium transition-all duration-200 
-                  ${
-                    loading ||
+                  ${loading ||
                     !formData.title ||
                     !formData.tone ||
                     !formData.storyType
-                      ? "bg-gray-400 cursor-not-allowed text-white"
-                      : "bg-linear-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-md"
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-linear-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-md"
                   }`}
               >
                 {loading
@@ -356,8 +360,8 @@ const GenerateStory = () => {
                     ? "Generating..."
                     : "Scheduling..."
                   : mode === "now"
-                  ? "Generate Now"
-                  : "Schedule Story"}
+                    ? "Generate Now"
+                    : "Schedule Story"}
               </button>
             </form>
           </div>
