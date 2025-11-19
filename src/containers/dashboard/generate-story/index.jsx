@@ -229,7 +229,6 @@ const GenerateStory = () => {
                   <option value="">Select voice...</option>
                   <option value="alloy">Alloy</option>
                   <option value="ash">Ash</option>
-                  <option value="ballad">Ballad</option>
                   <option value="coral">Coral</option>
                   <option value="echo">Echo</option>
                   <option value="fable">Fable</option>
