@@ -83,7 +83,6 @@ const GenerateStory = () => {
       voiceTone: formData.tone,
       imagePrompt: formData.imagePrompt,
       storyLength: storyLengthStr,
-      voice: voice,
       scheduledAt: mode === "schedule" ? scheduleTime : null,
     };
 
