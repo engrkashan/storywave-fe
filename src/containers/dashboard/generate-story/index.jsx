@@ -5,6 +5,7 @@ import {
   generateStory,
   getScheduledStories,
 } from "../../../redux/slices/story.slice";
+import VoiceSelector from "../../../components/VoiceSelecter";
 
 const GenerateStory = () => {
   const dispatch = useDispatch();
@@ -221,22 +222,10 @@ const GenerateStory = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Voice <span className="text-red-500">*</span>
                 </label>
-                <select
+                <VoiceSelector
                   value={formData.voice}
-                  onChange={(e) => handleInputChange("voice", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Select voice...</option>
-                  <option value="alloy">Alloy</option>
-                  <option value="ash">Ash</option>
-                  <option value="coral">Coral</option>
-                  <option value="echo">Echo</option>
-                  <option value="fable">Fable</option>
-                  <option value="nova">Nova</option>
-                  <option value="onyx">Onyx</option>
-                  <option value="sage">Sage</option>
-                  <option value="shimmer">Shimmer</option>
-                </select>
+                  onChange={(val) => handleInputChange("voice", val)}
+                />
               </div>
 
               {/* Voice Tone */}
