@@ -48,6 +48,19 @@ export const deleteStory = createAsyncThunk(
   }
 );
 
+// delete scheduled story (cancel)
+export const deleteScheduledStory = createAsyncThunk(
+  "story/deleteScheduled",
+  async (workflowId, thunkAPI) => {
+    try {
+      await axiosInstance.delete(`/story/scheduled/${workflowId}`);
+      return { workflowId };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 const storySlice = createSlice({
   name: "story",
   initialState,
@@ -103,6 +116,22 @@ const storySlice = createSlice({
         }
       })
       .addCase(deleteStory.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+
+      // deleteScheduledStory
+      .addCase(deleteScheduledStory.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(deleteScheduledStory.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        const id = action.payload.workflowId;
+        if (state.scheduled) {
+          state.scheduled = state.scheduled.filter((s) => s.workflowId !== id);
+        }
+      })
+      .addCase(deleteScheduledStory.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
       });
