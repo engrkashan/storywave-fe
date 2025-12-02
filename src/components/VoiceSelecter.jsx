@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import OpenAI from "openai";
-import { playAudio } from "openai/helpers/audio";
 
 // OpenAI client
 const openai = new OpenAI({
