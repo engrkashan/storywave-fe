@@ -6,7 +6,7 @@ import { deleteStory } from "../../../redux/slices/story.slice";
 
 const MyCreations = () => {
   const dispatch = useDispatch();
-  const { stories } = useSelector((state) => state.creations);
+  const { stories, status } = useSelector((state) => state.creations);
   const [selectedCreation, setSelectedCreation] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
@@ -51,16 +51,16 @@ const MyCreations = () => {
       </div>
 
       {/* Loading / Empty States */}
-      {/* {status === "loading" && (
+      {status === "loading" && (
         <div className="flex items-center justify-center min-h-96">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600 text-lg">Loading your creations...</p>
           </div>
         </div>
-      )} */}
+      )}
 
-      {creations.length === 0 && (
+      {(status != "loading" && creations.length === 0) && (
         <div className="flex flex-col items-center justify-center text-center min-h-96">
           <div className="text-6xl mb-4">✨</div>
           <p className="text-3xl font-semibold text-gray-900 mb-2">
@@ -73,7 +73,7 @@ const MyCreations = () => {
       )}
 
       {/* Grid */}
-      {creations.length > 0 && (
+      {(status != "loading" && creations.length > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {creations.map((item) => (
             <div
