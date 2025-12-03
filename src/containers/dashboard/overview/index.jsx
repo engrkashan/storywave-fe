@@ -13,6 +13,13 @@ const Overview = () => {
 
   useEffect(() => {
     dispatch(fetchOverview());
+
+    // Poll every 5 seconds to keep data fresh
+    const interval = setInterval(() => {
+      dispatch(fetchOverview());
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [dispatch]);
 
   const stats = [
@@ -97,7 +104,16 @@ const Overview = () => {
           Recent Activity
         </h3>
 
-        {(status != "loading" && stories.length === 0) && (
+        {status === "loading" && stories.length === 0 && (
+          <div className="flex items-center justify-center min-h-96">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600 text-lg">Loading your Activity...</p>
+            </div>
+          </div>
+        )}
+
+        {status !== "loading" && stories.length === 0 && (
           <div className="flex flex-col items-center justify-center text-center mt-40">
             <p className="text-2xl font-semibold text-gray-700 mb-4">
               😢 Oops! You haven’t created anything yet.
@@ -108,16 +124,7 @@ const Overview = () => {
           </div>
         )}
 
-        {status === "loading" && (
-          <div className="flex items-center justify-center min-h-96">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 text-lg">Loading your Activity...</p>
-            </div>
-          </div>
-        )}
-
-        {status != "loading" && stories.length > 0 && (
+        {stories.length > 0 && (
           <div className="flex flex-col gap-4">
             {stories.map((story) => (
               <motion.div
@@ -172,9 +179,22 @@ const Overview = () => {
                       <p className="text-sm text-gray-500">
                         {new Date(story.createdAt).toLocaleDateString()}
                       </p>
-
+                      <span
+                        className={`text-xs font-bold px-2 py-0.5 rounded-full ${story.status === "COMPLETED"
+                          ? "bg-green-100 text-green-700"
+                          : story.status === "FAILED"
+                            ? "bg-red-100 text-red-700"
+                            : story.status === "CANCELLED"
+                              ? "bg-gray-100 text-gray-600"
+                              : story.status === "SCHEDULED"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-blue-100 text-blue-700"
+                          }`}
+                      >
+                        {story.status}
+                      </span>
                       {story.error && (
-                        <span className=" text-red-500 truncate max-w-[500px]" title={story.error}>
+                        <span className="text-xs text-red-500 truncate max-w-[200px]" title={story.error}>
                           • {story.error}
                         </span>
                       )}
@@ -184,20 +204,6 @@ const Overview = () => {
 
                 {/* Actions */}
                 <div className="flex items-center gap-4 ml-4">
-                  <span
-                    className={`font-bold px-2 py-0.5 rounded-full ${story.status === "COMPLETED"
-                      ? "bg-green-100 text-green-700"
-                      : story.status === "FAILED"
-                        ? "bg-red-100 text-red-700"
-                        : story.status === "CANCELLED"
-                          ? "bg-gray-100 text-gray-600"
-                          : story.status === "SCHEDULED"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-blue-100 text-blue-700"
-                      }`}
-                  >
-                    {story.status}
-                  </span>
                   {(story.status === "PENDING" || story.status === "SCHEDULED") && (
                     <button
                       onClick={() => setWorkflowToCancel(story)}
@@ -222,6 +228,7 @@ const Overview = () => {
           </div>
         )}
       </div>
+
       {/* Confirmation Modal */}
       {workflowToCancel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -253,6 +260,7 @@ const Overview = () => {
                   onClick={() => {
                     dispatch(cancelWorkflow(workflowToCancel.workflow || workflowToCancel.id));
                     setWorkflowToCancel(null);
+                    dispatch(fetchOverview());
                   }}
                   className="px-5 py-2.5 bg-red-600 text-white font-medium hover:bg-red-700 rounded-xl shadow-lg shadow-red-200 transition-all"
                 >
