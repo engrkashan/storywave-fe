@@ -17,7 +17,7 @@ const Overview = () => {
     // Poll every 5 seconds to keep data fresh
     const interval = setInterval(() => {
       dispatch(fetchOverview());
-    }, 5000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [dispatch]);
@@ -179,22 +179,9 @@ const Overview = () => {
                       <p className="text-sm text-gray-500">
                         {new Date(story.createdAt).toLocaleDateString()}
                       </p>
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded-full ${story.status === "COMPLETED"
-                          ? "bg-green-100 text-green-700"
-                          : story.status === "FAILED"
-                            ? "bg-red-100 text-red-700"
-                            : story.status === "CANCELLED"
-                              ? "bg-gray-100 text-gray-600"
-                              : story.status === "SCHEDULED"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-blue-100 text-blue-700"
-                          }`}
-                      >
-                        {story.status}
-                      </span>
+
                       {story.error && (
-                        <span className="text-xs text-red-500 truncate max-w-[200px]" title={story.error}>
+                        <span className=" text-red-500 truncate max-w-[70%]" title={story.error}>
                           • {story.error}
                         </span>
                       )}
@@ -204,6 +191,20 @@ const Overview = () => {
 
                 {/* Actions */}
                 <div className="flex items-center gap-4 ml-4">
+                  <span
+                    className={` font-bold px-2 py-0.5 rounded-full ${story.status === "COMPLETED"
+                      ? "bg-green-100 text-green-700"
+                      : story.status === "FAILED"
+                        ? "bg-red-100 text-red-700"
+                        : story.status === "CANCELLED"
+                          ? "bg-gray-100 text-gray-600"
+                          : story.status === "SCHEDULED"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-blue-100 text-blue-700"
+                      }`}
+                  >
+                    {story.status}
+                  </span>
                   {(story.status === "PENDING" || story.status === "SCHEDULED") && (
                     <button
                       onClick={() => setWorkflowToCancel(story)}
