@@ -14,6 +14,19 @@ export const fetchOverview = createAsyncThunk(
   }
 );
 
+// Async thunk to cancel a workflow
+export const cancelWorkflow = createAsyncThunk(
+  "overview/cancelWorkflow",
+  async (workflowId, thunkAPI) => {
+    try {
+      await axiosInstance.post(`/overview/cancel/${workflowId}`);
+      return workflowId;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 const initialState = {
   totalStories: 0,
   videosCreated: 0,
@@ -44,6 +57,14 @@ const overviewSlice = createSlice({
       .addCase(fetchOverview.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
+      })
+      // Handle Cancel Workflow
+      .addCase(cancelWorkflow.fulfilled, (state, action) => {
+        // Find the story and update its status to CANCELLED
+        const story = state.stories.find((s) => s.id === action.payload);
+        if (story) {
+          story.status = "CANCELLED";
+        }
       });
   },
 });

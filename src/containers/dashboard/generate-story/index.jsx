@@ -207,15 +207,17 @@ const GenerateStory = () => {
               {/* Image Prompt */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Image Prompt
+                  Image Prompt (Max 2000 characters)
                 </label>
                 <input
                   type="text"
                   placeholder="Enter image prompt..."
                   value={formData.imagePrompt}
+                  maxLength={2000}
                   onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 />
+                <p className="text-xs text-gray-500 mt-1">{formData.imagePrompt.length}/2000</p>
               </div>
 
               {/* Voices */}
