@@ -107,6 +107,7 @@ const GenerateStory = () => {
       setLoading(false);
     }
   };
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   return (
     <div className="min-h-screen">
@@ -191,15 +192,24 @@ const GenerateStory = () => {
 
               {/* Concept */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Story Script
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Story Script
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditorOpen(true)}
+                    className="bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg px-3 py-1 rounded hover:bg-indigo-700 transition"
+                  >
+                    Edit Script
+                  </button>
+
+                </div>
                 <textarea
                   placeholder="Describe your story idea..."
                   value={formData.concept}
                   onChange={(e) => handleInputChange("concept", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none"
-                  rows="5"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none h-40"
                 />
               </div>
 
@@ -591,8 +601,32 @@ const GenerateStory = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </div >
+      {isEditorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex justify-center items-start pt-12 px-4">
+          <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg flex flex-col h-[90vh]">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold">Edit Story Script</h2>
+              <button
+                onClick={() => setIsEditorOpen(false)}
+                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <textarea
+              value={formData.concept}
+              onChange={(e) => handleInputChange("concept", e.target.value)}
+              className="flex-1 w-full p-6 text-gray-700 resize-none outline-none border-none"
+              placeholder="Write your story here..."
+            />
+          </div>
+        </div>
+      )}
+    </div >
   );
 };
 
