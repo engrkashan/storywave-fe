@@ -125,7 +125,7 @@ const Overview = () => {
         )}
 
         {stories.length > 0 && (
-          <div className="flex flex-col gap-4">
+          <div className="w-full flex flex-col gap-4">
             {stories.map((story) => (
               <motion.div
                 key={story.id}
@@ -181,10 +181,14 @@ const Overview = () => {
                       </p>
 
                       {story.error && (
-                        <span className=" text-red-500 truncate max-w-[70%]" title={story.error}>
+                        <span
+                          className="text-sm text-red-500 truncate max-w-[250px] md:max-w-[500px] lg:max-w-[800px] cursor-help"
+                          title={story.error}
+                        >
                           • {story.error}
                         </span>
                       )}
+
                     </div>
                   </div>
                 </div>
