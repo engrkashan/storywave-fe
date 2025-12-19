@@ -7,6 +7,7 @@ import {
   deleteScheduledStory,
 } from "../../../redux/slices/story.slice";
 import VoiceSelector from "../../../components/VoiceSelecter";
+import checkImagePromptSafety from "../../../utils/promptModerations"
 
 const GenerateStory = () => {
   const dispatch = useDispatch();
