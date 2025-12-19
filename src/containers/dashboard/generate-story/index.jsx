@@ -118,7 +118,8 @@ const GenerateStory = () => {
       setLoading(false);
     }
   };
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isTextEditorOpen, setIsTextEditorOpen] = useState(false);
+  const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
 
   return (
     <div className="min-h-screen">
@@ -209,7 +210,7 @@ const GenerateStory = () => {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setIsEditorOpen(true)}
+                    onClick={() => setIsTextEditorOpen(true)}
                     className="bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg px-3 py-1 rounded hover:bg-indigo-700 transition"
                   >
                     Edit Script
@@ -227,9 +228,19 @@ const GenerateStory = () => {
 
               {/* Image Prompt */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Image Prompt (Max 2000 characters)
-                </label>
+                <div className="flex items-center justify-between mb-2">
+
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Image Prompt (Max 2000 characters)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsPromptEditorOpen(true)}
+                    className="bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg px-3 py-1 rounded hover:bg-indigo-700 transition"
+                  >
+                    Edit Prompt
+                  </button>
+                </div>
                 <input
                   type="text"
                   placeholder="Enter image prompt..."
@@ -613,14 +624,14 @@ const GenerateStory = () => {
           </div>
         </div>
       </div >
-      {isEditorOpen && (
+      {isTextEditorOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex justify-center items-start pt-12 px-4">
           <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg flex flex-col h-[90vh]">
             {/* Modal Header */}
             <div className="flex justify-between items-center p-4 border-b border-gray-200">
               <h2 className="text-xl font-bold">Edit Story Script</h2>
               <button
-                onClick={() => setIsEditorOpen(false)}
+                onClick={() => setIsTextEditorOpen(false)}
                 className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
               >
                 Close
@@ -633,6 +644,31 @@ const GenerateStory = () => {
               onChange={(e) => handleInputChange("concept", e.target.value)}
               className="flex-1 w-full p-6 text-gray-700 resize-none outline-none border-none"
               placeholder="Write your story here..."
+            />
+          </div>
+        </div>
+      )}
+
+      {isPromptEditorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex justify-center items-start pt-12 px-4">
+          <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg flex flex-col h-[90vh]">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold">Edit Image Prompt</h2>
+              <button
+                onClick={() => setIsPromptEditorOpen(false)}
+                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <textarea
+              value={formData.imagePrompt}
+              onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
+              className="flex-1 w-full p-6 text-gray-700 resize-none outline-none border-none"
+              placeholder="Write your prompt here..."
             />
           </div>
         </div>

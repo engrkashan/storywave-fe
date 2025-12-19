@@ -92,15 +92,21 @@ const MyCreations = () => {
                     autoPlay
                   />
                 ) : (
-                  <img
-                    src={
-                      item.type === "PODCAST"
-                        ? "/podcast.jpeg"
-                        : "/placeholder.jpg"
-                    }
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    alt={item.title}
-                  />
+                  <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-lg bg-linear-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                    <div className="text-center">
+                      <BiVideo className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 text-lg">No video available</p>
+                    </div>
+                  </div>
+                  // <img
+                  //   src={
+                  //     item.type === "PODCAST"
+                  //       ? "/podcast.jpeg"
+                  //       : "/placeholder.jpg"
+                  //   }
+                  //   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  //   alt={item.title}
+                  // />
                 )}
               </div>
 
