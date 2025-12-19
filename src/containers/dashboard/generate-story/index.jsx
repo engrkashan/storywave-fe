@@ -77,6 +77,16 @@ const GenerateStory = () => {
       return;
     }
 
+    const safety = checkImagePromptSafety(formData.imagePrompt);
+
+    if (!safety.safe) {
+      toast.error(
+        `Image prompt contains blocked content: ${safety.blockedWords.join(", ")}`
+      );
+      return;
+    }
+
+
     const payload = {
       title: formData.title,
       textIdea: formData.concept,
