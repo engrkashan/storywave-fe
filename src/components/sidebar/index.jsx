@@ -10,7 +10,9 @@ import {
   User,
   X,
   Speech,
+  Workflow,
 } from "lucide-react";
+import { BiSolidFactory } from "react-icons/bi";
 import { Link, useLocation } from "react-router-dom";
 
 const sidebarLinks = [
@@ -20,20 +22,15 @@ const sidebarLinks = [
     label: "Story Builder",
     icon: <FileText className="text-xl" />,
   },
-  // {
-  //   to: "/dashboard/podcast-studio",
-  //   label: "Podcast Studio",
-  //   icon: <Mic className="text-xl" />,
-  // },
-  // {
-  //   to: "/dashboard/voice-cloning",
-  //   label: "Voice Cloning",
-  //   icon: <Speech className="text-xl rotate-12" />,
-  // },
+  {
+    to: "/dashboard/manage-workflows",
+    label: "Manage Workflows",
+    icon: <Workflow className="text-xl rotate-12" />,
+  },
   {
     to: "/dashboard/my-creations",
-    label: "My Creations",
-    icon: <FolderOpen className="text-xl" />,
+    label: "Stories & Podcasts",
+    icon: <Speech className="text-xl" />,
   },
   {
     to: "/dashboard/integrations",

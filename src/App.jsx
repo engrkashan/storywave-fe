@@ -8,8 +8,8 @@ const Login = lazy(() => import("./containers/common/login"));
 // User Dashboard
 const Overview = lazy(() => import("./containers/dashboard/overview"));
 const Integrations = lazy(() => import("./containers/dashboard/integrations"));
-const GenerateStory = lazy(() =>
-  import("./containers/dashboard/generate-story")
+const GenerateStory = lazy(
+  () => import("./containers/dashboard/generate-story"),
 );
 const Profile = lazy(() => import("./containers/dashboard/profile"));
 const MyCreations = lazy(() => import("./containers/dashboard/my-creations"));
@@ -17,6 +17,7 @@ const MyCreations = lazy(() => import("./containers/dashboard/my-creations"));
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout";
 import { Toaster } from "react-hot-toast";
+import ManageWorkflows from "./containers/dashboard/manage-workflows";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -33,6 +34,7 @@ const authRoutes = [{ path: "/auth/login", element: <Login /> }];
 const dashboardRoutes = [
   { path: "/overview", element: <Overview /> },
   { path: "/dashboard/integrations", element: <Integrations /> },
+  { path: "/dashboard/manage-workflows", element: <ManageWorkflows /> },
   { path: "/dashboard/generate-story", element: <GenerateStory /> },
   { path: "/dashboard/profile", element: <Profile /> },
   { path: "/dashboard/my-creations", element: <MyCreations /> },

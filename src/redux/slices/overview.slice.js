@@ -11,7 +11,7 @@ export const fetchOverview = createAsyncThunk(
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
     }
-  }
+  },
 );
 
 // Async thunk to cancel a workflow
@@ -24,7 +24,20 @@ export const cancelWorkflow = createAsyncThunk(
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
     }
-  }
+  },
+);
+
+// Async thunk to delete a workflow
+export const deleteWorkflow = createAsyncThunk(
+  "overview/deleteWorkflow",
+  async (workflowId, thunkAPI) => {
+    try {
+      await axiosInstance.delete(`/overview/${workflowId}`);
+      return workflowId;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  },
 );
 
 const initialState = {
@@ -34,6 +47,7 @@ const initialState = {
   podcasts: 0,
   stories: [],
   status: "idle",
+  deleteStatus: "idle",
   error: null,
 };
 
@@ -60,11 +74,30 @@ const overviewSlice = createSlice({
       })
       // Handle Cancel Workflow
       .addCase(cancelWorkflow.fulfilled, (state, action) => {
-        // Find the story and update its status to CANCELLED
         const story = state.stories.find((s) => s.id === action.payload);
         if (story) {
           story.status = "CANCELLED";
         }
+      })
+
+      // Handle Delete Workflow
+      .addCase(deleteWorkflow.pending, (state) => {
+        state.deleteStatus = "loading";
+      })
+      .addCase(deleteWorkflow.fulfilled, (state, action) => {
+        state.deleteStatus = "succeeded";
+
+        // Remove workflow from list
+        state.stories = state.stories.filter(
+          (story) => story.id !== action.payload,
+        );
+
+        // Update counters safely
+        state.totalStories = Math.max(0, state.totalStories - 1);
+      })
+      .addCase(deleteWorkflow.rejected, (state, action) => {
+        state.deleteStatus = "failed";
+        state.error = action.payload;
       });
   },
 });
