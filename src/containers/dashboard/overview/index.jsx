@@ -54,7 +54,7 @@ const Overview = () => {
 
   const overviewStats = [
     {
-      label: "Total Stories",
+      label: "Total Workflows",
       value: totalStories,
       icon: BiVideo,
       color: "from-blue-500 to-blue-400",
@@ -183,6 +183,33 @@ const Overview = () => {
         return { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" };
       default:
         return { bg: "bg-gray-50", text: "text-gray-700", dot: "bg-gray-500" };
+    }
+  };
+
+  const handleDownload = async (story) => {
+    try {
+      const fileUrl = story.video?.url || story.audio?.url;
+      if (!fileUrl) return;
+
+      const fileName = story.video
+        ? `${story.title}.mp4`
+        : `${story.title}.mp3`;
+
+      const response = await fetch(fileUrl, { mode: "cors" });
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Failed to download file. Try again.");
     }
   };
 
@@ -455,17 +482,16 @@ const Overview = () => {
                           </button>
                         )}
 
-                        {story.status === "COMPLETED" && story.video?.url && (
-                          <a
-                            href={story.video.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Download video"
-                          >
-                            <BiDownload className="w-4 h-4" />
-                          </a>
-                        )}
+                        {story.status === "COMPLETED" &&
+                          (story.video?.url || story.audio?.url) && (
+                            <button
+                              onClick={() => handleDownload(story)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Download media"
+                            >
+                              <BiDownload className="w-4 h-4" />
+                            </button>
+                          )}
 
                         <button
                           onClick={() => setWorkflowToDelete(story)}

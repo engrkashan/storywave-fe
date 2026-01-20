@@ -14,6 +14,19 @@ export const fetchOverview = createAsyncThunk(
   },
 );
 
+// Async thunk to fetch workflow detail by ID
+export const fetchWorkflowById = createAsyncThunk(
+  "workflowDetail/fetchById",
+  async (workflowId, thunkAPI) => {
+    try {
+      const response = await axiosInstance.get(`/overview/${workflowId}`);
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 // Async thunk to cancel a workflow
 export const cancelWorkflow = createAsyncThunk(
   "overview/cancelWorkflow",
@@ -41,6 +54,7 @@ export const deleteWorkflow = createAsyncThunk(
 );
 
 const initialState = {
+  workflow: null,
   totalStories: 0,
   videosCreated: 0,
   voiceovers: 0,
@@ -54,7 +68,13 @@ const initialState = {
 const overviewSlice = createSlice({
   name: "overview",
   initialState,
-  reducers: {},
+  reducers: {
+    clearWorkflowDetail: (state) => {
+      state.workflow = null;
+      state.status = "idle";
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchOverview.pending, (state) => {
@@ -72,6 +92,21 @@ const overviewSlice = createSlice({
         state.status = "failed";
         state.error = action.payload;
       })
+
+      // get workflowbyid cases
+      .addCase(fetchWorkflowById.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchWorkflowById.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.workflow = action.payload;
+      })
+      .addCase(fetchWorkflowById.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+
       // Handle Cancel Workflow
       .addCase(cancelWorkflow.fulfilled, (state, action) => {
         const story = state.stories.find((s) => s.id === action.payload);

@@ -8,6 +8,7 @@ import {
 } from "../../../redux/slices/story.slice";
 import VoiceSelector from "../../../components/VoiceSelecter";
 import { checkImagePromptSafety } from "../../../utils/promptModerations";
+import { fetchWorkflowById } from "../../../redux/slices/overview.slice";
 
 const GenerateStory = () => {
   const dispatch = useDispatch();
@@ -42,6 +43,33 @@ const GenerateStory = () => {
 
   useEffect(() => {
     dispatch(getScheduledStories());
+  }, [dispatch]);
+
+  useEffect(() => {
+    const editWorkflowId = localStorage.getItem("editWorkflowId");
+    if (editWorkflowId) {
+      dispatch(fetchWorkflowById(editWorkflowId))
+        .unwrap()
+        .then((data) => {
+          const metadata = data.metadata || {};
+
+          setFormData({
+            title: data.title || "",
+            url: metadata.url || "",
+            concept: metadata.textIdea || "", 
+            tone: metadata.voiceTone || "",
+            imagePrompt: metadata.imagePrompt || "",
+            storyType: metadata.storyType || "",
+            voice: metadata.voice || "",
+          });
+
+          setShowImagePrompt(
+            metadata.shouldGenerateImage || !!metadata.imagePrompt,
+          );
+        })
+        .catch(() => toast.error("Failed to load workflow data"))
+        .finally(() => localStorage.removeItem("editWorkflowId"));
+    }
   }, [dispatch]);
 
   useEffect(() => {

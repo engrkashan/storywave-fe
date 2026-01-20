@@ -13,6 +13,7 @@ import { fetchMyCreations } from "../../../redux/slices/creations.slice";
 import { deleteStory } from "../../../redux/slices/story.slice";
 import DeleteModal from "../../../components/modals/DeleteModal";
 
+
 const MyCreations = () => {
   const dispatch = useDispatch();
   const { stories, status } = useSelector((state) => state.creations);
@@ -77,6 +78,25 @@ const MyCreations = () => {
       setDeletingId(null);
       setDeleteTarget(null);
       setShowDeleteModal(false);
+    }
+  };
+
+  const downloadFileWithName = async (url, filename) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed", error);
     }
   };
 
@@ -148,7 +168,7 @@ const MyCreations = () => {
 
       {/* Grid */}
       {status !== "loading" && currentCreations.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {currentCreations.map((item) => (
             <div
               key={item.id}
@@ -353,11 +373,32 @@ const MyCreations = () => {
                         Audio
                       </h4>
                     </div>
-                    <audio
-                      controls
-                      src={selectedCreation.audio}
-                      className="w-full accent-emerald-500"
-                    />
+
+                    <div className="space-y-4">
+                      <audio
+                        controls
+                        src={selectedCreation.audio}
+                        className="w-full accent-emerald-500"
+                      />
+
+                      <button
+                        onClick={() =>
+                          downloadFileWithName(
+                            selectedCreation.audio,
+                            `${selectedCreation.title.replace(/[^a-z0-9]/gi, "_")}.mp3`,
+                          )
+                        }
+                        className={`inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all
+      ${
+        activeTab === "story"
+          ? "bg-emerald-600 text-white hover:bg-emerald-700"
+          : "bg-purple-600 text-white hover:bg-purple-700"
+      }`}
+                      >
+                        <BiHeadphone className="w-4 h-4" />
+                        Download Audio
+                      </button>
+                    </div>
                   </div>
                 )}
 

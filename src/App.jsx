@@ -18,6 +18,7 @@ const MyCreations = lazy(() => import("./containers/dashboard/my-creations"));
 import DashboardLayout from "./layouts/DashboardLayout";
 import { Toaster } from "react-hot-toast";
 import ManageWorkflows from "./containers/dashboard/manage-workflows";
+import WorkflowDetailPage from "./containers/dashboard/manage-workflows/detail";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -35,6 +36,7 @@ const dashboardRoutes = [
   { path: "/overview", element: <Overview /> },
   { path: "/dashboard/integrations", element: <Integrations /> },
   { path: "/dashboard/manage-workflows", element: <ManageWorkflows /> },
+  { path: "/dashboard/workflows/:id", element: <WorkflowDetailPage /> },
   { path: "/dashboard/generate-story", element: <GenerateStory /> },
   { path: "/dashboard/profile", element: <Profile /> },
   { path: "/dashboard/my-creations", element: <MyCreations /> },
