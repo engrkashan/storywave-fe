@@ -13,7 +13,6 @@ import { fetchMyCreations } from "../../../redux/slices/creations.slice";
 import { deleteStory } from "../../../redux/slices/story.slice";
 import DeleteModal from "../../../components/modals/DeleteModal";
 
-
 const MyCreations = () => {
   const dispatch = useDispatch();
   const { stories, status } = useSelector((state) => state.creations);
@@ -172,7 +171,7 @@ const MyCreations = () => {
           {currentCreations.map((item) => (
             <div
               key={item.id}
-              className="group relative bg-white rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 cursor-pointer border border-gray-200 hover:border-emerald-200"
+              className="group relative bg-white rounded-2xl overflow-hidden hover:shadow-xl  transition-all duration-300 cursor-pointer border border-gray-200 hover:border-gray-300"
               onClick={() => setSelectedCreation(item)}
             >
               {/* Type Badge */}
@@ -294,13 +293,34 @@ const MyCreations = () => {
             {/* Left Side - Media */}
             <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100/50 flex flex-col items-center justify-center p-6 lg:p-8">
               {selectedCreation.video ? (
-                <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-gray-200">
-                  <video
-                    src={selectedCreation.video}
-                    controls
-                    autoPlay
-                    className="w-full h-full"
-                  />
+                <div className="flex flex-col w-full">
+                  <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-gray-200">
+                    <video
+                      src={selectedCreation.video}
+                      controls
+                      autoPlay
+                      className="w-full h-full"
+                    />
+                  </div>
+
+                  {/* Download Video Button */}
+                  <button
+                    onClick={() =>
+                      downloadFileWithName(
+                        selectedCreation.video,
+                        `${selectedCreation.title.replace(/[^a-z0-9]/gi, "_")}.mp4`,
+                      )
+                    }
+                    className={`mt-4 inline-flex items-center w-fit gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all
+        ${
+          activeTab === "story"
+            ? "bg-emerald-600 text-white hover:bg-emerald-700"
+            : "bg-purple-600 text-white hover:bg-purple-700"
+        }`}
+                  >
+                    <BiVideo className="w-4 h-4" />
+                    Download Video
+                  </button>
                 </div>
               ) : (
                 <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
