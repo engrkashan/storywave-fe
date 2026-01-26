@@ -16,6 +16,10 @@ const VoiceSelector = ({ value, onChange }) => {
 
   // Static OpenAI voices
   const openaiVoices = [
+    { id: "marin", label: "Marin", provider: "openai" },
+    { id: "cedar", label: "Cedar", provider: "openai" },
+    { id: "verse", label: "Verse", provider: "openai" },
+    { id: "ballad", label: "Ballad", provider: "openai", },
     { id: "alloy", label: "Alloy", provider: "openai" },
     { id: "ash", label: "Ash", provider: "openai" },
     { id: "coral", label: "Coral", provider: "openai" },
