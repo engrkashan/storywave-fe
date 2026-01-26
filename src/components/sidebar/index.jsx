@@ -1,21 +1,18 @@
 import Cookies from "js-cookie";
 import {
   FileText,
-  FolderOpen,
   Home,
   LogOut,
   Menu,
-  Mic,
-  Share2,
+  Speech,
   User,
   X,
-  Speech,
   Workflow,
+  Share2,
 } from "lucide-react";
-import { BiSolidFactory } from "react-icons/bi";
 import { Link, useLocation } from "react-router-dom";
 
-const sidebarLinks = [
+const adminLinks = [
   { to: "/overview", label: "Overview", icon: <Home className="text-xl" /> },
   {
     to: "/dashboard/generate-story",
@@ -26,6 +23,11 @@ const sidebarLinks = [
     to: "/dashboard/manage-workflows",
     label: "Manage Workflows",
     icon: <Workflow className="text-xl rotate-12" />,
+  },
+  {
+    to: "/dashboard/manage-creators",
+    label: "Manage Creators",
+    icon: <User className="text-xl" />,
   },
   {
     to: "/dashboard/my-creations",
@@ -44,8 +46,27 @@ const sidebarLinks = [
   },
 ];
 
+const creatorLinks = [
+  {
+    to: "/creator-dashboard/overview",
+    label: "Overview",
+    icon: <Home className="text-xl" />,
+  },
+  {
+    to: "/dashboard/generate-story",
+    label: "Story Builder",
+    icon: <FileText className="text-xl" />,
+  },
+  {
+    to: "/creator-dashboard/creations",
+    label: "My Stories",
+    icon: <Speech className="text-xl" />,
+  },
+];
+
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
+  const role = Cookies.get("userRole");
 
   const handleLogout = () => {
     Cookies.remove("token");
@@ -54,6 +75,12 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     Cookies.remove("fullName");
     window.location.href = "/";
   };
+
+  // Determine which links to show
+  const linksToShow =
+    location.pathname.startsWith("/creator-dashboard") || role === "creator"
+      ? creatorLinks
+      : adminLinks;
 
   return (
     <>
@@ -95,7 +122,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
           {/* Navigation */}
           <nav>
             <ul className="space-y-4 px-4">
-              {sidebarLinks.map((link, index) => (
+              {linksToShow.map((link, index) => (
                 <li key={index}>
                   <Link
                     to={link.to}

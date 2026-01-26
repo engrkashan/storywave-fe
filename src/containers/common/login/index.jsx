@@ -9,6 +9,7 @@ const Login = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [role, setRole] = useState("admin");
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -16,50 +17,80 @@ const Login = () => {
 
   useEffect(() => {
     const savedToken = Cookies.get("token");
+    const savedRole = Cookies.get("userRole");
+
     if (savedToken) {
-      navigate("/overview");
+      if (savedRole === "creator") {
+        navigate("/creator-dashboard/overview");
+      } else {
+        navigate("/overview");
+      }
     }
   }, [navigate]);
 
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+
+  //   if (isForgotPassword) {
+  //     toast.success(`Password reset link sent to ${email}`);
+  //     setIsForgotPassword(false);
+  //   } else {
+  //     dispatch(loginAdmin({ email, password: newPassword }));
+  //   }
+  // };
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (isForgotPassword) {
       toast.success(`Password reset link sent to ${email}`);
       setIsForgotPassword(false);
+      return;
+    }
+
+    if (role === "creator") {
+      // Skip API call for creator
+      Cookies.set("token", "creator-token", { expires: 7, sameSite: "Lax" });
+      Cookies.set("userRole", "creator", { expires: 7, sameSite: "Lax" });
+      Cookies.set("fullName", "Creator User", { expires: 7, sameSite: "Lax" });
+
+      toast.success("Welcome Creator!");
+      navigate("/creator-dashboard/overview");
     } else {
+      // Admin login hits API
       dispatch(loginAdmin({ email, password: newPassword }));
     }
   };
 
-  // Handle login result
   useEffect(() => {
     if (status === "succeeded" && user && token) {
       Cookies.set("token", token, { expires: 7, sameSite: "Lax" });
       Cookies.set("userId", user.id, { expires: 7, sameSite: "Lax" });
-      Cookies.set("userRole", user.role, { expires: 7, sameSite: "Lax" });
+      Cookies.set("userRole", user.role || role, {
+        expires: 7,
+        sameSite: "Lax",
+      });
       Cookies.set("fullName", user.fullName, { expires: 7, sameSite: "Lax" });
 
       toast.success("Welcome Onboard!");
-      navigate("/overview");
+
+      if ((user.role || role) === "creator") {
+        navigate("/creator-dashboard/overview");
+      } else {
+        navigate("/overview");
+      }
     }
 
     if (status === "failed" && error) {
       toast.error(error.message || "Oops! Login failed. Please try again.");
     }
-  }, [status, error, user, token, navigate]);
+  }, [status, error, user, token, navigate, role]);
 
   return (
-    <div className="relative h-screen w-full p-4 md:p-20 grid grid-cols-1 md:grid-cols-5 items-center justify-center gap-6 md:gap-10 bg-gradient-to-b from-[#f8be4c]/60 to-[#f0498f]/60">
-      {/* Content */}
+    <div className="relative min-h-screen w-full p-4 md:px-20 grid grid-cols-1 md:grid-cols-5  items-center justify-center gap-6 md:gap-10 bg-gradient-to-b from-[#f8be4c]/60 to-[#f0498f]/60">
       <div className="w-full flex items-center justify-center md:justify-end h-full col-span-1 md:col-span-2">
         <div className="w-full max-w-lg p-8 bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20">
           <div className="flex items-center justify-center mb-5">
-            <img
-              src="/logo.png"
-              alt="Story Wave"
-              className="w-auto h-32 md:h-40"
-            />
+            <img src="/logo.png" alt="Story Wave" className="w-auto h-32 " />
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -99,27 +130,21 @@ const Login = () => {
               </div>
             )}
 
-            {/* Remember me and Forgot Password link */}
-            <div className="flex items-center justify-between">
-              {!isForgotPassword && (
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-[#FF007F] border-gray-300 rounded focus:ring-[#FF007F]"
-                  />
-                  <span className="ml-2 text-gray-600">Remember me</span>
-                </label>
-              )}
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsForgotPassword(!isForgotPassword);
-                }}
-                className="text-[#FF007F] hover:text-[#FF3385] font-medium"
+            <div>
+              <label className="block font-medium text-gray-900 mb-2">
+                Select Role
+              </label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full p-4 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF007F] focus:border-transparent transition-all duration-200 shadow-sm hover:shadow-md"
               >
-                {isForgotPassword ? "Back to Login" : "Forgot password?"}
-              </a>
+                <option value="" disabled>
+                  Select User Role
+                </option>
+                <option value="admin">Admin</option>
+                <option value="creator">Creator</option>
+              </select>
             </div>
 
             <button
@@ -130,20 +155,20 @@ const Login = () => {
               {status === "loading"
                 ? "Signing In..."
                 : isForgotPassword
-                ? "Send Reset Link"
-                : "Sign In"}
+                  ? "Send Reset Link"
+                  : "Sign In"}
             </button>
           </form>
         </div>
       </div>
 
-      <div className="w-full h-full rounded-2xl overflow-hidden col-span-1 md:col-span-3 shadow-2xl">
+      <div className="w-full h-full rounded-2xl max-h-[85vh] overflow-hidden col-span-1 md:col-span-3 shadow-2xl">
         <video
           src="/videos/hero.mp4"
           autoPlay
           loop
           muted
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover "
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none rounded-2xl"></div>
       </div>
