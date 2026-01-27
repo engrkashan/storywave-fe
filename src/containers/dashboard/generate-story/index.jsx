@@ -7,7 +7,7 @@ import {
   deleteScheduledStory,
 } from "../../../redux/slices/story.slice";
 import VoiceSelector from "../../../components/VoiceSelecter";
-import { checkImagePromptSafety } from "../../../utils/promptModerations"
+import { checkImagePromptSafety } from "../../../utils/promptModerations";
 
 const GenerateStory = () => {
   const dispatch = useDispatch();
@@ -82,11 +82,10 @@ const GenerateStory = () => {
 
     if (!safety.safe) {
       toast.error(
-        `Image prompt contains blocked content: ${safety.blockedWords.join(", ")}`
+        `Image prompt contains blocked content: ${safety.blockedWords.join(", ")}`,
       );
       return;
     }
-
 
     const payload = {
       title: formData.title,
@@ -215,7 +214,6 @@ const GenerateStory = () => {
                   >
                     Edit Script
                   </button>
-
                 </div>
                 <textarea
                   placeholder="Describe your story idea..."
@@ -225,13 +223,11 @@ const GenerateStory = () => {
                 />
               </div>
 
-
               {/* Image Prompt */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image Prompt (Max 2000 characters)
+                    Image Prompt (Max 3500 characters)
                   </label>
                   <button
                     type="button"
@@ -245,11 +241,15 @@ const GenerateStory = () => {
                   type="text"
                   placeholder="Enter image prompt..."
                   value={formData.imagePrompt}
-                  maxLength={2000}
-                  onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
+                  maxLength={3500}
+                  onChange={(e) =>
+                    handleInputChange("imagePrompt", e.target.value)
+                  }
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 />
-                <p className="text-xs text-gray-500 mt-1">{formData.imagePrompt.length}/2000</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formData.imagePrompt.length}/3500
+                </p>
               </div>
 
               {/* Voices */}
@@ -373,12 +373,13 @@ const GenerateStory = () => {
                   !formData.storyType
                 }
                 className={`w-full py-3 rounded-lg font-medium transition-all duration-200 
-                  ${loading ||
+                  ${
+                    loading ||
                     !formData.title ||
                     !formData.tone ||
                     !formData.storyType
-                    ? "bg-gray-400 cursor-not-allowed text-white"
-                    : "bg-linear-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-md"
+                      ? "bg-gray-400 cursor-not-allowed text-white"
+                      : "bg-linear-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-md"
                   }`}
               >
                 {loading
@@ -582,18 +583,18 @@ const GenerateStory = () => {
                             e.stopPropagation();
                             if (
                               window.confirm(
-                                "Are you sure you want to cancel this scheduled story?"
+                                "Are you sure you want to cancel this scheduled story?",
                               )
                             ) {
                               dispatch(deleteScheduledStory(item.workflowId))
                                 .unwrap()
                                 .then(() =>
-                                  toast.success("Scheduled story cancelled")
+                                  toast.success("Scheduled story cancelled"),
                                 )
                                 .catch((err) =>
                                   toast.error(
-                                    err?.error || "Failed to cancel story"
-                                  )
+                                    err?.error || "Failed to cancel story",
+                                  ),
                                 );
                             }
                           }}
@@ -623,7 +624,7 @@ const GenerateStory = () => {
             </div>
           </div>
         </div>
-      </div >
+      </div>
       {isTextEditorOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex justify-center items-start pt-12 px-4">
           <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg flex flex-col h-[90vh]">
@@ -673,7 +674,7 @@ const GenerateStory = () => {
           </div>
         </div>
       )}
-    </div >
+    </div>
   );
 };
 
