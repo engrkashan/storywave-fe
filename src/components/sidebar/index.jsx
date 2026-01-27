@@ -9,6 +9,7 @@ import {
   X,
   Workflow,
   Share2,
+  Users,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -25,9 +26,9 @@ const adminLinks = [
     icon: <Workflow className="text-xl rotate-12" />,
   },
   {
-    to: "/dashboard/manage-creators",
-    label: "Manage Creators",
-    icon: <User className="text-xl" />,
+    to: "/dashboard/manage-users",
+    label: "Manage Users",
+    icon: <Users className="text-xl" />,
   },
   {
     to: "/dashboard/my-creations",
@@ -39,11 +40,11 @@ const adminLinks = [
     label: "Publish & Share",
     icon: <Share2 className="text-xl" />,
   },
-  {
-    to: "/dashboard/profile",
-    label: "My Account",
-    icon: <User className="text-xl" />,
-  },
+  // {
+  //   to: "/dashboard/profile",
+  //   label: "My Account",
+  //   icon: <User className="text-xl" />,
+  // },
 ];
 
 const creatorLinks = [
@@ -53,13 +54,18 @@ const creatorLinks = [
     icon: <Home className="text-xl" />,
   },
   {
-    to: "/dashboard/generate-story",
+    to: "/creator-dashboard/generate-story",
     label: "Story Builder",
     icon: <FileText className="text-xl" />,
   },
   {
+    to: "/creator-dashboard/manage-workflows",
+    label: "Manage Workflows",
+    icon: <Workflow className="text-xl rotate-12" />,
+  },
+  {
     to: "/creator-dashboard/creations",
-    label: "My Stories",
+    label: "My Creations",
     icon: <Speech className="text-xl" />,
   },
 ];

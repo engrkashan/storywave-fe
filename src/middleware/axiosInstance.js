@@ -10,20 +10,19 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const Token = Cookies.get("token");
-    const token = Token
+    const token = Cookies.get("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 export default axiosInstance;

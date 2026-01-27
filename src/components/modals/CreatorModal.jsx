@@ -1,14 +1,33 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { X, User, Mail, Key, Eye, EyeOff, Save } from "lucide-react";
+import {
+  X,
+  User,
+  Mail,
+  Key,
+  Eye,
+  EyeOff,
+  Save,
+  UserCircle,
+} from "lucide-react";
 
 const emptyForm = {
-  name: "",
+  fullName: "",
+  username: "",
   email: "",
   password: "",
+  role: "ADMIN",
 };
 
-const CreatorModal = ({ isOpen, onClose, onSave, editingCreator }) => {
+const roles = ["ADMIN", "CREATOR"];
+
+const CreatorModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  editingCreator,
+  isSaving,
+}) => {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -21,12 +40,12 @@ const CreatorModal = ({ isOpen, onClose, onSave, editingCreator }) => {
 
   const validate = () => {
     const e = {};
-
-    if (!form.name.trim()) e.name = "Required";
+    if (!form.fullName.trim()) e.fullName = "Required";
+    if (!form.username.trim()) e.username = "Required";
     if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email";
     if (!form.password || form.password.length < 4)
-      e.password = "Min 6 characters";
-
+      e.password = "Min 4 characters";
+    if (!form.role) e.role = "Required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -35,7 +54,6 @@ const CreatorModal = ({ isOpen, onClose, onSave, editingCreator }) => {
     e.preventDefault();
     if (!validate()) return;
     onSave(form);
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -43,7 +61,6 @@ const CreatorModal = ({ isOpen, onClose, onSave, editingCreator }) => {
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
         <motion.div
           className="absolute inset-0 bg-black/50"
           initial={{ opacity: 0 }}
@@ -51,8 +68,6 @@ const CreatorModal = ({ isOpen, onClose, onSave, editingCreator }) => {
           exit={{ opacity: 0 }}
           onClick={onClose}
         />
-
-        {/* Modal */}
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -60,28 +75,29 @@ const CreatorModal = ({ isOpen, onClose, onSave, editingCreator }) => {
           transition={{ duration: 0.2 }}
           className="relative w-full max-w-md bg-white rounded-xl shadow-xl"
         >
-          {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-gray-200 border-b">
             <h3 className="text-lg font-semibold text-gray-900">
-              {editingCreator ? "Edit Creator" : "Add Creator"}
+              {editingCreator ? "Edit User" : "Add User"}
             </h3>
             <button onClick={onClose}>
               <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
             </button>
           </div>
-
-          {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {/* Name */}
             <Field
               icon={User}
               placeholder="Full name"
-              value={form.name}
-              error={errors.name}
-              onChange={(v) => setForm({ ...form, name: v })}
+              value={form.fullName}
+              error={errors.fullName}
+              onChange={(v) => setForm({ ...form, fullName: v })}
             />
-
-            {/* Email */}
+            <Field
+              icon={UserCircle}
+              placeholder="Username"
+              value={form.username}
+              error={errors.username}
+              onChange={(v) => setForm({ ...form, username: v })}
+            />
             <Field
               icon={Mail}
               type="email"
@@ -90,8 +106,6 @@ const CreatorModal = ({ isOpen, onClose, onSave, editingCreator }) => {
               error={errors.email}
               onChange={(v) => setForm({ ...form, email: v })}
             />
-
-            {/* Password */}
             <div className="relative">
               <Field
                 icon={Key}
@@ -114,7 +128,29 @@ const CreatorModal = ({ isOpen, onClose, onSave, editingCreator }) => {
               </button>
             </div>
 
-            {/* Actions */}
+            {/* Role */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-700">
+                Role
+              </label>
+              <select
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value })}
+                className={`w-full pl-3 pr-4 py-2.5 rounded-lg border ${
+                  errors.role ? "border-red-400" : "border-gray-200"
+                } focus:border focus:border-gray-800 focus:outline-none`}
+              >
+                {roles.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+              {errors.role && (
+                <p className="text-xs text-red-500 mt-1">{errors.role}</p>
+              )}
+            </div>
+
             <div className="flex justify-end gap-3 pt-4">
               <button
                 type="button"
@@ -125,7 +161,8 @@ const CreatorModal = ({ isOpen, onClose, onSave, editingCreator }) => {
               </button>
               <button
                 type="submit"
-                className="flex justify-center gap-2 items-center bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+                disabled={isSaving}
+                className="flex justify-center gap-2 items-center bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg px-4 py-2 rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 {editingCreator ? "Update" : "Save"}
@@ -140,7 +177,6 @@ const CreatorModal = ({ isOpen, onClose, onSave, editingCreator }) => {
 
 export default CreatorModal;
 
-/* ----------------------  Input ---------------------- */
 const Field = ({ icon: Icon, error, onChange, ...props }) => (
   <div>
     <div className="relative">

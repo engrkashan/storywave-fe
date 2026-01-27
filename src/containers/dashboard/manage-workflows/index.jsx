@@ -22,6 +22,7 @@ import {
   BiEdit,
   BiChevronDown,
   BiChevronUp,
+  BiVideo,
 } from "react-icons/bi";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
@@ -278,17 +279,33 @@ const ManageWorkflows = () => {
         <FilterDropdown value={filterType} onChange={setFilterType} />
       </div>
 
-      {/* GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-        {filteredStories.map((story) => (
-          <WorkflowCard
-            key={story.id}
-            story={story}
-            onDelete={handleDeleteClick}
-            onEdit={(story) => localStorage.setItem("editWorkflowId", story.id)}
-          />
-        ))}
-      </div>
+      {/* GRID OR EMPTY STATE */}
+      {filteredStories.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+          {filteredStories.map((story) => (
+            <WorkflowCard
+              key={story.id}
+              story={story}
+              onDelete={handleDeleteClick}
+              onEdit={(story) =>
+                localStorage.setItem("editWorkflowId", story.id)
+              }
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center w-full h-[70vh] bg-white shadow-md mx-auto text-center border border-gray-100 rounded-2xl mt-10">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <BiVideo className="w-10 h-10 text-gray-400" />
+          </div>
+          <p className="text-xl font-semibold text-gray-700 mb-2">
+            No Workflow Found
+          </p>
+          <p className="text-gray-500 max-w-sm">
+            You haven't created any stories yet.
+          </p>
+        </div>
+      )}
 
       {/* DELETE MODAL */}
       <DeleteModal

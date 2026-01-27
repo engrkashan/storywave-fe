@@ -186,6 +186,17 @@ const Overview = () => {
     }
   };
 
+  const getRoleColor = (role) => {
+    switch (role) {
+      case "ADMIN":
+        return "bg-purple-50 text-purple-700";
+      case "CREATOR":
+        return "bg-indigo-50 text-indigo-700";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
+
   const handleDownload = async (story) => {
     try {
       const fileUrl = story.video?.url || story.audio?.url;
@@ -284,8 +295,7 @@ const Overview = () => {
         <div className="p-6 border-b border-gray-100">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h3 className="text-2xl font-bold text-gray-900">Your Stories</h3>
-              <p className="text-gray-600 mt-1">
+              <h3 className="text-2xl font-bold text-gray-900">
                 {filterStatus === "ALL"
                   ? "All stories"
                   : filterStatus === "PENDING"
@@ -293,7 +303,7 @@ const Overview = () => {
                     : filterStatus === "COMPLETED"
                       ? "Completed stories"
                       : "Cancelled stories"}
-              </p>
+              </h3>
             </div>
 
             <div className="relative">
@@ -420,11 +430,24 @@ const Overview = () => {
                               {story.title}
                             </h4>
                             <div className="flex items-center gap-2 flex-shrink-0">
+                              {/* Status */}
                               <span
                                 className={`text-xs font-medium px-2 py-1 rounded-full ${statusColor.bg} ${statusColor.text}`}
                               >
                                 {story.status}
                               </span>
+
+                              {/* Role Tag */}
+                              {story.owner && (
+                                <span
+                                  className={`text-xs font-medium px-2 py-1 rounded-full ${getRoleColor(
+                                    story.owner.name,
+                                  )}`}
+                                >
+                                  {story.owner.name}
+                                </span>
+                              )}
+
                               {story.error && (
                                 <span className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded-full">
                                   Error

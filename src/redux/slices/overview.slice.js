@@ -16,7 +16,7 @@ export const fetchOverview = createAsyncThunk(
 
 // Async thunk to fetch workflow detail by ID
 export const fetchWorkflowById = createAsyncThunk(
-  "workflowDetail/fetchById",
+  "overview/fetchWorkflowById",
   async (workflowId, thunkAPI) => {
     try {
       const response = await axiosInstance.get(`/overview/${workflowId}`);
@@ -77,15 +77,17 @@ const overviewSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Fetch Overview
       .addCase(fetchOverview.pending, (state) => {
         state.status = "loading";
+        state.error = null;
       })
       .addCase(fetchOverview.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.totalStories = action.payload.totalStories;
-        state.videosCreated = action.payload.totalVideos;
-        state.voiceovers = action.payload.totalVoiceovers;
-        state.podcasts = action.payload.totalPodcasts;
+        state.videosCreated = action.payload.videosCreated;
+        state.voiceovers = action.payload.voiceovers;
+        state.podcasts = action.payload.podcasts;
         state.stories = action.payload.stories;
       })
       .addCase(fetchOverview.rejected, (state, action) => {
@@ -93,7 +95,7 @@ const overviewSlice = createSlice({
         state.error = action.payload;
       })
 
-      // get workflowbyid cases
+      // Fetch Workflow by ID
       .addCase(fetchWorkflowById.pending, (state) => {
         state.status = "loading";
         state.error = null;
@@ -107,28 +109,40 @@ const overviewSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Handle Cancel Workflow
+      // Cancel Workflow
       .addCase(cancelWorkflow.fulfilled, (state, action) => {
-        const story = state.stories.find((s) => s.id === action.payload);
-        if (story) {
-          story.status = "CANCELLED";
+        const workflowId = action.payload;
+        const story = state.stories.find((s) => s.id === workflowId);
+        if (story) story.status = "CANCELLED";
+        if (state.workflow && state.workflow.id === workflowId) {
+          state.workflow.status = "CANCELLED";
         }
       })
 
-      // Handle Delete Workflow
+      // Delete Workflow
       .addCase(deleteWorkflow.pending, (state) => {
         state.deleteStatus = "loading";
       })
       .addCase(deleteWorkflow.fulfilled, (state, action) => {
+        const workflowId = action.payload;
         state.deleteStatus = "succeeded";
 
-        // Remove workflow from list
-        state.stories = state.stories.filter(
-          (story) => story.id !== action.payload,
-        );
+        state.stories = state.stories.filter((s) => s.id !== workflowId);
+        if (state.workflow && state.workflow.id === workflowId) {
+          state.workflow = null;
+        }
 
-        // Update counters safely
+        // Update counters (safe)
         state.totalStories = Math.max(0, state.totalStories - 1);
+        const deletedStory = state.stories.find((s) => s.id === workflowId);
+        if (deletedStory) {
+          if (deletedStory.type === "VIDEO")
+            state.videosCreated = Math.max(0, state.videosCreated - 1);
+          if (deletedStory.type === "VOICEOVER")
+            state.voiceovers = Math.max(0, state.voiceovers - 1);
+          if (deletedStory.type === "PODCAST")
+            state.podcasts = Math.max(0, state.podcasts - 1);
+        }
       })
       .addCase(deleteWorkflow.rejected, (state, action) => {
         state.deleteStatus = "failed";
@@ -137,4 +151,5 @@ const overviewSlice = createSlice({
   },
 });
 
+export const { clearWorkflowDetail } = overviewSlice.actions;
 export default overviewSlice.reducer;

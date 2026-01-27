@@ -12,21 +12,14 @@ const GenerateStory = lazy(
   () => import("./containers/dashboard/generate-story"),
 );
 const Profile = lazy(() => import("./containers/dashboard/profile"));
-const MyCreations = lazy(() => import("./containers/dashboard/my-creations"));
-
-// Creator Dashboard
-const CreatorCreations = lazy(
-  () => import("./containers/creator-dashboard/my-creations"),
-);
 
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout";
 import { Toaster } from "react-hot-toast";
 import ManageWorkflows from "./containers/dashboard/manage-workflows";
 import WorkflowDetailPage from "./containers/dashboard/manage-workflows/detail";
-import { elements } from "chart.js";
-import ManageCreators from "./containers/dashboard/manage-creators";
-import CreatorOverview from "./containers/creator-dashboard/overview";
+import ManageCreators from "./containers/dashboard/manage-users";
+import MyCreations from "./containers/dashboard/my-creations";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -44,7 +37,7 @@ const dashboardRoutes = [
   { path: "/overview", element: <Overview /> },
   { path: "/dashboard/integrations", element: <Integrations /> },
   { path: "/dashboard/manage-workflows", element: <ManageWorkflows /> },
-  { path: "/dashboard/manage-creators", element: <ManageCreators /> },
+  { path: "/dashboard/manage-users", element: <ManageCreators /> },
   { path: "/dashboard/workflows/:id", element: <WorkflowDetailPage /> },
   { path: "/dashboard/generate-story", element: <GenerateStory /> },
   { path: "/dashboard/profile", element: <Profile /> },
@@ -54,11 +47,16 @@ const dashboardRoutes = [
 const creatorDashboardRoutes = [
   {
     path: "/creator-dashboard/creations",
-    element: <CreatorCreations />,
+    element: <MyCreations />,
   },
   {
     path: "/creator-dashboard/overview",
-    element: <CreatorOverview />,
+    element: <Overview />,
+  },
+  { path: "/creator-dashboard/manage-workflows", element: <ManageWorkflows /> },
+  {
+    path: "/creator-dashboard/generate-story",
+    element: <GenerateStory />,
   },
 ];
 
