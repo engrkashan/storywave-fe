@@ -227,7 +227,7 @@ const GenerateStory = () => {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image Prompt (Max 3500 characters)
+                    Image Prompt (Max 5000 characters)
                   </label>
                   <button
                     type="button"
@@ -241,14 +241,14 @@ const GenerateStory = () => {
                   type="text"
                   placeholder="Enter image prompt..."
                   value={formData.imagePrompt}
-                  maxLength={3500}
+                  maxLength={5000}
                   onChange={(e) =>
                     handleInputChange("imagePrompt", e.target.value)
                   }
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {formData.imagePrompt.length}/3500
+                  {formData.imagePrompt.length}/5000
                 </p>
               </div>
 
