@@ -68,6 +68,8 @@ const WorkflowDetailPage = () => {
     "thumbnail",
     "audioUrl",
     "audioURL",
+    "storyLength",
+    "storylength",
   ];
 
   const shouldExcludeKey = (key) => {
