@@ -326,14 +326,14 @@ const GenerateStory = () => {
                     {/* Input */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Image Prompt (Max 2000 characters)
+                        Image Prompt (Max 5000 characters)
                       </label>
 
                       <input
                         type="text"
                         placeholder="Enter image prompt..."
                         value={formData.imagePrompt}
-                        maxLength={2000}
+                        maxLength={5000}
                         onChange={(e) =>
                           handleInputChange("imagePrompt", e.target.value)
                         }
@@ -341,7 +341,7 @@ const GenerateStory = () => {
                       />
 
                       <p className="text-xs text-gray-500 mt-1">
-                        {formData.imagePrompt.length}/2000
+                        {formData.imagePrompt.length}/5000
                       </p>
                     </div>
                   </div>

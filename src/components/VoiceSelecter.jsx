@@ -16,6 +16,10 @@ const VoiceSelector = ({ value, onChange }) => {
 
   // Static OpenAI voices
   const openaiVoices = [
+    { id: "marin", label: "Marin", provider: "openai" },
+    { id: "cedar", label: "Cedar", provider: "openai" },
+    { id: "verse", label: "Verse", provider: "openai" },
+    { id: "ballad", label: "Ballad", provider: "openai" },
     { id: "alloy", label: "Alloy", provider: "openai" },
     { id: "ash", label: "Ash", provider: "openai" },
     { id: "coral", label: "Coral", provider: "openai" },
@@ -44,7 +48,7 @@ const VoiceSelector = ({ value, onChange }) => {
               headers: {
                 "X-Hume-Api-Key": import.meta.env.VITE_HUME_API_KEY,
               },
-            }
+            },
           );
 
           if (!res.ok) throw new Error("Error fetching voices");
@@ -62,7 +66,10 @@ const VoiceSelector = ({ value, onChange }) => {
 
         for (const voice of all) {
           const accents = voice.tags?.ACCENT || voice.labels?.ACCENT; // this is an array
-          if (Array.isArray(accents) && accents.some(a => allowedAccents.includes(a))) {
+          if (
+            Array.isArray(accents) &&
+            accents.some((a) => allowedAccents.includes(a))
+          ) {
             filtered.push({
               id: voice.id,
               label: voice.name,
@@ -109,7 +116,7 @@ const VoiceSelector = ({ value, onChange }) => {
     //         response_format: "wav",
     //       });
     //       audioBlob = await response.blob();
-    //     } 
+    //     }
     //     else {
     //       const response = await fetch("https://api.hume.ai/v0/tts", {
     //         method: "POST",
@@ -169,7 +176,6 @@ const VoiceSelector = ({ value, onChange }) => {
     //   }
     // };
 
-
     const generatePreview = async () => {
       setLoadingVoice(true);
       const sampleText =
@@ -197,9 +203,7 @@ const VoiceSelector = ({ value, onChange }) => {
           currentUrl = URL.createObjectURL(audioBlob);
 
           setAudioSrc(currentUrl);
-        }
-
-        else {
+        } else {
           // -------- Hume Preview -------- //
           const response = await fetch("https://api.hume.ai/v0/tts", {
             method: "POST",
