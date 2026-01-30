@@ -100,82 +100,6 @@ const VoiceSelector = ({ value, onChange }) => {
 
     let currentUrl = null;
 
-    // const generatePreview = async () => {
-    //   setLoadingVoice(true);
-    //   const sampleText = "Once upon a time, in a quiet forest, a clever fox met a wise old owl. \"Teach me your secrets,\" said the fox. The owl replied, \"Patience is the key to wisdom.\" They laughed together under the stars.";
-
-    //   try {
-    //     let audioBlob;
-
-    //     if (value.provider === "openai") {
-
-    //       const response = await openai.audio.speech.create({
-    //         model: "gpt-4o-mini-tts",
-    //         voice: value.id,
-    //         input: sampleText,
-    //         response_format: "wav",
-    //       });
-    //       audioBlob = await response.blob();
-    //     }
-    //     else {
-    //       const response = await fetch("https://api.hume.ai/v0/tts", {
-    //         method: "POST",
-    //         headers: {
-    //           "X-Hume-Api-Key": import.meta.env.VITE_HUME_API_KEY,
-    //           "Content-Type": "application/json",
-    //         },
-    //         body: JSON.stringify({
-    //           utterances: [
-    //             {
-    //               text: sampleText,
-    //               voice: {
-    //                 id: value.id,    // ✔️ correct location
-    //               },
-    //             },
-    //           ],
-    //           format: {
-    //             type: "mp3",
-    //           },
-    //           num_generations: 1,
-    //         }),
-    //       });
-
-    //       if (!response.ok) {
-    //         const errorData = await response.json().catch(() => ({}));
-    //         console.error("Hume API Error:", errorData);
-    //         throw new Error(`Hume API error: ${response.status} ${response.statusText}`);
-    //       }
-
-    //       const body = await response.json();
-
-    //       if (!body.generations || body.generations.length === 0) {
-    //         throw new Error("No audio generated");
-    //       }
-
-    //       const base64Audio = body.generations[0].audio;
-
-    //       // Convert Base64 → Blob
-    //       const binaryString = window.atob(base64Audio);
-    //       const len = binaryString.length;
-    //       const bytes = new Uint8Array(len);
-
-    //       for (let i = 0; i < len; i++) {
-    //         bytes[i] = binaryString.charCodeAt(i);
-    //       }
-
-    //       const audioBlob = new Blob([bytes], { type: "audio/mp3" });
-
-    //       const currentUrl = URL.createObjectURL(audioBlob);
-    //       setAudioSrc(currentUrl);
-    //     }
-    //   } catch (err) {
-    //     console.error(err);
-    //     alert("Failed to generate preview");
-    //   } finally {
-    //     setLoadingVoice(false);
-    //   }
-    // };
-
     const generatePreview = async () => {
       setLoadingVoice(true);
       const sampleText =
@@ -253,13 +177,6 @@ const VoiceSelector = ({ value, onChange }) => {
 
   return (
     <div className="flex flex-col space-y-3">
-      {loadingVoice ? (
-        <div className="w-full px-4 py-2 bg-gray-200 rounded-lg text-center">
-          Loading preview...
-        </div>
-      ) : (
-        audioSrc && <audio controls src={audioSrc} className="w-full" />
-      )}
 
       <select
         value={value?.id || ""}
@@ -287,6 +204,15 @@ const VoiceSelector = ({ value, onChange }) => {
           ))}
         </optgroup>
       </select>
+
+      {loadingVoice ? (
+        <div className="w-full px-4 py-2 bg-gray-200 rounded-lg text-center">
+          Loading preview...
+        </div>
+      ) : (
+        audioSrc && <audio controls src={audioSrc} className="w-full" />
+      )}
+
     </div>
   );
 };

@@ -146,39 +146,51 @@ const GenerateStory = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-6 md:p-8">
       {/* ⛔ WARNING MODAL */}
       {showPromptWarning && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4">
-          <div className="bg-white max-w-lg w-full rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-red-600 mb-2">
-              Content Warning
-            </h2>
-            <p className="text-gray-700 mb-3">
-              Your image prompt contains potentially sensitive or abusive words.
+          <div className="bg-white max-w-lg w-full rounded-2xl shadow-2xl p-8 animate-fadeIn">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Content Warning</h2>
+            </div>
+
+            <p className="text-gray-700 mb-6">
+              Your image prompt contains potentially sensitive or abusive words that may violate content guidelines.
             </p>
 
             {blockedWords.length > 0 && (
-              <div className="bg-gray-100 p-3 rounded mb-4 text-sm">
-                <strong>Detected words:</strong> {blockedWords.join(", ")}
+              <div className="bg-red-50 border border-red-200 p-4 rounded-xl mb-6">
+                <p className="text-sm font-medium text-red-800 mb-2">Detected words:</p>
+                <div className="flex flex-wrap gap-2">
+                  {blockedWords.map((word, index) => (
+                    <span key={index} className="px-3 py-1 bg-white border border-red-300 rounded-lg text-red-700 text-sm font-medium">
+                      {word}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
-            <p className="text-sm text-gray-600 mb-6">
-              You can go back and edit the prompt, or continue anyway at your
-              own discretion.
+            <p className="text-sm text-gray-600 mb-8">
+              You can go back and edit the prompt, or continue at your own discretion.
             </p>
 
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowPromptWarning(false)}
-                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                className="px-6 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors duration-200"
               >
-                Cancel
+                Edit Prompt
               </button>
               <button
                 onClick={() => executeGenerate(pendingPayload)}
-                className="px-4 py-2 rounded bg-linear-to-r from-amber-400 to-pink-500 text-white shadow"
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-medium hover:shadow-lg transition-all duration-200"
               >
                 Continue Anyway
               </button>
@@ -186,279 +198,402 @@ const GenerateStory = () => {
           </div>
         </div>
       )}
-      <div className="flex h-screen">
-        {/* Left Panel */}
-        <div className="w-1/2 bg-white border-r border-gray-200 overflow-y-auto thin-scrollbar">
-          <div className="p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Story Builder
-            </h1>
-            <p className="text-gray-600 text-xl mb-8">
-              Generate or schedule your AI-powered story
-            </p>
 
-            <form className="space-y-6">
-              {/* Mode */}
+      {/* Header */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Story Builder</h1>
+            <p className="text-gray-600 text-lg">
+              Create and schedule AI-powered stories with rich multimedia
+            </p>
+          </div>
+          {loading && (
+            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-xl shadow-md">
+              <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-700 font-medium">
+                {loadingMessages[currentMessageIndex]}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Stats/Cards Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <p className="text-sm text-gray-500">Stories Generated</p>
+                <p className="text-2xl font-bold text-gray-900">-</p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-pink-100 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Scheduled</p>
+                <p className="text-2xl font-bold text-gray-900">{scheduled?.length || 0}</p>
+              </div>
+              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Active Stories</p>
+                <p className="text-2xl font-bold text-gray-900">-</p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-amber-100 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Main Form - Left Column */}
+        <div className="lg:col-span-7">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-pink-600 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Create New Story</h2>
+            </div>
+
+            <form className="space-y-8">
+              {/* Mode Selection */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-3">
                   Generation Mode
                 </label>
-                <select
-                  value={mode}
-                  onChange={(e) => setMode(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                >
-                  <option value="now">Generate Now</option>
-                  <option value="schedule">Schedule for Later</option>
-                </select>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setMode("now")}
+                    className={`flex-1 py-4 px-6 rounded-xl border-2 text-center font-medium transition-all duration-200 ${mode === "now"
+                      ? "border-amber-500 bg-amber-50 text-amber-700"
+                      : "border-gray-300 hover:border-gray-400 text-gray-700"
+                      }`}
+                  >
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span>Generate Now</span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("schedule")}
+                    className={`flex-1 py-4 px-6 rounded-xl border-2 text-center font-medium transition-all duration-200 ${mode === "schedule"
+                      ? "border-pink-500 bg-pink-50 text-pink-700"
+                      : "border-gray-300 hover:border-gray-400 text-gray-700"
+                      }`}
+                  >
+                    <div className="flex flex-col items-center">
+                      <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Schedule</span>
+                    </div>
+                  </button>
+                </div>
               </div>
 
               {mode === "schedule" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Date & Time <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Schedule Date & Time <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="datetime-local"
-                    value={scheduleInput}
-                    min={new Date().toISOString().slice(0, 16)}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setScheduleInput(value);
-                      const iso = new Date(value).toISOString();
-                      setScheduleTime(iso);
-                    }}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                  />
+                  <div className="relative">
+                    <input
+                      type="datetime-local"
+                      value={scheduleInput}
+                      min={new Date().toISOString().slice(0, 16)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setScheduleInput(value);
+                        const iso = new Date(value).toISOString();
+                        setScheduleTime(iso);
+                      }}
+                      className="w-full px-4 py-3.5 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                    />
+                    <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
                 </div>
               )}
 
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Story Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter story title..."
-                  value={formData.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Story Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter a compelling title..."
+                    value={formData.title}
+                    onChange={(e) => handleInputChange("title", e.target.value)}
+                    className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  />
+                </div>
+
+                {/* Story Type */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Story Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.storyType}
+                    onChange={(e) => handleInputChange("storyType", e.target.value)}
+                    className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  >
+                    <option value="">Select a story type...</option>
+                    <option value="true_crime_fiction_cinematic">
+                      True Crime - Fiction Cinematic (Netflix-Style)
+                    </option>
+                    <option value="true_crime_nonfiction_forensic">
+                      True Crime - Nonfiction Forensic (Forensic Files)
+                    </option>
+                    <option value="manipulation_sexual_manipulation">
+                      Manipulation - Sexual Manipulation (Mature)
+                    </option>
+                    <option value="cultural_history_documentary">
+                      Cultural History - Documentary (National Geographic)
+                    </option>
+                    <option value="homesteading_howto_field_guide">
+                      Homesteading - How-To Field Guide
+                    </option>
+                    <option value="work_and_trades_shop_manual">
+                      Work & Trades - Shop Manual (How-To)
+                    </option>
+                    <option value="work_and_trades_shopfloordoc">
+                      Work & Trades - Shopfloor Doc (Profile)
+                    </option>
+                    <option value="investigative_discovery_journalistic">
+                      Investigative Discovery - Journalistic
+                    </option>
+                    <option value="storytelling_cinematic">
+                      Storytelling - Cinematic (Movie-Style)
+                    </option>
+                    <option value="conversation_narrated_documentary">
+                      Conversation - Narrated Documentary (Blended)
+                    </option>
+                    <option value="education_howto_trades">
+                      Education - How-To (Trades)
+                    </option>
+                  </select>
+                </div>
               </div>
 
               {/* URL */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Reference URL
+                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                  Reference URL (Optional)
                 </label>
-                <input
-                  type="url"
-                  placeholder="https://example.com"
-                  value={formData.url}
-                  onChange={(e) => handleInputChange("url", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
+                <div className="relative">
+                  <input
+                    type="url"
+                    placeholder="https://example.com"
+                    value={formData.url}
+                    onChange={(e) => handleInputChange("url", e.target.value)}
+                    className="w-full px-4 py-3.5 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  />
+                  <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                </div>
               </div>
 
-              <p className="font-semibold text-center">OR</p>
-
-              {/* Concept */}
+              {/* Story Script */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-gray-700">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-semibold text-gray-900">
                     Story Script
                   </label>
                   <button
                     type="button"
                     onClick={() => setIsTextEditorOpen(true)}
-                    className="bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg px-3 py-1 rounded hover:bg-indigo-700 transition"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
                   >
-                    Edit Script
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Open Editor
                   </button>
                 </div>
                 <textarea
-                  placeholder="Describe your story idea..."
+                  placeholder="Describe your story idea or paste your script here..."
                   value={formData.concept}
                   onChange={(e) => handleInputChange("concept", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none h-40"
+                  className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none h-48"
                 />
               </div>
 
-              {/* Image Prompt */}
-              <div className="mb-4">
-                <div className="flex items-center gap-3 mb-2 justify-between w-full">
-                  <span className="text-sm font-medium text-gray-700">
-                    Generate Image
-                  </span>
-
+              {/* Image Generation */}
+              <div className="bg-gray-50 p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-amber-100 to-pink-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Generate Images</h3>
+                      <p className="text-sm text-gray-500">Add AI-generated images to your story</p>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowImagePrompt((prev) => !prev)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300
-        ${
-          showImagePrompt
-            ? "bg-gradient-to-r from-[#f8be4c] to-[#f0498f]"
-            : "bg-gray-300"
-        }
-      `}
+                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 ${showImagePrompt
+                      ? "bg-gradient-to-r from-amber-500 to-pink-500"
+                      : "bg-gray-300"
+                      }`}
                   >
                     <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300
-          ${showImagePrompt ? "translate-x-5" : "translate-x-1"}
-        `}
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform duration-300 shadow-sm ${showImagePrompt ? "translate-x-7" : "translate-x-1"
+                        }`}
                     />
                   </button>
                 </div>
 
                 {showImagePrompt && (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex justify-end">
+                  <div className="space-y-6 animate-fadeIn">
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-semibold text-gray-900">
+                        Image Prompt
+                      </label>
                       <button
                         type="button"
                         onClick={() => setIsPromptEditorOpen(true)}
-                        className="w-fit bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg px-3 py-1 rounded hover:opacity-90 transition"
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg font-medium transition-colors duration-200"
                       >
-                        Edit Prompt
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Open Editor
                       </button>
                     </div>
 
-                    {/* Input */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Image Prompt (Max 5000 characters)
-                      </label>
+                    <textarea
+                      placeholder="Describe the images you want to generate..."
+                      value={formData.imagePrompt}
+                      onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
+                      className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 resize-none h-32"
+                    />
 
-                      <input
-                        type="text"
-                        placeholder="Enter image prompt..."
-                        value={formData.imagePrompt}
-                        maxLength={5000}
-                        onChange={(e) =>
-                          handleInputChange("imagePrompt", e.target.value)
-                        }
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                      />
-
-                      <p className="text-xs text-gray-500 mt-1">
-                        {formData.imagePrompt.length}/5000
-                      </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500">
+                        {formData.imagePrompt.length}/5000 characters
+                      </span>
+                      {formData.imagePrompt.length > 0 && (
+                        <span className={`text-sm font-medium ${formData.imagePrompt.length > 4500 ? "text-red-600" : "text-green-600"
+                          }`}>
+                          {formData.imagePrompt.length > 4500 ? "Approaching limit" : "Good length"}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Voices */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Voice <span className="text-red-500">*</span>
-                </label>
-                <VoiceSelector
-                  value={formData.voice}
-                  onChange={(val) => handleInputChange("voice", val)}
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Voice */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Voice <span className="text-red-500">*</span>
+                  </label>
+                  <VoiceSelector
+                    value={formData.voice}
+                    onChange={(val) => handleInputChange("voice", val)}
+                  />
+                </div>
 
-              {/* Voice Tone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Voice Tone <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.tone}
-                  onChange={(e) => handleInputChange("tone", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Select tone...</option>
-                  <option value="neutral">Neutral</option>
-                  <option value="excited">Excited & Energetic</option>
-                  <option value="calm">Calm & Soothing</option>
-                  <option value="mysterious">Mysterious & Intriguing</option>
-                  <option value="professional">
-                    Professional & Informative
-                  </option>
-                  <option value="playful">Playful & Fun</option>
-                </select>
-              </div>
-
-              {/* Story Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Story Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.storyType}
-                  onChange={(e) =>
-                    handleInputChange("storyType", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                >
-                  <option value="">Select story type...</option>
-                  <option value="true_crime_fiction_cinematic">
-                    True Crime - Fiction Cinematic (Netflix-Style)
-                  </option>
-                  <option value="true_crime_nonfiction_forensic">
-                    True Crime - Nonfiction Forensic (Forensic Files)
-                  </option>
-                  <option value="manipulation_sexual_manipulation">
-                    Manipulation - Sexual Manipulation (Mature)
-                  </option>
-                  <option value="cultural_history_documentary">
-                    Cultural History - Documentary (National Geographic)
-                  </option>
-                  <option value="homesteading_howto_field_guide">
-                    Homesteading - How-To Field Guide
-                  </option>
-                  <option value="work_and_trades_shop_manual">
-                    Work & Trades - Shop Manual (How-To)
-                  </option>
-                  <option value="work_and_trades_shopfloordoc">
-                    Work & Trades - Shopfloor Doc (Profile)
-                  </option>
-                  <option value="investigative_discovery_journalistic">
-                    Investigative Discovery - Journalistic
-                  </option>
-                  <option value="storytelling_cinematic">
-                    Storytelling - Cinematic (Movie-Style)
-                  </option>
-                  <option value="conversation_narrated_documentary">
-                    Conversation - Narrated Documentary (Blended)
-                  </option>
-                  <option value="education_howto_trades">
-                    Education - How-To (Trades)
-                  </option>
-                </select>
+                {/* Voice Tone */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Voice Tone <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.tone}
+                    onChange={(e) => handleInputChange("tone", e.target.value)}
+                    className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  >
+                    <option value="">Select tone...</option>
+                    <option value="neutral">Neutral</option>
+                    <option value="excited">Excited & Energetic</option>
+                    <option value="calm">Calm & Soothing</option>
+                    <option value="mysterious">Mysterious & Intriguing</option>
+                    <option value="professional">Professional & Informative</option>
+                    <option value="playful">Playful & Fun</option>
+                  </select>
+                </div>
               </div>
 
               {/* Story Length */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Story Length <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-1">
+                      Story Length
+                    </label>
+                    <p className="text-sm text-gray-500">Adjust the duration of your story</p>
+                  </div>
+                  <span className="text-lg font-bold text-amber-600 bg-amber-50 px-4 py-2 rounded-lg">
+                    {storyLengthStr}
+                  </span>
+                </div>
+
                 <input
                   type="range"
                   min="1"
                   max="3"
                   value={lengthLevel}
-                  onChange={(e) => setLengthLevel(e.target.value)}
-                  className="w-full h-2 bg-gradient rounded-lg appearance-none cursor-pointer"
+                  onChange={(e) => setLengthLevel(Number(e.target.value))}
+                  className="w-full h-3 bg-gradient-to-r from-amber-200 to-pink-500 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-amber-500 [&::-webkit-slider-thumb]:shadow-lg"
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
+
+                <div className="flex justify-between mt-4">
                   {lengthLabels.map((label, index) => (
-                    <span
-                      key={index}
-                      className={
-                        lengthLevel == index + 1
-                          ? "text-indigo-600 font-medium"
-                          : ""
-                      }
-                    >
-                      {label} ({lengthMinutes[index]} min)
-                    </span>
+                    <div key={index} className="text-center">
+                      {/* <div className={`w-10 h-10 mx-auto mb-2 rounded-full flex items-center justify-center ${lengthLevel === index + 1
+                        ? "bg-gradient-to-r from-amber-500 to-pink-500 text-white"
+                        : "bg-gray-100 text-gray-500"
+                        }`}>
+                        {lengthMinutes[index]}
+                      </div> */}
+                      <span className={`text-sm font-medium ${lengthLevel === index + 1 ? "text-amber-600" : "text-gray-500"
+                        }`}>
+                        {label}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>
 
+              {/* Generate Button */}
               <button
                 type="button"
                 onClick={handleGenerate}
@@ -466,272 +601,244 @@ const GenerateStory = () => {
                   loading ||
                   !formData.title ||
                   !formData.tone ||
-                  !formData.storyType
+                  !formData.storyType ||
+                  (mode === "schedule" && !scheduleTime)
                 }
-                className={`w-full py-3 rounded-lg font-medium transition-all duration-200 
-                  ${
-                    loading ||
-                    !formData.title ||
-                    !formData.tone ||
-                    !formData.storyType
-                      ? "bg-gray-400 cursor-not-allowed text-white"
-                      : "bg-linear-to-r from-amber-400 to-pink-500 text-white hover:scale-[1.02] shadow-md"
+                className={`w-full py-4 rounded-xl font-semibold text-lg transition-all duration-200 ${loading ||
+                  !formData.title ||
+                  !formData.tone ||
+                  !formData.storyType ||
+                  (mode === "schedule" && !scheduleTime)
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-amber-500 to-pink-600 text-white hover:shadow-xl hover:scale-[1.02]"
                   }`}
               >
-                {loading
-                  ? mode === "now"
-                    ? "Generating..."
-                    : "Scheduling..."
-                  : mode === "now"
-                    ? "Generate Now"
-                    : "Schedule Story"}
+                {loading ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    {mode === "now" ? "Generating Story..." : "Scheduling Story..."}
+                  </div>
+                ) : mode === "now" ? (
+                  "Generate Story Now"
+                ) : (
+                  "Schedule Story"
+                )}
               </button>
             </form>
           </div>
         </div>
 
-        {/* Right Panel */}
-        <div className="w-1/2 bg-gray-50 overflow-y-auto thin-scrollbar">
-          <div className="p-8">
-            {/* Preview Block */}
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                Live Preview
-              </h2>
-              <p className="text-gray-600 text-xl">
-                See your story details as you type
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-              {loading ? (
-                <div className="animate-pulse">
-                  <div className="w-16 h-16 bg-linear-to-r from-amber-400 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <svg
-                      className="w-8 h-8 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {mode === "now"
-                      ? "Creating Your Story"
-                      : "Scheduling Story"}
-                  </h3>
-                  <p className="text-gray-500 text-sm transition-all duration-500">
-                    {loadingMessages[currentMessageIndex]}
-                  </p>
+        {/* Right Column - Scheduled Stories & Results */}
+        <div className="lg:col-span-5 space-y-8">
+          {/* Generated Story Results */}
+          {storyData && mode === "now" && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 animate-fadeIn">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-pink-600 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
-              ) : storyData ? (
-                <div className="space-y-6 animate-fadeIn">
-                  <h3 className="text-2xl font-semibold text-gray-900 capitalize">
-                    {storyData.story?.title}
-                  </h3>
+                <h2 className="text-2xl font-bold text-gray-900">Story Generated!</h2>
+              </div>
 
-                  {/* Video */}
-                  {storyData.video ? (
-                    <div className="space-y-3">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{storyData.story?.title}</h3>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {storyLengthStr}
+                    </span>
+                    <span>•</span>
+                    <span>{formData.tone}</span>
+                  </div>
+                </div>
+
+                {/* Video Preview */}
+                {storyData.video && (
+                  <div className="space-y-4">
+                    <div className="relative rounded-xl overflow-hidden bg-gray-900">
                       <video
                         src={storyData.video}
                         controls
-                        className="w-full rounded-2xl shadow-lg border border-gray-200"
+                        className="w-full aspect-video"
                       />
-                      <button
-                        onClick={() => {
-                          const link = document.createElement("a");
-                          link.href = storyData.video;
-                          link.download = storyData.story?.title
-                            ? `${storyData.story.title}.mp4`
-                            : "story-video.mp4";
-                          link.click();
-                        }}
-                        className="px-4 py-2 rounded-lg bg-linear-to-r from-pink-500 to-amber-400 text-white font-medium hover:scale-[1.02] shadow-md"
-                      >
-                        Download Video
-                      </button>
                     </div>
-                  ) : (
-                    <p className="text-gray-400 italic">No video available.</p>
-                  )}
-
-                  {/* Script */}
-                  <div className="text-left text-gray-700 space-y-4">
-                    <p className="font-semibold text-lg">Story Script:</p>
-                    <pre className="whitespace-pre-wrap text-gray-600 text-sm bg-gray-50 p-4 rounded-lg border max-h-60 overflow-y-auto thin-scrollbar">
-                      {storyData.story?.script}
-                    </pre>
+                    <button
+                      onClick={() => {
+                        const link = document.createElement("a");
+                        link.href = storyData.video;
+                        link.download = storyData.story?.title
+                          ? `${storyData.story.title}.mp4`
+                          : "story-video.mp4";
+                        link.click();
+                      }}
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-pink-600 text-white font-semibold hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download Video
+                    </button>
                   </div>
+                )}
 
-                  {storyData.voiceover && (
+                {/* Voiceover */}
+                {storyData.voiceover && (
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <p className="text-sm font-medium text-gray-900 mb-3">Voiceover Preview</p>
                     <audio
                       controls
                       src={storyData.voiceover}
-                      className="w-full rounded-md"
+                      className="w-full rounded-lg"
                     />
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <svg
-                      className="w-8 h-8 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Preview Your Story
-                  </h3>
-                  <p className="text-gray-500 text-sm">
-                    Fill the form and generate or schedule your story to preview
-                    it here.
-                  </p>
-                </>
-              )}
+                )}
+
+                {/* Script Preview */}
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-gray-900">Story Script</p>
+                    <span className="text-xs text-gray-500">
+                      {storyData.story?.script?.length || 0} characters
+                    </span>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto thin-scrollbar">
+                    <p className="text-gray-700 whitespace-pre-wrap text-sm">
+                      {storyData.story?.script || "No script available"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Scheduled Stories */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-pink-600 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Scheduled Stories</h2>
+                  <p className="text-sm text-gray-500">Upcoming story generations</p>
+                </div>
+              </div>
+              <span className="px-4 py-2 bg-amber-100 text-amber-700 font-semibold rounded-lg">
+                {scheduled?.length || 0}
+              </span>
             </div>
 
-            {/* ---------------------------- */}
-            {/* Scheduled Stories Section    */}
-            {/* ---------------------------- */}
-            <div className="mt-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Scheduled Stories
-              </h2>
-
-              {!scheduled || scheduled.length === 0 ? (
-                <div className="bg-white p-8 border border-gray-200 rounded-xl shadow-sm text-center">
-                  <p className="text-gray-500 text-sm">No scheduled stories.</p>
+            {!scheduled || scheduled.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {scheduled.map((item) => (
-                    <div
-                      key={item.workflowId}
-                      className="group bg-white p-5 border rounded-xl shadow-sm flex items-center justify-between 
-                     hover:shadow-md hover:border-gray-300 transition-all duration-200 cursor-pointer"
-                    >
-                      {/* Left */}
-                      <div className="flex flex-col">
-                        <p className="font-semibold text-gray-900 group-hover:text-gray-800">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Scheduled Stories</h3>
+                <p className="text-gray-500 max-w-sm mx-auto">
+                  Stories scheduled for later will appear here. Select "Schedule" mode to plan future stories.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[600px] overflow-y-auto thin-scrollbar pr-2">
+                {scheduled.map((item) => (
+                  <div
+                    key={item.workflowId}
+                    className="group p-5 border border-gray-200 rounded-xl hover:border-amber-300 hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 group-hover:text-amber-700">
                           {item.title}
-                        </p>
-
-                        <p className="text-sm text-gray-500">
-                          <span className="font-medium text-gray-600">
-                            Scheduled for:
-                          </span>{" "}
-                          {new Date(item.scheduledAt).toLocaleString()}
+                        </h4>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {new Date(item.scheduledAt).toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </p>
                       </div>
-
-                      {/* Right */}
-                      <div className="flex items-center space-x-3">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600">
-                          Pending
-                        </span>
-
-                        {/* subtle chevron */}
-                        <svg
-                          className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-
-                        {/* Delete Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (
-                              window.confirm(
-                                "Are you sure you want to cancel this scheduled story?",
-                              )
-                            ) {
-                              dispatch(deleteScheduledStory(item.workflowId))
-                                .unwrap()
-                                .then(() =>
-                                  toast.success("Scheduled story cancelled"),
-                                )
-                                .catch((err) =>
-                                  toast.error(
-                                    err?.error || "Failed to cancel story",
-                                  ),
-                                );
-                            }
-                          }}
-                          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                          title="Cancel Schedule"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
-                      </div>
+                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Scheduled
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+
+                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        {item.storyType?.replace(/_/g, ' ') || 'Custom'}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (
+                            window.confirm(
+                              "Are you sure you want to cancel this scheduled story?",
+                            )
+                          ) {
+                            dispatch(deleteScheduledStory(item.workflowId))
+                              .unwrap()
+                              .then(() =>
+                                toast.success("Scheduled story cancelled"),
+                              )
+                              .catch((err) =>
+                                toast.error(
+                                  err?.error || "Failed to cancel story",
+                                ),
+                              );
+                          }
+                        }}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Text Editor Modal */}
       {isTextEditorOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex justify-center items-start pt-12 px-4">
-          <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg flex flex-col h-[90vh]">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col h-[80vh] animate-modalSlide">
             {/* Modal Header */}
-            <div className="flex justify-between items-center p-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold">Edit Story Script</h2>
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-100 to-pink-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Story Script Editor</h2>
+              </div>
               <button
                 onClick={() => setIsTextEditorOpen(false)}
-                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200"
               >
-                Close
+                Save & Close
               </button>
             </div>
 
@@ -739,24 +846,32 @@ const GenerateStory = () => {
             <textarea
               value={formData.concept}
               onChange={(e) => handleInputChange("concept", e.target.value)}
-              className="flex-1 w-full p-6 text-gray-700 resize-none outline-none border-none"
+              className="flex-1 w-full p-8 text-gray-700 resize-none outline-none border-none text-lg leading-relaxed"
               placeholder="Write your story here..."
             />
           </div>
         </div>
       )}
 
+      {/* Image Prompt Editor Modal */}
       {isPromptEditorOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex justify-center items-start pt-12 px-4">
-          <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg flex flex-col h-[90vh]">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col h-[80vh] animate-modalSlide">
             {/* Modal Header */}
-            <div className="flex justify-between items-center p-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold">Edit Image Prompt</h2>
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Image Prompt Editor</h2>
+              </div>
               <button
                 onClick={() => setIsPromptEditorOpen(false)}
-                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                className="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg font-medium transition-colors duration-200"
               >
-                Close
+                Save & Close
               </button>
             </div>
 
@@ -764,13 +879,36 @@ const GenerateStory = () => {
             <textarea
               value={formData.imagePrompt}
               onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
-              className="flex-1 w-full p-6 text-gray-700 resize-none outline-none border-none"
-              placeholder="Write your prompt here..."
+              className="flex-1 w-full p-8 text-gray-700 resize-none outline-none border-none text-lg leading-relaxed"
+              placeholder="Describe the images you want to generate. Be as detailed as possible..."
             />
+
+            {/* Footer Stats */}
+            <div className="border-t border-gray-200 p-6">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">
+                  {formData.imagePrompt.length}/5000 characters
+                </span>
+                <div className="flex items-center gap-4">
+                  <span className={`text-sm font-medium ${formData.imagePrompt.length > 4500
+                    ? "text-red-600"
+                    : formData.imagePrompt.length > 1000
+                      ? "text-green-600"
+                      : "text-yellow-600"
+                    }`}>
+                    {formData.imagePrompt.length > 4500
+                      ? "⚠️ Approaching limit"
+                      : formData.imagePrompt.length > 1000
+                        ? "✅ Good length"
+                        : "📝 Add more details"}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 };
 
