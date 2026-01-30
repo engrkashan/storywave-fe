@@ -13,7 +13,7 @@ import { fetchWorkflowById } from "../../../redux/slices/overview.slice";
 const GenerateStory = () => {
   const dispatch = useDispatch();
   const scheduled = useSelector((state) => state.stories.scheduled);
-  const [voice, setVoice] = useState("");
+
   const [storyData, setStoryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lengthLevel, setLengthLevel] = useState(3);
@@ -22,6 +22,14 @@ const GenerateStory = () => {
   const [scheduleInput, setScheduleInput] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+  // 🔥 warning modal state
+  const [showPromptWarning, setShowPromptWarning] = useState(false);
+  const [blockedWords, setBlockedWords] = useState([]);
+  const [pendingPayload, setPendingPayload] = useState(null);
+
+  const [isTextEditorOpen, setIsTextEditorOpen] = useState(false);
+  const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -47,73 +55,70 @@ const GenerateStory = () => {
 
   useEffect(() => {
     const editWorkflowId = localStorage.getItem("editWorkflowId");
-    if (editWorkflowId) {
-      dispatch(fetchWorkflowById(editWorkflowId))
-        .unwrap()
-        .then((data) => {
-          const metadata = data.metadata || {};
+    if (!editWorkflowId) return;
 
-          setFormData({
-            title: data.title || "",
-            url: metadata.url || "",
-            concept: metadata.textIdea || "", 
-            tone: metadata.voiceTone || "",
-            imagePrompt: metadata.imagePrompt || "",
-            storyType: metadata.storyType || "",
-            voice: metadata.voice || "",
-          });
-
-          setShowImagePrompt(
-            metadata.shouldGenerateImage || !!metadata.imagePrompt,
-          );
-        })
-        .catch(() => toast.error("Failed to load workflow data"))
-        .finally(() => localStorage.removeItem("editWorkflowId"));
-    }
+    dispatch(fetchWorkflowById(editWorkflowId))
+      .unwrap()
+      .then((data) => {
+        const m = data.metadata || {};
+        setFormData({
+          title: data.title || "",
+          url: m.url || "",
+          concept: m.textIdea || "",
+          tone: m.voiceTone || "",
+          imagePrompt: m.imagePrompt || "",
+          storyType: m.storyType || "",
+          voice: m.voice || "",
+        });
+        setShowImagePrompt(m.shouldGenerateImage || !!m.imagePrompt);
+      })
+      .catch(() => toast.error("Failed to load workflow"))
+      .finally(() => localStorage.removeItem("editWorkflowId"));
   }, [dispatch]);
 
   useEffect(() => {
-    let interval;
-    if (loading) {
-      interval = setInterval(() => {
-        setCurrentMessageIndex((prev) => (prev + 1) % loadingMessages.length);
-      }, 2000);
-    }
-    return () => clearInterval(interval);
+    if (!loading) return;
+    const i = setInterval(
+      () => setCurrentMessageIndex((p) => (p + 1) % loadingMessages.length),
+      2000,
+    );
+    return () => clearInterval(i);
   }, [loading]);
 
   const lengthMinutes = [10, 20, 30];
   const lengthLabels = ["Brief", "Medium", "Long"];
   const storyLengthStr = `${lengthMinutes[lengthLevel - 1]} minutes`;
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (k, v) => setFormData((p) => ({ ...p, [k]: v }));
+
+  const executeGenerate = async (payload) => {
+    try {
+      setLoading(true);
+      const res = await dispatch(generateStory(payload)).unwrap();
+      if (mode === "now") {
+        setStoryData(res);
+        toast.success("Story generated successfully 🎉");
+      } else {
+        toast.success("Story scheduled successfully ⏰");
+      }
+    } catch (e) {
+      toast.error(e?.error || "Something went wrong");
+    } finally {
+      setLoading(false);
+      setShowPromptWarning(false);
+      setPendingPayload(null);
+    }
   };
 
-  const handleGenerate = async () => {
-    if (!formData.concept && !formData.url) {
-      toast.error("Please provide a story concept or URL");
-      return;
-    }
+  const handleGenerate = () => {
+    if (!formData.concept && !formData.url)
+      return toast.error("Please provide a story concept or URL");
 
-    if (!formData.title || !formData.tone || !formData.storyType) {
-      toast.error("Please fill all required fields");
-      return;
-    }
+    if (!formData.title || !formData.tone || !formData.storyType)
+      return toast.error("Please fill all required fields");
 
-    if (mode === "schedule" && !scheduleTime) {
-      toast.error("Please select a schedule time");
-      return;
-    }
-
-    const safety = checkImagePromptSafety(formData.imagePrompt);
-
-    if (!safety.safe) {
-      toast.error(
-        `Image prompt contains blocked content: ${safety.blockedWords.join(", ")}`,
-      );
-      return;
-    }
+    if (mode === "schedule" && !scheduleTime)
+      return toast.error("Please select a schedule time");
 
     const payload = {
       title: formData.title,
@@ -128,29 +133,59 @@ const GenerateStory = () => {
       scheduledAt: mode === "schedule" ? scheduleTime : null,
     };
 
-    try {
-      setLoading(true);
+    const safety = checkImagePromptSafety(formData.imagePrompt);
 
-      const response = await dispatch(generateStory(payload)).unwrap();
-
-      if (mode === "now") {
-        setStoryData(response);
-        toast.success("Story generated successfully 🎉");
-      } else {
-        setStoryData(null);
-        toast.success("Story scheduled successfully ⏰");
-      }
-    } catch (err) {
-      toast.error(err?.error || "Something went wrong");
-    } finally {
-      setLoading(false);
+    if (!safety.safe) {
+      setBlockedWords(safety.blockedWords || []);
+      setPendingPayload(payload);
+      setShowPromptWarning(true);
+      return;
     }
+
+    executeGenerate(payload);
   };
-  const [isTextEditorOpen, setIsTextEditorOpen] = useState(false);
-  const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
 
   return (
     <div className="min-h-screen">
+      {/* ⛔ WARNING MODAL */}
+      {showPromptWarning && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4">
+          <div className="bg-white max-w-lg w-full rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-red-600 mb-2">
+              Content Warning
+            </h2>
+            <p className="text-gray-700 mb-3">
+              Your image prompt contains potentially sensitive or abusive words.
+            </p>
+
+            {blockedWords.length > 0 && (
+              <div className="bg-gray-100 p-3 rounded mb-4 text-sm">
+                <strong>Detected words:</strong> {blockedWords.join(", ")}
+              </div>
+            )}
+
+            <p className="text-sm text-gray-600 mb-6">
+              You can go back and edit the prompt, or continue anyway at your
+              own discretion.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowPromptWarning(false)}
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => executeGenerate(pendingPayload)}
+                className="px-4 py-2 rounded bg-linear-to-r from-amber-400 to-pink-500 text-white shadow"
+              >
+                Continue Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex h-screen">
         {/* Left Panel */}
         <div className="w-1/2 bg-white border-r border-gray-200 overflow-y-auto thin-scrollbar">
