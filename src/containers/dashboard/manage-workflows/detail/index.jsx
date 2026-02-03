@@ -16,7 +16,7 @@ import {
   ChevronRight,
   Info,
 } from "lucide-react";
-import { BiAlarmExclamation, BiMicrophone, BiPhotoAlbum } from "react-icons/bi";
+import { BiAlarmExclamation, BiMicrophone } from "react-icons/bi";
 
 const WorkflowDetailPage = () => {
   const { id } = useParams();
@@ -30,9 +30,9 @@ const WorkflowDetailPage = () => {
   const formatDate = (date) =>
     date
       ? new Date(date).toLocaleString("en-US", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
       : "N/A";
 
   const getStatusIcon = (status) => {
@@ -49,6 +49,7 @@ const WorkflowDetailPage = () => {
   };
 
   const excludedKeys = [
+    "textIdea",
     "result",
     "url",
     "Url",
@@ -160,15 +161,14 @@ const WorkflowDetailPage = () => {
 
                 <div className="flex items-center">
                   <span
-                    className={`ml-2 px-4 py-1.5 rounded-full text-sm font-medium border ${
-                      workflow.status === "completed"
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : workflow.status === "processing"
-                          ? "bg-blue-50 text-blue-700 border-blue-200"
-                          : workflow.status === "failed"
-                            ? "bg-red-50 text-red-700 border-red-200"
-                            : "bg-yellow-50 text-yellow-700 border-yellow-200"
-                    }`}
+                    className={`ml-2 px-4 py-1.5 rounded-full text-sm font-medium border ${workflow.status === "completed"
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : workflow.status === "processing"
+                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                        : workflow.status === "failed"
+                          ? "bg-red-50 text-red-700 border-red-200"
+                          : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                      }`}
                   >
                     {workflow.status.charAt(0).toUpperCase() +
                       workflow.status.slice(1)}
@@ -212,8 +212,8 @@ const WorkflowDetailPage = () => {
                           <div className="md:col-span-2">
                             <div className="text-sm text-gray-900 break-words bg-white p-3 rounded-lg border border-gray-100">
                               {key.toLowerCase() === "voice" &&
-                              value &&
-                              typeof value === "object"
+                                value &&
+                                typeof value === "object"
                                 ? value.label || "—"
                                 : renderMetaValue(value, key)}
                             </div>
