@@ -20,7 +20,7 @@ import { toast } from "react-hot-toast";
 
 const Overview = () => {
   const dispatch = useDispatch();
-  const { totalStories, stories, status } = useSelector(
+  const { totalStories, stories, status, podcasts } = useSelector(
     (state) => state.overview,
   );
   const [workflowToCancel, setWorkflowToCancel] = useState(null);
@@ -114,6 +114,27 @@ const Overview = () => {
       color: "from-gray-500 to-gray-400",
       description: "Cancelled or failed",
     },
+    {
+      label: "Podcasts",
+      value: podcasts,
+      icon: () => (
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+          />
+        </svg>
+      ),
+      color: "from-purple-500 to-indigo-400",
+      description: "Total podcasts created",
+    },
   ];
 
   useEffect(() => {
@@ -140,7 +161,7 @@ const Overview = () => {
       await dispatch(deleteWorkflow(workflowId)).unwrap();
       toast.success("Story deleted successfully!");
       setWorkflowToDelete(null);
-      dispatch(fetchOverview());
+      // Don't refetch - Redux already updated the state optimistically
     } catch (error) {
       console.error("Delete story failed:", error);
       toast.error("Failed to delete story. Try again.");
@@ -154,7 +175,7 @@ const Overview = () => {
       await dispatch(cancelWorkflow(workflowId)).unwrap();
       toast.success("Story cancelled successfully!");
       setWorkflowToCancel(null);
-      dispatch(fetchOverview());
+      // Don't refetch - Redux already updated the state
     } catch (error) {
       console.error("Cancel workflow failed:", error);
       toast.error("Failed to cancel story. Try again.");
@@ -168,6 +189,12 @@ const Overview = () => {
           bg: "bg-emerald-50",
           text: "text-emerald-700",
           dot: "bg-emerald-500",
+        };
+      case "PROCESSING":
+        return {
+          bg: "bg-yellow-100",
+          text: "text-yellow-700",
+          dot: "bg-yellow-500",
         };
       case "FAILED":
         return { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" };
@@ -199,7 +226,7 @@ const Overview = () => {
 
   const handleDownload = async (story) => {
     try {
-      const fileUrl = story.video?.url || story.audio?.url;
+      const fileUrl = story.video?.url || story.audioURL;
       if (!fileUrl) return;
 
       const fileName = story.video
@@ -250,7 +277,7 @@ const Overview = () => {
         </div>
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
           {overviewStats.map((stat, i) => {
             const Icon = stat.icon;
             return (
@@ -340,23 +367,21 @@ const Overview = () => {
                             setFilterStatus(status);
                             setShowFilterDropdown(false);
                           }}
-                          className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${
-                            filterStatus === status
-                              ? "bg-blue-50 text-blue-600"
-                              : "text-gray-700"
-                          } first:rounded-t-xl last:rounded-b-xl`}
+                          className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${filterStatus === status
+                            ? "bg-blue-50 text-blue-600"
+                            : "text-gray-700"
+                            } first:rounded-t-xl last:rounded-b-xl`}
                         >
                           <div className="flex items-center gap-2">
                             <div
-                              className={`w-2 h-2 rounded-full ${
-                                status === "ALL"
-                                  ? "bg-gray-400"
-                                  : status === "PENDING"
-                                    ? "bg-blue-500"
-                                    : status === "COMPLETED"
-                                      ? "bg-emerald-500"
-                                      : "bg-gray-500"
-                              }`}
+                              className={`w-2 h-2 rounded-full ${status === "ALL"
+                                ? "bg-gray-400"
+                                : status === "PENDING"
+                                  ? "bg-blue-500"
+                                  : status === "COMPLETED"
+                                    ? "bg-emerald-500"
+                                    : "bg-gray-500"
+                                }`}
                             ></div>
                             {status === "ALL"
                               ? "All Stories"
@@ -426,9 +451,19 @@ const Overview = () => {
                         {/* Story Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
-                            <h4 className="text-lg font-semibold text-gray-900 truncate">
-                              {story.title}
-                            </h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-lg font-semibold text-gray-900 truncate">
+                                {story.title}
+                              </h4>
+                              {story.isPodcast && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                  </svg>
+                                  Podcast
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               {/* Status */}
                               <span
@@ -497,20 +532,20 @@ const Overview = () => {
                       <div className="flex items-center gap-2 mt-3 sm:mt-0 sm:ml-4">
                         {(story.status === "PENDING" ||
                           story.status === "SCHEDULED") && (
-                          <button
-                            onClick={() => setWorkflowToCancel(story)}
-                            className="px-3 py-1.5 text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        )}
+                            <button
+                              onClick={() => setWorkflowToCancel(story)}
+                              className="px-3 py-1.5 text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          )}
 
                         {story.status === "COMPLETED" &&
-                          (story.video?.url || story.audio?.url) && (
+                          (story.video?.url || story.audioURL) && (
                             <button
                               onClick={() => handleDownload(story)}
                               className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="Download media"
+                              title={story.isPodcast ? "Download audio" : "Download media"}
                             >
                               <BiDownload className="w-4 h-4" />
                             </button>

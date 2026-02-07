@@ -127,21 +127,22 @@ const overviewSlice = createSlice({
         const workflowId = action.payload;
         state.deleteStatus = "succeeded";
 
-        state.stories = state.stories.filter((s) => s.id !== workflowId);
-        if (state.workflow && state.workflow.id === workflowId) {
-          state.workflow = null;
+        // Find the deleted story BEFORE filtering to check if it's a podcast
+        const deletedStory = state.stories.find((s) => s.id === workflowId);
+
+        // Update counters BEFORE filtering
+        state.totalStories = Math.max(0, state.totalStories - 1);
+
+        // Check if deleted story was a podcast and update podcast count
+        if (deletedStory?.isPodcast) {
+          state.podcasts = Math.max(0, state.podcasts - 1);
         }
 
-        // Update counters (safe)
-        state.totalStories = Math.max(0, state.totalStories - 1);
-        const deletedStory = state.stories.find((s) => s.id === workflowId);
-        if (deletedStory) {
-          if (deletedStory.type === "VIDEO")
-            state.videosCreated = Math.max(0, state.videosCreated - 1);
-          if (deletedStory.type === "VOICEOVER")
-            state.voiceovers = Math.max(0, state.voiceovers - 1);
-          if (deletedStory.type === "PODCAST")
-            state.podcasts = Math.max(0, state.podcasts - 1);
+        // Now filter out the deleted story
+        state.stories = state.stories.filter((s) => s.id !== workflowId);
+
+        if (state.workflow && state.workflow.id === workflowId) {
+          state.workflow = null;
         }
       })
       .addCase(deleteWorkflow.rejected, (state, action) => {

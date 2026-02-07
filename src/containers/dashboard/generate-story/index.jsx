@@ -8,11 +8,17 @@ import {
 } from "../../../redux/slices/story.slice";
 import VoiceSelector from "../../../components/VoiceSelecter";
 import { checkImagePromptSafety } from "../../../utils/promptModerations";
-import { fetchWorkflowById } from "../../../redux/slices/overview.slice";
+import { fetchWorkflowById, fetchOverview } from "../../../redux/slices/overview.slice";
 
 const GenerateStory = () => {
   const dispatch = useDispatch();
   const scheduled = useSelector((state) => state.stories.scheduled);
+  const { totalStories, stories } = useSelector((state) => state.overview);
+
+  // Calculate active stories (PENDING, PROCESSING, SCHEDULED)
+  const activeStories = stories.filter(
+    (s) => s.status === "PENDING" || s.status === "PROCESSING" || s.status === "SCHEDULED"
+  ).length;
 
   const [storyData, setStoryData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -51,6 +57,7 @@ const GenerateStory = () => {
 
   useEffect(() => {
     dispatch(getScheduledStories());
+    dispatch(fetchOverview());
   }, [dispatch]);
 
   useEffect(() => {
@@ -224,7 +231,7 @@ const GenerateStory = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Stories Generated</p>
-                <p className="text-2xl font-bold text-gray-900">-</p>
+                <p className="text-2xl font-bold text-gray-900">{totalStories || 0}</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-pink-100 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,7 +259,7 @@ const GenerateStory = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Active Stories</p>
-                <p className="text-2xl font-bold text-gray-900">-</p>
+                <p className="text-2xl font-bold text-gray-900">{activeStories || 0}</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-amber-100 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -7,12 +7,10 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
-const HUME_API_URL = "https://api.hume.ai/v0/tts/voices";
-
 const VoiceSelector = ({ value, onChange }) => {
   const [audioSrc, setAudioSrc] = useState(null);
   const [loadingVoice, setLoadingVoice] = useState(false);
-  const [humeVoices, setHumeVoices] = useState([]);
+  const [fishVoices, setFishVoices] = useState([]);
 
   // Static OpenAI voices
   const openaiVoices = [
@@ -31,65 +29,39 @@ const VoiceSelector = ({ value, onChange }) => {
     { id: "shimmer", label: "Shimmer", provider: "openai" },
   ];
 
-  // Fetch Hume voices
+  // Fetch Fish Audio voices from backend
   useEffect(() => {
-    const fetchHumeVoices = async () => {
+    const fetchFishVoices = async () => {
       setLoadingVoice(true);
-      let all = [];
-      let page = 0;
-      const pageSize = 100;
-      let totalPages = 1;
 
       try {
-        while (page < totalPages) {
-          const res = await fetch(
-            `${HUME_API_URL}?provider=HUME_AI&page_number=${page}&page_size=${pageSize}`,
-            {
-              headers: {
-                "X-Hume-Api-Key": import.meta.env.VITE_HUME_API_KEY,
-              },
-            },
-          );
+        // Call backend API instead of Fish Audio SDK directly
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/voice/fish-voices`
+        );
 
-          if (!res.ok) throw new Error("Error fetching voices");
-
-          const data = await res.json();
-          const thisPage = data.voices_page || data.voices;
-          if (thisPage) all = all.concat(thisPage);
-
-          totalPages = data.total_pages || 1;
-          page += 1;
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const filtered = [];
-        const allowedAccents = ["American", "Black American", "Latin American"];
+        const data = await response.json();
+        const voices = data.voices || [];
 
-        for (const voice of all) {
-          const accents = voice.tags?.ACCENT || voice.labels?.ACCENT; // this is an array
-          if (
-            Array.isArray(accents) &&
-            accents.some((a) => allowedAccents.includes(a))
-          ) {
-            filtered.push({
-              id: voice.id,
-              label: voice.name,
-              provider: "hume",
-              accent: accents.join(", "), // optional: join array into string for display
-            });
-          }
-        }
-        setHumeVoices(filtered);
+        console.log(`✅ Fetched ${voices.length} Fish voices from backend`);
+        setFishVoices(voices);
       } catch (err) {
-        console.error("Failed to fetch Hume voices:", err);
+        console.error("Failed to fetch Fish voices:", err);
+        // Fallback: use empty array if API fails
+        setFishVoices([]);
       } finally {
         setLoadingVoice(false);
       }
     };
 
-    fetchHumeVoices();
+    fetchFishVoices();
   }, []);
 
-  const allVoices = [...openaiVoices, ...humeVoices];
+  const allVoices = [...openaiVoices, ...fishVoices];
 
   // Generate voice preview
   useEffect(() => {
@@ -105,11 +77,7 @@ const VoiceSelector = ({ value, onChange }) => {
       const sampleText =
         "Once upon a time, in a quiet forest, a clever fox met a wise old owl.";
 
-      let currentUrl = null;
-
       try {
-        let audioBlob;
-
         if (value.provider === "openai") {
           const response = await openai.audio.speech.create({
             model: "gpt-4o-mini-tts",
@@ -125,47 +93,53 @@ const VoiceSelector = ({ value, onChange }) => {
 
           // Create URL for audio tag
           currentUrl = URL.createObjectURL(audioBlob);
-
           setAudioSrc(currentUrl);
-        } else {
-          // -------- Hume Preview -------- //
-          const response = await fetch("https://api.hume.ai/v0/tts", {
-            method: "POST",
-            headers: {
-              "X-Hume-Api-Key": import.meta.env.VITE_HUME_API_KEY,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              utterances: [{ text: sampleText, voice: { id: value.id } }],
-              format: { type: "mp3" },
-              num_generations: 1,
-            }),
-          });
+        } else if (value.provider === "fish") {
+          // -------- Fish Audio Preview via Backend -------- //
+          console.log("🎤 Generating Fish Audio preview for:", value.label, value.id);
 
-          const body = await response.json();
-          const base64Audio = body.generations[0].audio;
+          const response = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL}/api/voice/preview`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                text: sampleText,
+                voiceId: value.id,
+                provider: "fish",
+              }),
+            }
+          );
 
-          const binaryString = window.atob(base64Audio);
-          const bytes = new Uint8Array(binaryString.length);
-
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
 
-          audioBlob = new Blob([bytes], { type: "audio/mp3" });
+          console.log("✅ Fish Audio response received from backend");
+
+          // Convert response to Blob
+          const arrayBuffer = await response.arrayBuffer();
+          const audioBlob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+
           currentUrl = URL.createObjectURL(audioBlob);
           setAudioSrc(currentUrl);
+
+          console.log("✅ Fish Audio preview ready");
         }
       } catch (err) {
-        console.error(err);
-        alert("Failed to generate preview");
+        console.error("❌ Preview generation error:", err);
+        console.error("Error details:", {
+          provider: value.provider,
+          voiceId: value.id,
+          voiceLabel: value.label,
+          error: err.message,
+        });
+        alert(`Failed to generate preview: ${err.message}`);
       } finally {
         setLoadingVoice(false);
       }
-
-      return () => {
-        if (currentUrl) URL.revokeObjectURL(currentUrl);
-      };
     };
 
     generatePreview();
@@ -196,10 +170,10 @@ const VoiceSelector = ({ value, onChange }) => {
           ))}
         </optgroup>
 
-        <optgroup label="Hume Voices">
-          {humeVoices.map((v) => (
+        <optgroup label="Fish Voices">
+          {fishVoices.map((v) => (
             <option key={v.id} value={v.id}>
-              {v.label} ({v.accent})
+              {v.label}
             </option>
           ))}
         </optgroup>
