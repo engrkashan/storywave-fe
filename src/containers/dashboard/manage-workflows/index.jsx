@@ -114,11 +114,10 @@ const FilterDropdown = memo(({ value, onChange }) => {
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`w-full px-4 py-3 text-left flex items-center justify-between transition-colors ${
-                  value === option.value
-                    ? "bg-indigo-50 text-indigo-600 font-medium"
-                    : "hover:bg-gray-50 text-gray-700"
-                }`}
+                className={`w-full px-4 py-3 text-left flex items-center justify-between transition-colors ${value === option.value
+                  ? "bg-indigo-50 text-indigo-600 font-medium"
+                  : "hover:bg-gray-50 text-gray-700"
+                  }`}
               >
                 <span>{option.label}</span>
                 {value === option.value && (
@@ -138,7 +137,7 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
   const status = STATUS_MAP[story.status] || STATUS_MAP.PENDING;
 
   const renderHeaderContent = () => {
-    if (story.video?.url && story.metadata?.result?.isPodcastOnly === false) {
+    if (story?.isPodcast === false) {
       return (
         <div className="absolute inset-0 w-full h-full">
           <video
@@ -147,6 +146,7 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
             muted
             loop
             playsInline
+            autoPlay={false}
             preload="metadata"
           />
           <div className="absolute inset-0 bg-black/20" />

@@ -106,22 +106,20 @@ const MyCreations = () => {
         <div className="flex items-center mb-8 border-b border-gray-200">
           <button
             onClick={() => setActiveTab("story")}
-            className={`flex items-center gap-2 px-6 py-3 text-lg font-medium border-b-2 transition-all ${
-              activeTab === "story"
-                ? "border-emerald-500 text-emerald-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+            className={`flex items-center gap-2 px-6 py-3 text-lg font-medium border-b-2 transition-all ${activeTab === "story"
+              ? "border-emerald-500 text-emerald-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
           >
             <BiFilm className="w-5 h-5" />
             Stories ({storyCreations.length})
           </button>
           <button
             onClick={() => setActiveTab("podcast")}
-            className={`flex items-center gap-2 px-6 py-3 text-lg font-medium border-b-2 transition-all ${
-              activeTab === "podcast"
-                ? "border-emerald-500 text-emerald-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+            className={`flex items-center gap-2 px-6 py-3 text-lg font-medium border-b-2 transition-all ${activeTab === "podcast"
+              ? "border-emerald-500 text-emerald-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
           >
             <BiPodcast className="w-5 h-5" />
             Podcasts ({podcastCreations.length})
@@ -167,11 +165,10 @@ const MyCreations = () => {
                 {/* Type Badge */}
                 <div className="absolute top-4 left-4 z-10">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
-                      activeTab === "story"
-                        ? "bg-emerald-500/90 text-white"
-                        : "bg-purple-500/90 text-white"
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${activeTab === "story"
+                      ? "bg-emerald-500/90 text-white"
+                      : "bg-purple-500/90 text-white"
+                      }`}
                   >
                     {activeTab === "story" ? "Story" : "Podcast"}
                   </span>
@@ -186,7 +183,8 @@ const MyCreations = () => {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         muted
                         loop
-                        autoPlay
+                        autoPlay={false}
+
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </>
@@ -196,11 +194,10 @@ const MyCreations = () => {
                         className={`text-center p-6 ${activeTab === "podcast" ? "animate-pulse-slow" : ""}`}
                       >
                         <div
-                          className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                            activeTab === "story"
-                              ? "bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-500"
-                              : "bg-gradient-to-br from-purple-100 to-purple-200 text-purple-500"
-                          }`}
+                          className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${activeTab === "story"
+                            ? "bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-500"
+                            : "bg-gradient-to-br from-purple-100 to-purple-200 text-purple-500"
+                            }`}
                         >
                           {activeTab === "story" ? (
                             <BiFilm className="w-10 h-10" />
@@ -297,11 +294,10 @@ const MyCreations = () => {
                         )
                       }
                       className={`mt-4 inline-flex items-center w-fit gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all
-        ${
-          activeTab === "story"
-            ? "bg-emerald-600 text-white hover:bg-emerald-700"
-            : "bg-purple-600 text-white hover:bg-purple-700"
-        }`}
+        ${activeTab === "story"
+                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                          : "bg-purple-600 text-white hover:bg-purple-700"
+                        }`}
                     >
                       <BiVideo className="w-4 h-4" />
                       Download Video
@@ -311,11 +307,10 @@ const MyCreations = () => {
                   <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                     <div className="text-center">
                       <div
-                        className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${
-                          activeTab === "story"
-                            ? "bg-gradient-to-br from-emerald-100 to-emerald-200"
-                            : "bg-gradient-to-br from-purple-100 to-purple-200"
-                        }`}
+                        className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${activeTab === "story"
+                          ? "bg-gradient-to-br from-emerald-100 to-emerald-200"
+                          : "bg-gradient-to-br from-purple-100 to-purple-200"
+                          }`}
                       >
                         {activeTab === "story" ? (
                           <BiFilm className="w-12 h-12 text-emerald-500" />
@@ -338,11 +333,10 @@ const MyCreations = () => {
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <div className="flex items-center gap-3 mb-3">
                     <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        activeTab === "story"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-purple-100 text-purple-700"
-                      }`}
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${activeTab === "story"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-purple-100 text-purple-700"
+                        }`}
                     >
                       {activeTab === "story" ? "Story" : "Podcast"}
                     </span>
@@ -360,19 +354,17 @@ const MyCreations = () => {
                   {/* Audio Player */}
                   {selectedCreation.audio && (
                     <div
-                      className={`rounded-2xl p-6 border ${
-                        activeTab === "story"
-                          ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-emerald-200"
-                          : "bg-gradient-to-r from-purple-50 to-purple-100/50 border-purple-200"
-                      }`}
+                      className={`rounded-2xl p-6 border ${activeTab === "story"
+                        ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-emerald-200"
+                        : "bg-gradient-to-r from-purple-50 to-purple-100/50 border-purple-200"
+                        }`}
                     >
                       <div className="flex items-center gap-3 mb-4">
                         <div
-                          className={`rounded-full p-2 ${
-                            activeTab === "story"
-                              ? "bg-emerald-500"
-                              : "bg-purple-500"
-                          }`}
+                          className={`rounded-full p-2 ${activeTab === "story"
+                            ? "bg-emerald-500"
+                            : "bg-purple-500"
+                            }`}
                         >
                           <BiHeadphone className="w-5 h-5 text-white" />
                         </div>
@@ -396,11 +388,10 @@ const MyCreations = () => {
                             )
                           }
                           className={`inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all
-      ${
-        activeTab === "story"
-          ? "bg-emerald-600 text-white hover:bg-emerald-700"
-          : "bg-purple-600 text-white hover:bg-purple-700"
-      }`}
+      ${activeTab === "story"
+                              ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                              : "bg-purple-600 text-white hover:bg-purple-700"
+                            }`}
                         >
                           <BiHeadphone className="w-4 h-4" />
                           Download Audio

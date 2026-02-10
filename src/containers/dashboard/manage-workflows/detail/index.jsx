@@ -64,7 +64,6 @@ const WorkflowDetailPage = () => {
     "file",
     "generateImage",
     "generateVideo",
-    "image",
     "video",
     "thumbnail",
     "audioUrl",
