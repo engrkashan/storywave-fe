@@ -142,7 +142,7 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
         <div className="absolute inset-0 w-full h-full">
           <video
             className="w-full h-full object-cover"
-            src={story.video.url}
+            src={story?.video?.url}
             muted
             loop
             playsInline

@@ -47,7 +47,6 @@ const VoiceSelector = ({ value, onChange }) => {
         const data = await response.json();
         const voices = data.voices || [];
 
-        console.log(`✅ Fetched ${voices.length} Fish voices from backend`);
         setFishVoices(voices);
       } catch (err) {
         console.error("Failed to fetch Fish voices:", err);
@@ -96,7 +95,6 @@ const VoiceSelector = ({ value, onChange }) => {
           setAudioSrc(currentUrl);
         } else if (value.provider === "fish") {
           // -------- Fish Audio Preview via Backend -------- //
-          console.log("🎤 Generating Fish Audio preview for:", value.label, value.id);
 
           const response = await fetch(
             `${import.meta.env.VITE_API_BASE_URL}/api/voice/preview`,
@@ -117,7 +115,6 @@ const VoiceSelector = ({ value, onChange }) => {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
 
-          console.log("✅ Fish Audio response received from backend");
 
           // Convert response to Blob
           const arrayBuffer = await response.arrayBuffer();
@@ -126,7 +123,6 @@ const VoiceSelector = ({ value, onChange }) => {
           currentUrl = URL.createObjectURL(audioBlob);
           setAudioSrc(currentUrl);
 
-          console.log("✅ Fish Audio preview ready");
         }
       } catch (err) {
         console.error("❌ Preview generation error:", err);
