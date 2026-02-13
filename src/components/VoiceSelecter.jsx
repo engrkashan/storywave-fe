@@ -160,7 +160,7 @@ const VoiceSelector = ({ value, onChange }) => {
 
         <optgroup label="OpenAI Voices">
           {openaiVoices.map((v) => (
-            <option key={v.id} value={v.id}>
+            <option key={`openai-${v.id}`} value={v.id}>
               {v.label}
             </option>
           ))}
@@ -168,7 +168,7 @@ const VoiceSelector = ({ value, onChange }) => {
 
         <optgroup label="Fish Voices">
           {fishVoices.map((v) => (
-            <option key={v.id} value={v.id}>
+            <option key={`fish-${v.id}`} value={v.id}>
               {v.label}
             </option>
           ))}
