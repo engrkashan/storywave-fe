@@ -277,9 +277,39 @@ const GenerateStory = () => {
                   <label className="block text-sm font-semibold text-gray-900 mb-3">Story Type <span className="text-red-500">*</span></label>
                   <select value={formData.storyType} onChange={(e) => handleInputChange("storyType", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500">
                     <option value="">Select a story type...</option>
-                    <option value="true_crime_fiction_cinematic">True Crime - Fiction Cinematic</option>
-                    <option value="cultural_history_documentary">Cultural History - Documentary</option>
-                    <option value="storytelling_cinematic">Storytelling - Cinematic</option>
+                    <option value="true_crime_fiction_cinematic">
+                      True Crime - Fiction Cinematic (Netflix-Style)
+                    </option>
+                    <option value="true_crime_nonfiction_forensic">
+                      True Crime - Nonfiction Forensic (Forensic Files)
+                    </option>
+                    <option value="manipulation_sexual_manipulation">
+                      Manipulation - Sexual Manipulation (Mature)
+                    </option>
+                    <option value="cultural_history_documentary">
+                      Cultural History - Documentary (National Geographic)
+                    </option>
+                    <option value="homesteading_howto_field_guide">
+                      Homesteading - How-To Field Guide
+                    </option>
+                    <option value="work_and_trades_shop_manual">
+                      Work & Trades - Shop Manual (How-To)
+                    </option>
+                    <option value="work_and_trades_shopfloordoc">
+                      Work & Trades - Shopfloor Doc (Profile)
+                    </option>
+                    <option value="investigative_discovery_journalistic">
+                      Investigative Discovery - Journalistic
+                    </option>
+                    <option value="storytelling_cinematic">
+                      Storytelling - Cinematic (Movie-Style)
+                    </option>
+                    <option value="conversation_narrated_documentary">
+                      Conversation - Narrated Documentary (Blended)
+                    </option>
+                    <option value="education_howto_trades">
+                      Education - How-To (Trades)
+                    </option>
                   </select>
                 </div>
               </div>
@@ -349,7 +379,15 @@ const GenerateStory = () => {
               {/* Voice & Length */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div><label className="block text-sm font-semibold text-gray-900 mb-2">Voice Selection</label><VoiceSelector value={formData.voice} onChange={(v) => handleInputChange("voice", v)} /></div>
-                <div><label className="block text-sm font-semibold text-gray-900 mb-2">Voice Tone</label><select value={formData.tone} onChange={(e) => handleInputChange("tone", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500"><option value="">Select tone...</option><option value="neutral">Neutral</option><option value="excited">Excited</option><option value="calm">Calm</option></select></div>
+                <div><label className="block text-sm font-semibold text-gray-900 mb-2">Voice Tone</label><select value={formData.tone} onChange={(e) => handleInputChange("tone", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500">
+                  <option value="">Select tone...</option>
+                  <option value="neutral">Neutral</option>
+                  <option value="excited">Excited & Energetic</option>
+                  <option value="calm">Calm & Soothing</option>
+                  <option value="mysterious">Mysterious & Intriguing</option>
+                  <option value="professional">Professional & Informative</option>
+                  <option value="playful">Playful & Fun</option>
+                </select></div>
               </div>
 
               <div className="space-y-6">
