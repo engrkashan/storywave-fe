@@ -32,12 +32,14 @@ const MyCreations = () => {
         id: item.id,
         title: item.title,
         type: item.type,
-        video: item.video?.url || null,
+        video: item.video?.url || item.video?.video_16_9 || item.video?.video_9_16 || null,
+        video_16_9: item.video?.video_16_9 || null,
+        video_9_16: item.video?.video_9_16 || null,
         content: item.content || item.episode?.script || null,
         audio: item.voiceover?.audioURL || item.episode?.audioURL || null,
         duration: item.video?.duration || item.episode?.duration || null,
         createdAt: new Date(item.createdAt).toLocaleDateString(),
-        hasVideo: !!item.video?.url,
+        hasVideo: !!(item.video?.url || item.video?.video_16_9 || item.video?.video_9_16),
       };
 
       if (creation.hasVideo) {
@@ -273,35 +275,72 @@ const MyCreations = () => {
               </button>
 
               {/* Left Side - Media */}
-              <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100/50 flex flex-col items-center justify-center p-6 lg:p-8">
-                {selectedCreation.video ? (
-                  <div className="flex flex-col w-full">
-                    <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-gray-200">
-                      <video
-                        src={selectedCreation.video}
-                        controls
-                        autoPlay
-                        className="w-full h-full"
-                      />
-                    </div>
+              <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100/50 flex flex-col items-center justify-center p-6 lg:p-8 overflow-y-auto">
+                {selectedCreation.hasVideo ? (
+                  <div className="flex flex-col w-full gap-8">
+                    {/* Landscape Version */}
+                    {(selectedCreation.video_16_9 || (!selectedCreation.video_9_16 && selectedCreation.video)) && (
+                      <div className="flex flex-col w-full">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-semibold text-gray-700">Landscape (16:9)</span>
+                        </div>
+                        <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-black">
+                          <video
+                            src={selectedCreation.video_16_9 || selectedCreation.video}
+                            controls
+                            className="w-full h-full"
+                          />
+                        </div>
+                        <button
+                          onClick={() =>
+                            downloadFileWithName(
+                              selectedCreation.video_16_9 || selectedCreation.video,
+                              `${selectedCreation.title.replace(/[^a-z0-9]/gi, "_")}_landscape.mp4`,
+                            )
+                          }
+                          className={`mt-4 inline-flex items-center w-fit gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all
+                            ${activeTab === "story"
+                              ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                              : "bg-purple-600 text-white hover:bg-purple-700"
+                            }`}
+                        >
+                          <BiVideo className="w-4 h-4" />
+                          Download Landscape
+                        </button>
+                      </div>
+                    )}
 
-                    {/* Download Video Button */}
-                    <button
-                      onClick={() =>
-                        downloadFileWithName(
-                          selectedCreation.video,
-                          `${selectedCreation.title.replace(/[^a-z0-9]/gi, "_")}.mp4`,
-                        )
-                      }
-                      className={`mt-4 inline-flex items-center w-fit gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all
-        ${activeTab === "story"
-                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                          : "bg-purple-600 text-white hover:bg-purple-700"
-                        }`}
-                    >
-                      <BiVideo className="w-4 h-4" />
-                      Download Video
-                    </button>
+                    {/* Portrait Version */}
+                    {selectedCreation.video_9_16 && (
+                      <div className="flex flex-col w-full">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-semibold text-gray-700">Portrait (9:16) - TikTok/Instagram</span>
+                        </div>
+                        <div className="w-full max-w-[320px] aspect-[9/16] mx-auto rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-black">
+                          <video
+                            src={selectedCreation.video_9_16}
+                            controls
+                            className="w-full h-full"
+                          />
+                        </div>
+                        <button
+                          onClick={() =>
+                            downloadFileWithName(
+                              selectedCreation.video_9_16,
+                              `${selectedCreation.title.replace(/[^a-z0-9]/gi, "_")}_portrait.mp4`,
+                            )
+                          }
+                          className={`mt-4 mx-auto inline-flex items-center w-fit gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all
+                            ${activeTab === "story"
+                              ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                              : "bg-purple-600 text-white hover:bg-purple-700"
+                            }`}
+                        >
+                          <BiVideo className="w-4 h-4" />
+                          Download Portrait
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">

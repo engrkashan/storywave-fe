@@ -51,6 +51,7 @@ const GenerateStory = () => {
     imageCount: 5,
     backgroundMusic: true,
     aspectRatio: "16:9",
+    dualPlatform: false,
   });
 
   const loadingMessages = [
@@ -113,7 +114,6 @@ const GenerateStory = () => {
       setLoading(true);
       const res = await dispatch(generateStory(payload)).unwrap();
       if (mode === "now") {
-        setStoryData(res);
         toast.success("Generating Your Story 🎉");
       } else {
         toast.success("Your Story is Scheduled ⏰");
@@ -152,6 +152,7 @@ const GenerateStory = () => {
       imageCount: formData.imageCount,
       backgroundMusic: formData.backgroundMusic,
       aspectRatio: formData.aspectRatio,
+      dualPlatform: formData.dualPlatform,
     };
 
     if (showImagePrompt && formData.mediaType === "single_image" && formData.imagePrompt) {
@@ -382,14 +383,26 @@ const GenerateStory = () => {
               {/* Aspect Ratio Selection (Commented out for now) */}
 
               <div className="space-y-4">
-                <label className="text-sm font-semibold text-gray-900">Final Format (Aspect Ratio)</label>
-                <div className="flex gap-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-gray-900">Final Format (Aspect Ratio)</label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-500">Generate Both (16:9 & 9:16)</span>
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange("dualPlatform", !formData.dualPlatform)}
+                      className={`relative flex h-6 w-11 items-center rounded-full transition-colors ${formData.dualPlatform ? "bg-amber-500" : "bg-gray-300"}`}
+                    >
+                      <span className={`h-5 w-5 rounded-full bg-white transition-transform ${formData.dualPlatform ? "translate-x-5" : "translate-x-1"}`} />
+                    </button>
+                  </div>
+                </div>
+                <div className={`flex gap-4 transition-opacity ${formData.dualPlatform ? "opacity-50 pointer-events-none" : "opacity-100"}`}>
                   <button
                     type="button"
-                    onClick={() => handleInputChange("aspectRatio", "1:1")}
-                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center font-medium transition-all ${formData.aspectRatio === "1:1" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
+                    onClick={() => handleInputChange("aspectRatio", "9:16")}
+                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center font-medium transition-all ${formData.aspectRatio === "9:16" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
                   >
-                    TikTok / Instagram (1:1)
+                    TikTok / Instagram (9:16)
                   </button>
                   <button
                     type="button"
@@ -430,72 +443,6 @@ const GenerateStory = () => {
 
         {/* Right Column */}
         <div className="lg:col-span-5 space-y-8">
-          {storyData && mode === "now" && (
-            <div className="bg-white rounded-3xl shadow-xl border border-amber-100 p-8 animate-fadeIn overflow-hidden relative">
-              <div className="absolute top-0 right-0 p-4">
-                <span className="px-3 py-1 bg-amber-500 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">New Result</span>
-              </div>
-
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-pink-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-200">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Masterpiece Ready!</h2>
-                  <p className="text-sm text-gray-500 font-medium">Your cinematic story has been generated</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                {storyData.video && (
-                  <div className="group relative rounded-2xl overflow-hidden shadow-2xl bg-black aspect-video flex items-center justify-center">
-                    <video
-                      src={storyData.video}
-                      controls
-                      className="w-full h-full object-contain"
-                      poster={storyData.media?.[0]}
-                    />
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-gray-900">{storyData.metadata?.title || "Untitled Story"}</h3>
-                    {storyData.metadata?.aspectRatio && (
-                      <span className="text-[10px] font-bold text-gray-400 border border-gray-200 px-2 py-0.5 rounded uppercase">
-                        {storyData.metadata.aspectRatio}
-                      </span>
-                    )}
-                  </div>
-
-                  {storyData.voiceover && (
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                      <audio src={storyData.voiceover} controls className="w-full h-8" />
-                    </div>
-                  )}
-
-                  <div className="relative">
-                    <div className="absolute -left-4 top-0 bottom-0 w-1 bg-gradient-to-b from-amber-400 to-pink-500 rounded-full" />
-                    <div className="bg-white p-5 rounded-2xl max-h-48 overflow-y-auto text-sm text-gray-600 leading-relaxed font-medium italic">
-                      "{storyData.story?.script?.substring(0, 500)}..."
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => window.open(storyData.video, '_blank')}
-                    className="flex-1 py-3 px-4 bg-gray-900 text-white rounded-xl font-bold text-sm tracking-wide hover:bg-black transition-all"
-                  >
-                    DOWNLOAD VIDEO
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
             <div className="flex items-center justify-between mb-8"><h2 className="text-2xl font-semibold text-gray-900 tracking-tight">Scheduled Generations</h2><span className="px-4 py-1 bg-amber-500 text-white  rounded-full text-xs">{scheduled?.length || 0}</span></div>
             {!scheduled?.length ? <div className="text-center py-12 text-gray-400 font-medium">No active generations today</div> : (

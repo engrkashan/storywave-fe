@@ -16,18 +16,16 @@ const DeleteModal = ({
         {/* Close Button */}
         <X
           onClick={!isLoading ? onClose : undefined}
-          className={`absolute top-4 right-4 w-6 h-6 ${
-            isLoading
+          className={`absolute top-4 right-4 w-6 h-6 ${isLoading
               ? "text-gray-300 cursor-not-allowed"
               : "cursor-pointer text-gray-400 hover:text-gray-600"
-          }`}
+            }`}
         />
 
         {/* Icon */}
         <Trash2
-          className={`mx-auto text-red-500 w-12 h-12 mb-4 ${
-            !isLoading ? "animate-bounce" : ""
-          }`}
+          className={`mx-auto text-red-500 w-12 h-12 mb-4 ${!isLoading ? "animate-bounce" : ""
+            }`}
         />
 
         {/* Title */}
@@ -45,11 +43,10 @@ const DeleteModal = ({
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className={`px-6 py-2 rounded-full transition flex items-center gap-2 ${
-              isLoading
+            className={`px-6 py-2 rounded-full transition flex items-center gap-2 text-white ${isLoading
                 ? "bg-red-400 cursor-not-allowed"
                 : "bg-red-600 hover:bg-red-700 text-white"
-            }`}
+              }`}
           >
             {isLoading && (
               <Loader2 className="w-4 h-4 animate-spin text-white" />
@@ -60,11 +57,10 @@ const DeleteModal = ({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className={`px-6 py-2 rounded-full transition ${
-              isLoading
+            className={`px-6 py-2 rounded-full transition ${isLoading
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+              }`}
           >
             Cancel
           </button>
