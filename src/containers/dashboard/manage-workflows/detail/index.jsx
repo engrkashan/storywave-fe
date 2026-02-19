@@ -315,21 +315,46 @@ const WorkflowDetailPage = () => {
           {/* SIDEBAR */}
           <div className="space-y-8">
             {/* Video Card */}
-            {workflow.video && (
+            {(workflow.video?.fileURL || workflow.video?.video_16_9 || workflow.video?.video_9_16) && (
               <SectionCard
-                title="Video"
+                title="Video Content"
                 icon={<Film className="h-6 w-6 text-white" />}
                 gradient="from-purple-500 to-pink-600"
               >
-                <div className="space-y-4">
-                  <video
-                    controls
-                    src={workflow.video.fileURL}
-                    className="w-full rounded-lg shadow-lg"
-                    poster={workflow.video.thumbnail}
-                  />
-                  {workflow.video.duration && (
-                    <div className="flex items-center text-sm text-gray-600">
+                <div className="space-y-8">
+                  {/* YouTube / Landscape Version */}
+                  {(workflow.video?.video_16_9 || workflow.video?.fileURL) && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">Landscape / YouTube (16:9)</span>
+                      </div>
+                      <video
+                        controls
+                        src={workflow.video.video_16_9 || workflow.video.fileURL}
+                        className="w-full rounded-xl shadow-lg border border-gray-100"
+                        poster={workflow.video.thumbnail}
+                      />
+                    </div>
+                  )}
+
+                  {/* TikTok / Portrait Version */}
+                  {workflow.video?.video_9_16 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-pink-600 uppercase tracking-wider">Portrait / TikTok (9:16)</span>
+                      </div>
+                      <div className="max-w-[280px] mx-auto">
+                        <video
+                          controls
+                          src={workflow.video.video_9_16}
+                          className="w-full rounded-xl shadow-lg border border-gray-100 aspect-[9/16] bg-black"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {workflow.video?.duration && (
+                    <div className="flex items-center text-sm text-gray-600 pt-2 border-t border-gray-100">
                       <Clock className="h-4 w-4 mr-2" />
                       Duration: {workflow.video.duration}
                     </div>
