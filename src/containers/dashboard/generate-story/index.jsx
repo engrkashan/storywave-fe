@@ -366,7 +366,7 @@ const GenerateStory = () => {
                     {formData.mediaType === "multi_image" && (
                       <div className="space-y-4 p-5 bg-white rounded-2xl border border-gray-200">
                         <div className="flex justify-between items-center"><span className="font-semibold text-gray-700 uppercase text-xs tracking-wider">Number of Scenes</span><span className="text-amber-600  text-lg">{formData.imageCount}</span></div>
-                        <input type="range" min="2" max="15" value={formData.imageCount} onChange={(e) => handleInputChange("imageCount", parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none accent-amber-500" />
+                        <input type="range" min="2" max="50" value={formData.imageCount} onChange={(e) => handleInputChange("imageCount", parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none accent-amber-500" />
                       </div>
                     )}
 
