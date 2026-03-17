@@ -323,7 +323,7 @@ const WorkflowDetailPage = () => {
               >
                 <div className="space-y-8">
                   {/* YouTube / Landscape Version */}
-                  {(workflow.video?.video_16_9 || workflow.video?.fileURL) && (
+                  {(workflow.video?.video_16_9 !== null) && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">Landscape / YouTube (16:9)</span>
