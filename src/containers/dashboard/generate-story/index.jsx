@@ -317,6 +317,18 @@ const GenerateStory = () => {
                   </select>
                 </div>
               </div>
+              <div className="mb-7">
+                <label className="block text-sm font-semibold text-gray-900 mb-3">Series <span className="text-red-500">*</span></label>
+                  <input type="text" placeholder="Enter series..." value={formData.series} onChange={(e) => handleInputChange("series", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
+              </div>
+                <div className="mb-7">
+                  <div className="flex justify-between items-center mb-3"><label className="text-sm font-semibold text-gray-900">Cover Art Prompt <span className="text-red-500">*</span></label></div>
+                  <textarea placeholder="Describe or paste your cover art prompt..." value={formData.coverArtPrompt} onChange={(e) => handleInputChange("coverArtPrompt", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500 h-48 resize-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">Seo <span className="text-red-500">*</span></label>
+                 <input type="text" placeholder="Enter seo..." value={formData.seo} onChange={(e) => handleInputChange("seo", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
+                </div>
 
               {/* URL & Script */}
               <div className="space-y-6">
