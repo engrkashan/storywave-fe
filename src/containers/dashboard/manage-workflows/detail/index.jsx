@@ -234,9 +234,27 @@ const WorkflowDetailPage = () => {
                 <div className="space-y-6">
                   {workflow.story.title && (
                     <div className="border-b border-gray-100 pb-4">
-                      <h3 className="text-xl font-bold text-gray-900">
-                        {workflow.story.title}
-                      </h3>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {workflow.story.title}
+                        </h3>
+                        {workflow.story.series && (
+                          <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full uppercase tracking-wider">
+                            Series: {workflow.story.series}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {workflow.story.coverArtURL && (
+                    <div className="mb-6">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 block">Cover Art</span>
+                      <img 
+                        src={workflow.story.coverArtURL} 
+                        alt="Story Cover Art" 
+                        className="w-full h-auto rounded-2xl shadow-lg border border-gray-100 max-h-[400px] object-cover" 
+                      />
                     </div>
                   )}
 
@@ -263,6 +281,37 @@ const WorkflowDetailPage = () => {
                       </div>
                     </div>
                   )}
+                  {workflow.story.visualSuggestions && (
+                    <div className="mt-6 bg-amber-50/50 p-5 rounded-xl border border-amber-100/50">
+                      <div className="flex items-center mb-2">
+                        <Info className="h-4 w-4 text-amber-600 mr-2" />
+                        <span className="text-sm font-semibold text-gray-700">
+                          Visual Suggestions
+                        </span>
+                      </div>
+                      <p className="text-gray-700 italic text-sm">
+                        "{workflow.story.visualSuggestions}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </SectionCard>
+            )}
+
+            {/* SEO Metadata Section */}
+            {workflow.story?.seoContent && Object.keys(workflow.story.seoContent).length > 0 && (
+              <SectionCard
+                title="SEO Metadata"
+                icon={<Info className="h-6 w-6 text-white" />}
+                gradient="from-blue-500 to-indigo-600"
+              >
+                <div className="space-y-4">
+                  {Object.entries(workflow.story.seoContent).map(([key, value]) => (
+                    <div key={key}>
+                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">{key}</span>
+                      <p className="text-gray-700 text-sm leading-relaxed">{value}</p>
+                    </div>
+                  ))}
                 </div>
               </SectionCard>
             )}

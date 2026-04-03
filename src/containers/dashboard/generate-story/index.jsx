@@ -52,6 +52,10 @@ const GenerateStory = () => {
     backgroundMusic: true,
     aspectRatio: "16:9",
     dualPlatform: false,
+    series: "",
+    coverArtPrompt: "",
+    seoMetadata: JSON.stringify({ Title: "", Description: "" }, null, 2),
+    visualSuggestions: "",
   });
 
   const loadingMessages = [
@@ -87,6 +91,12 @@ const GenerateStory = () => {
           imageCount: m.imageCount || 5,
           backgroundMusic: m.backgroundMusic ?? true,
           aspectRatio: m.aspectRatio || "16:9",
+          series: m.series || "",
+          coverArtPrompt: m.coverArtPrompt || "",
+          seoMetadata: m.seoContent
+            ? JSON.stringify(m.seoContent, null, 2)
+            : JSON.stringify({ Title: "", Description: "" }, null, 2),
+          visualSuggestions: m.visualSuggestions || "",
         });
         setShowImagePrompt(m.shouldGenerateImage || !!m.imagePrompt);
       })
@@ -153,6 +163,16 @@ const GenerateStory = () => {
       backgroundMusic: formData.backgroundMusic,
       aspectRatio: formData.aspectRatio,
       dualPlatform: formData.dualPlatform,
+      series: formData.series,
+      coverArtPrompt: formData.coverArtPrompt,
+      seoContent: (() => {
+        try {
+          return JSON.parse(formData.seoMetadata);
+        } catch (e) {
+          return {};
+        }
+      })(),
+      visualSuggestions: formData.visualSuggestions,
     };
 
     if (showImagePrompt && formData.mediaType === "single_image" && formData.imagePrompt) {
@@ -318,6 +338,47 @@ const GenerateStory = () => {
                 </div>
               </div>
 
+              {/* Series & Visual Suggestions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">Series (Optional)</label>
+                  <input type="text" placeholder="e.g. The Midnight Chronicles" value={formData.series} onChange={(e) => handleInputChange("series", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">Visual Suggestions (Optional)</label>
+                  <input type="text" placeholder="e.g. Use neon noir lighting..." value={formData.visualSuggestions} onChange={(e) => handleInputChange("visualSuggestions", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
+                </div>
+              </div>
+
+              {/* SEO Metadata */}
+              <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  </div>
+                  <h3 className="font-semibold text-gray-900">SEO Content (JSON)</h3>
+                </div>
+                <div className="space-y-2">
+                  <textarea
+                    placeholder='{ "Title": "...", "Description": "..." }'
+                    value={formData.seoMetadata}
+                    onChange={(e) => handleInputChange("seoMetadata", e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 bg-white h-40 font-mono text-sm resize-none"
+                  />
+                  <div className="flex justify-between items-center px-1">
+                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Must be valid JSON</p>
+                    {(() => {
+                      try {
+                        JSON.parse(formData.seoMetadata);
+                        return <span className="text-[10px] text-green-500 font-bold uppercase tracking-widest">Valid JSON</span>;
+                      } catch (e) {
+                        return <span className="text-[10px] text-red-500 font-bold uppercase tracking-widest">Invalid JSON</span>;
+                      }
+                    })()}
+                  </div>
+                </div>
+              </div>
+
               {/* URL & Script */}
               <div className="space-y-6">
                 <div>
@@ -376,6 +437,11 @@ const GenerateStory = () => {
                         <textarea placeholder="Describe your image..." value={formData.imagePrompt} onChange={(e) => handleInputChange("imagePrompt", e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 h-32 resize-none" />
                       </div>
                     )}
+
+                    <div className="space-y-4 pt-4 border-t border-gray-200">
+                      <label className="text-sm font-semibold text-gray-900">Cover Art Prompt (Optional)</label>
+                      <textarea placeholder="Specific prompt for the main cover art (16:9)..." value={formData.coverArtPrompt} onChange={(e) => handleInputChange("coverArtPrompt", e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 h-24 resize-none" />
+                    </div>
                   </div>
                 )}
               </div>
