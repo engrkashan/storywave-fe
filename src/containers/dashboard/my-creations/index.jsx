@@ -129,7 +129,7 @@ const MyCreations = () => {
         </div>
 
         {/* Loading State */}
-        {status === "loading" && (
+        {status === "loading" && stories.length === 0 && (
           <div className="flex items-center justify-center min-h-96">
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>

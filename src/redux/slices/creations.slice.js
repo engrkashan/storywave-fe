@@ -39,7 +39,10 @@ const creationsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchMyCreations.pending, (state) => {
-        state.status = "loading";
+        // Only show loading if we don't have any stories yet
+        if (state.stories.length === 0) {
+          state.status = "loading";
+        }
       })
       .addCase(fetchMyCreations.fulfilled, (state, action) => {
         state.status = "succeeded";

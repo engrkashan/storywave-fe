@@ -262,7 +262,7 @@ const ManageWorkflows = () => {
   const handleDeleteClick = (id) => setDeleteId(id);
 
   /* ----------- LOADER ----------- */
-  if (status === "loading") {
+  if (status === "loading" && stories.length === 0) {
     return (
       <div className="flex flex-col gap-2 h-screen justify-center items-center">
         <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4" />

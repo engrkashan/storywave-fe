@@ -79,7 +79,10 @@ const overviewSlice = createSlice({
     builder
       // Fetch Overview
       .addCase(fetchOverview.pending, (state) => {
-        state.status = "loading";
+        // Only show loading if we don't have any stories yet
+        if (state.stories.length === 0) {
+          state.status = "loading";
+        }
         state.error = null;
       })
       .addCase(fetchOverview.fulfilled, (state, action) => {
@@ -96,8 +99,12 @@ const overviewSlice = createSlice({
       })
 
       // Fetch Workflow by ID
-      .addCase(fetchWorkflowById.pending, (state) => {
-        state.status = "loading";
+      .addCase(fetchWorkflowById.pending, (state, action) => {
+        // Only show loading if the requested workflow is different from the one in store
+        const workflowId = action.meta.arg;
+        if (!state.workflow || state.workflow.id !== workflowId) {
+          state.status = "loading";
+        }
         state.error = null;
       })
       .addCase(fetchWorkflowById.fulfilled, (state, action) => {

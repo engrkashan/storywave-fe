@@ -70,6 +70,12 @@ const WorkflowDetailPage = () => {
     "audioURL",
     "storyLength",
     "storylength",
+    "commonPrompt",
+    "storyMetadata",
+    "masterPrompts",
+    "shouldGenerateImage",
+    "result",
+    "failedAt"
   ];
 
   const shouldExcludeKey = (key) => {
@@ -81,7 +87,7 @@ const WorkflowDetailPage = () => {
     );
   };
 
-  if (status === "loading") {
+  if (status === "loading" && (!workflow || workflow.id !== id)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
@@ -190,7 +196,16 @@ const WorkflowDetailPage = () => {
               >
                 <div className="space-y-6">
                   {Object.entries(workflow.metadata)
-                    .filter(([key]) => !shouldExcludeKey(key))
+                    .filter(([key, value]) => {
+                      if (shouldExcludeKey(key)) return false;
+                      if (value === null || value === undefined || value === "") return false;
+                      
+                      // Conditional logic
+                      if (key === "imageCount" && workflow.metadata.mediaType !== "multi_image") return false;
+                      if (key === "visualSuggestion" && !value) return false;
+
+                      return true;
+                    })
                     .map(([key, value]) => (
                       <div
                         key={key}
@@ -203,7 +218,7 @@ const WorkflowDetailPage = () => {
                                 <Info className="h-4 w-4 text-indigo-600" />
                               </div>
                               <div className="text-sm font-semibold text-gray-700 capitalize">
-                                {key.replace(/([A-Z])/g, " $1")}
+                                {key.replace(/([A-Z])/g, " $1").replace("Seo", "SEO")}
                               </div>
                             </div>
                           </div>

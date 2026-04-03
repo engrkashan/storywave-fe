@@ -52,6 +52,7 @@ const GenerateStory = () => {
     backgroundMusic: true,
     aspectRatio: "16:9",
     dualPlatform: false,
+    visualSuggestion: "",
   });
 
   const loadingMessages = [
@@ -87,8 +88,9 @@ const GenerateStory = () => {
           imageCount: m.imageCount || 5,
           backgroundMusic: m.backgroundMusic ?? true,
           aspectRatio: m.aspectRatio || "16:9",
+          visualSuggestion: m.visualSuggestion || "",
         });
-        setShowImagePrompt(m.shouldGenerateImage || !!m.imagePrompt);
+        setShowImagePrompt(m.shouldGenerateImage || !!m.imagePrompt || !!m.visualSuggestion);
       })
       .catch(() => toast.error("Failed to load workflow"))
       .finally(() => localStorage.removeItem("editWorkflowId"));
@@ -156,6 +158,7 @@ const GenerateStory = () => {
       series: formData.series,
       coverArtPrompt: formData.coverArtPrompt,
       seoContent: formData.seo,
+      visualSuggestion: formData.visualSuggestion,
     };
 
     if (showImagePrompt && formData.mediaType === "single_image" && formData.imagePrompt) {
@@ -321,17 +324,17 @@ const GenerateStory = () => {
                 </div>
               </div>
               <div className="mb-7">
-                <label className="block text-sm font-semibold text-gray-900 mb-3">Series <span className="text-red-500">*</span></label>
-                  <input type="text" placeholder="Enter series..." value={formData.series} onChange={(e) => handleInputChange("series", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
+                <label className="block text-sm font-semibold text-gray-900 mb-3">Series</label>
+                <input type="text" placeholder="Enter series..." value={formData.series} onChange={(e) => handleInputChange("series", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
               </div>
-                <div className="mb-7">
-                  <div className="flex justify-between items-center mb-3"><label className="text-sm font-semibold text-gray-900">Cover Art Prompt <span className="text-red-500">*</span></label></div>
-                  <textarea placeholder="Describe or paste your cover art prompt..." value={formData.coverArtPrompt} onChange={(e) => handleInputChange("coverArtPrompt", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500 h-48 resize-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">Seo <span className="text-red-500">*</span></label>
-                 <input type="text" placeholder="Enter seo..." value={formData.seo} onChange={(e) => handleInputChange("seo", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
-                </div>
+              <div className="mb-7">
+                <div className="flex justify-between items-center mb-3"><label className="text-sm font-semibold text-gray-900">Cover Art Prompt <span className="text-red-500">*</span></label></div>
+                <textarea placeholder="Describe or paste your cover art prompt..." value={formData.coverArtPrompt} onChange={(e) => handleInputChange("coverArtPrompt", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500 h-48 resize-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-3">Seo</label>
+                <input type="text" placeholder="Enter seo..." value={formData.seo} onChange={(e) => handleInputChange("seo", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
+              </div>
 
               {/* URL & Script */}
               <div className="space-y-6">
@@ -391,6 +394,16 @@ const GenerateStory = () => {
                         <textarea placeholder="Describe your image..." value={formData.imagePrompt} onChange={(e) => handleInputChange("imagePrompt", e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 h-32 resize-none" />
                       </div>
                     )}
+
+                    <div className="space-y-4">
+                      <label className="text-sm font-semibold text-gray-900">Visual Suggestion (Optional)</label>
+                      <textarea
+                        placeholder="Add specific artistic direction (e.g., 'Neon-noir lighting, heavy rain, cyberpunk aesthetics')..."
+                        value={formData.visualSuggestion}
+                        onChange={(e) => handleInputChange("visualSuggestion", e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 h-24 resize-none"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
