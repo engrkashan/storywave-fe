@@ -153,6 +153,9 @@ const GenerateStory = () => {
       backgroundMusic: formData.backgroundMusic,
       aspectRatio: formData.aspectRatio,
       dualPlatform: formData.dualPlatform,
+      series: formData.series,
+      coverArtPrompt: formData.coverArtPrompt,
+      seoContent: formData.seo,
     };
 
     if (showImagePrompt && formData.mediaType === "single_image" && formData.imagePrompt) {

@@ -388,6 +388,25 @@ const WorkflowDetailPage = () => {
               </SectionCard>
             )}
 
+            {/* Cover Art Card */}
+            {workflow.coverArt && (
+              <SectionCard
+                title="Cover Art"
+                icon={<Film className="h-6 w-6 text-white" />}
+                gradient="from-fuchsia-500 to-pink-600"
+              >
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-fuchsia-50 to-pink-50 p-4 rounded-xl flex justify-center">
+                    <img
+                      src={workflow.coverArt.fileURL}
+                      alt="Cover Art"
+                      className="w-full max-w-[280px] rounded-xl shadow-lg border border-gray-100 aspect-square object-cover"
+                    />
+                  </div>
+                </div>
+              </SectionCard>
+            )}
+
             {/* Podcast Episodes Card */}
             {workflow.podcast?.episodes?.length > 0 && (
               <SectionCard
