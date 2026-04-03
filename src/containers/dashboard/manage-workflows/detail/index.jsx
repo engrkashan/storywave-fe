@@ -8,13 +8,13 @@ import {
   CheckCircle,
   Clock,
   DockIcon,
-  Film,
-  ListCheck,
   Music,
   X,
   ExternalLink,
   ChevronRight,
   Info,
+  Film,
+  Image,
 } from "lucide-react";
 import { BiAlarmExclamation, BiMicrophone } from "react-icons/bi";
 
@@ -372,16 +372,17 @@ const WorkflowDetailPage = () => {
               >
                 <div className="space-y-8">
                   {/* YouTube / Landscape Version */}
-                  {(workflow.video?.video_16_9 !== null) && (
+                  {workflow.video?.video_16_9 !== null && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">Landscape / YouTube (16:9)</span>
+                        <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">
+                          Landscape / YouTube (16:9)
+                        </span>
                       </div>
                       <video
                         controls
                         src={workflow.video.video_16_9 || workflow.video.fileURL}
                         className="w-full rounded-xl shadow-lg border border-gray-100"
-                        poster={workflow.video.thumbnail}
                       />
                     </div>
                   )}
@@ -390,7 +391,9 @@ const WorkflowDetailPage = () => {
                   {workflow.video?.video_9_16 && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-pink-600 uppercase tracking-wider">Portrait / TikTok (9:16)</span>
+                        <span className="text-xs font-bold text-pink-600 uppercase tracking-wider">
+                          Portrait / TikTok (9:16)
+                        </span>
                       </div>
                       <div className="max-w-[280px] mx-auto">
                         <video
@@ -406,6 +409,42 @@ const WorkflowDetailPage = () => {
                     <div className="flex items-center text-sm text-gray-600 pt-2 border-t border-gray-100">
                       <Clock className="h-4 w-4 mr-2" />
                       Duration: {workflow.video.duration}
+                    </div>
+                  )}
+                </div>
+              </SectionCard>
+            )}
+
+            {/* Cover Art Card */}
+            {(workflow.story?.coverArtURL_1_1 || workflow.story?.coverArtURL_16_9) && (
+              <SectionCard
+                title="Cover Art"
+                icon={<Image className="h-6 w-6 text-white" />}
+                gradient="from-blue-500 to-indigo-600"
+              >
+                <div className="space-y-6">
+                  {workflow.story?.coverArtURL_16_9 && (
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-1">
+                        Landscape (16:9)
+                      </span>
+                      <img
+                        src={workflow.story.coverArtURL_16_9}
+                        alt="Cover Art 16:9"
+                        className="w-full rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                      />
+                    </div>
+                  )}
+                  {workflow.story?.coverArtURL_1_1 && (
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest pl-1">
+                        Square (1:1)
+                      </span>
+                      <img
+                        src={workflow.story.coverArtURL_1_1}
+                        alt="Cover Art 1:1"
+                        className="w-full aspect-square object-cover rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                      />
                     </div>
                   )}
                 </div>
