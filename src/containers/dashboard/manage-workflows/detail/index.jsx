@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, Link } from "react-router-dom";
 import { fetchWorkflowById } from "../../../../redux/slices/overview.slice";
@@ -15,6 +15,7 @@ import {
   Info,
   Film,
   Image,
+  Copy,
 } from "lucide-react";
 import { BiAlarmExclamation, BiMicrophone } from "react-icons/bi";
 
@@ -22,10 +23,18 @@ const WorkflowDetailPage = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const { workflow, status, error } = useSelector((state) => state.overview);
+  const [activeSEOTab, setActiveSEOTab] = useState(null);
 
   useEffect(() => {
     if (id) dispatch(fetchWorkflowById(id));
   }, [dispatch, id]);
+
+  useEffect(() => {
+    if (workflow?.story?.seoContent && !activeSEOTab) {
+      const platforms = Object.keys(workflow.story.seoContent);
+      if (platforms.length > 0) setActiveSEOTab(platforms[0]);
+    }
+  }, [workflow, activeSEOTab]);
 
   const formatDate = (date) =>
     date
@@ -49,6 +58,7 @@ const WorkflowDetailPage = () => {
   };
 
   const excludedKeys = [
+    "seoContent",
     "textIdea",
     "result",
     "url",
@@ -303,15 +313,96 @@ const WorkflowDetailPage = () => {
               <SectionCard
                 title="SEO Metadata"
                 icon={<Info className="h-6 w-6 text-white" />}
-                gradient="from-blue-500 to-indigo-600"
+                gradient="from-blue-600 to-indigo-700"
               >
-                <div className="space-y-4">
-                  {Object.entries(workflow.story.seoContent).map(([key, value]) => (
-                    <div key={key}>
-                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">{key}</span>
-                      <p className="text-gray-700 text-sm leading-relaxed">{value}</p>
-                    </div>
-                  ))}
+                <div className="space-y-6">
+                  {/* Determine if it's nested (tabbed) or flat */}
+                  {(() => {
+                    const seoEntries = Object.entries(workflow.story.seoContent);
+                    const isNested = seoEntries.some(([_, v]) => v && typeof v === "object" && !Array.isArray(v));
+
+                    if (isNested) {
+                      return (
+                        <>
+                          <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 pb-4">
+                            {Object.keys(workflow.story.seoContent).map((platform) => (
+                              <button
+                                key={platform}
+                                onClick={() => setActiveSEOTab(platform)}
+                                className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-sm transform active:scale-95 ${activeSEOTab === platform
+                                    ? "bg-indigo-600 text-white shadow-indigo-200"
+                                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                  }`}
+                              >
+                                {platform}
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="mt-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                            {activeSEOTab && workflow.story.seoContent[activeSEOTab] && (
+                              <div className="grid grid-cols-1 gap-6">
+                                {Object.entries(workflow.story.seoContent[activeSEOTab]).map(([field, value]) => (
+                                  <div key={field} className="group/item space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest pl-1">
+                                        {field.replace(/([A-Z])/g, " $1")}
+                                      </span>
+                                      {typeof value === "string" && (
+                                        <button
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(value);
+                                          }}
+                                          className="p-1.5 hover:bg-indigo-50 rounded-lg text-indigo-300 hover:text-indigo-600 transition-all opacity-0 group-hover/item:opacity-100"
+                                          title={`Copy ${field}`}
+                                        >
+                                          <Copy className="h-3.5 w-3.5" />
+                                        </button>
+                                      )}
+                                    </div>
+                                    <div className="bg-gray-50/50 rounded-2xl border border-gray-100 p-5 group-hover/item:border-indigo-100 transition-colors">
+                                      {Array.isArray(value) ? (
+                                        <div className="flex flex-wrap gap-2">
+                                          {value.map((tag, i) => (
+                                            <span key={i} className="px-3 py-1 bg-white border border-indigo-50 text-indigo-500 rounded-xl text-[11px] font-medium shadow-sm">
+                                              {tag.startsWith("#") ? tag : `#${tag}`}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      ) : typeof value === "string" ? (
+                                        <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                                          {value}
+                                        </p>
+                                      ) : (
+                                        <pre className="text-[10px] text-gray-500 overflow-x-auto bg-white p-3 rounded-lg border border-gray-100">
+                                          {JSON.stringify(value, null, 2)}
+                                        </pre>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 gap-4">
+                        {seoEntries.map(([key, value]) => (
+                          <div key={key} className="space-y-1">
+                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest pl-1">
+                              {key.replace(/([A-Z])/g, " $1")}
+                            </span>
+                            <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 text-sm text-gray-700">
+                              {typeof value === "string" ? value : JSON.stringify(value)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </SectionCard>
             )}
