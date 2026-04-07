@@ -54,7 +54,7 @@ const GenerateStory = () => {
     dualPlatform: false,
     series: "",
     coverArtPrompt: "",
-    seoMetadata: JSON.stringify({ Title: "", Description: "" }, null, 2),
+    seoMetadata: "",
     visualSuggestions: "",
   });
 
@@ -350,35 +350,6 @@ const GenerateStory = () => {
                 </div>
               </div>
 
-              {/* SEO Metadata */}
-              <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  </div>
-                  <h3 className="font-semibold text-gray-900">SEO Content (JSON)</h3>
-                </div>
-                <div className="space-y-2">
-                  <textarea
-                    placeholder='{ "Title": "...", "Description": "..." }'
-                    value={formData.seoMetadata}
-                    onChange={(e) => handleInputChange("seoMetadata", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 bg-white h-40 font-mono text-sm resize-none"
-                  />
-                  <div className="flex justify-between items-center px-1">
-                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Must be valid JSON</p>
-                    {(() => {
-                      try {
-                        JSON.parse(formData.seoMetadata);
-                        return <span className="text-[10px] text-green-500 font-bold uppercase tracking-widest">Valid JSON</span>;
-                      } catch (e) {
-                        return <span className="text-[10px] text-red-500 font-bold uppercase tracking-widest">Invalid JSON</span>;
-                      }
-                    })()}
-                  </div>
-                </div>
-              </div>
-
               {/* URL & Script */}
               <div className="space-y-6">
                 <div>
@@ -389,6 +360,12 @@ const GenerateStory = () => {
                   <div className="flex justify-between items-center mb-3"><label className="text-sm font-semibold text-gray-900">Story Script</label><button type="button" onClick={() => setIsTextEditorOpen(true)} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium">Open Editor</button></div>
                   <textarea placeholder="Describe or paste your script..." value={formData.concept} onChange={(e) => handleInputChange("concept", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500 h-48 resize-none" />
                 </div>
+              </div>
+
+              {/* Cover Art Prompt */}
+              <div className="space-y-4 pt-4 border-t border-gray-200">
+                <label className="text-sm font-semibold text-gray-900">Cover Art Prompt (Optional)</label>
+                <textarea placeholder="Specific prompt for the main cover art (16:9)..." value={formData.coverArtPrompt} onChange={(e) => handleInputChange("coverArtPrompt", e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 h-24 resize-none" />
               </div>
 
               {/* Visual Generation Card */}
@@ -438,10 +415,6 @@ const GenerateStory = () => {
                       </div>
                     )}
 
-                    <div className="space-y-4 pt-4 border-t border-gray-200">
-                      <label className="text-sm font-semibold text-gray-900">Cover Art Prompt (Optional)</label>
-                      <textarea placeholder="Specific prompt for the main cover art (16:9)..." value={formData.coverArtPrompt} onChange={(e) => handleInputChange("coverArtPrompt", e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 h-24 resize-none" />
-                    </div>
                   </div>
                 )}
               </div>
@@ -498,6 +471,32 @@ const GenerateStory = () => {
               <div className="space-y-6">
                 <div className="flex justify-between items-center"><label className="text-sm font-semibold text-gray-900">Story Length</label><span className="text-amber-600 font-semibold bg-amber-50 px-3 py-1 rounded-lg">{storyLengthStr}</span></div>
                 <input type="range" min="1" max="3" value={lengthLevel} onChange={(e) => setLengthLevel(Number(e.target.value))} className="w-full h-1.5 bg-gradient-to-r from-amber-300 to-pink-500 rounded-lg appearance-none accent-amber-500" />
+              </div>
+
+              {/* SEO Metadata */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-semibold text-gray-900">SEO Content (JSON)</h3>
+                </div>
+                <div className="space-y-2">
+                  <textarea
+                    placeholder=''
+                    value={formData.seoMetadata}
+                    onChange={(e) => handleInputChange("seoMetadata", e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 bg-white h-40 font-mono text-sm resize-none"
+                  />
+                  <div className="flex justify-between items-center px-1">
+                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Must be valid JSON</p>
+                    {(() => {
+                      try {
+                        JSON.parse(formData.seoMetadata);
+                        return <span className="text-[10px] text-green-500 font-bold uppercase tracking-widest">Valid JSON</span>;
+                      } catch (e) {
+                        return <span className="text-[10px] text-red-500 font-bold uppercase tracking-widest">Invalid JSON</span>;
+                      }
+                    })()}
+                  </div>
+                </div>
               </div>
 
               <button type="button" onClick={handleGenerate} disabled={loading || !formData.title} className="w-full py-5 rounded-2xl  text-xl bg-gradient-to-r from-amber-500 via-pink-500 to-rose-600 text-white shadow-xl shadow-amber-200 hover:scale-[1.02] active:scale-95 transition-all disabled:grayscale disabled:opacity-50">

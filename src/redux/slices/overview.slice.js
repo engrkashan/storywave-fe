@@ -59,6 +59,11 @@ const initialState = {
   videosCreated: 0,
   voiceovers: 0,
   podcasts: 0,
+  stats: {
+    pending: 0,
+    completed: 0,
+    cancelled: 0,
+  },
   stories: [],
   status: "idle",
   deleteStatus: "idle",
@@ -88,6 +93,11 @@ const overviewSlice = createSlice({
         state.videosCreated = action.payload.videosCreated;
         state.voiceovers = action.payload.voiceovers;
         state.podcasts = action.payload.podcasts;
+        state.stats = action.payload.stats || {
+          pending: 0,
+          completed: 0,
+          cancelled: 0,
+        };
         state.stories = action.payload.stories;
       })
       .addCase(fetchOverview.rejected, (state, action) => {

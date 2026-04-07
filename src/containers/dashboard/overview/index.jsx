@@ -20,7 +20,7 @@ import { toast } from "react-hot-toast";
 
 const Overview = () => {
   const dispatch = useDispatch();
-  const { totalStories, stories, status, podcasts } = useSelector(
+  const { totalStories, stories, status, podcasts, stats } = useSelector(
     (state) => state.overview,
   );
   const [workflowToCancel, setWorkflowToCancel] = useState(null);
@@ -30,15 +30,11 @@ const Overview = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [deletingWorkflowId, setDeletingWorkflowId] = useState(null);
 
-  // Calculate story statistics
-  const storyStats = {
-    pending: stories.filter(
-      (s) => s.status === "PENDING" || s.status === "SCHEDULED",
-    ).length,
-    completed: stories.filter((s) => s.status === "COMPLETED").length,
-    cancelled: stories.filter(
-      (s) => s.status === "CANCELLED" || s.status === "FAILED",
-    ).length,
+  // Use story stats directly from API
+  const storyStats = stats || {
+    pending: 0,
+    completed: 0,
+    cancelled: 0,
   };
 
   // Filter stories based on selected status
