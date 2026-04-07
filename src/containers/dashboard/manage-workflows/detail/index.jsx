@@ -16,6 +16,7 @@ import {
   Film,
   Image,
   Copy,
+  Download,
 } from "lucide-react";
 import { BiAlarmExclamation, BiMicrophone } from "react-icons/bi";
 
@@ -24,6 +25,32 @@ const WorkflowDetailPage = () => {
   const dispatch = useDispatch();
   const { workflow, status, error } = useSelector((state) => state.overview);
   const [activeSEOTab, setActiveSEOTab] = useState(null);
+
+  const handleDownload = (url, ratio = "16:9") => {
+    if (!url) return;
+
+    // Cloudinary transformation for forced PNG and High Quality download
+    // For 1:1, we use 3000x3000px as requested.
+    let transformation = "f_png,fl_attachment";
+    if (ratio === "1:1") {
+      transformation = "w_3000,h_3000,c_limit,f_png,fl_attachment";
+    }
+
+    // Insert transformation into Cloudinary URL
+    // Format: .../upload/[transformation]/v[version]/...
+    const urlParts = url.split("/upload/");
+    if (urlParts.length !== 2) return window.open(url, "_blank");
+
+    const transformedUrl = `${urlParts[0]}/upload/${transformation}/${urlParts[1]}`;
+
+    // Create a temporary link and trigger download
+    const link = document.createElement("a");
+    link.href = transformedUrl;
+    link.setAttribute("download", `cover-art-${ratio.replace(":", "-")}.png`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     if (id) dispatch(fetchWorkflowById(id));
@@ -515,10 +542,21 @@ const WorkflowDetailPage = () => {
               >
                 <div className="space-y-6">
                   {workflow.story?.coverArtURL_16_9 && (
-                    <div className="space-y-2">
-                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-1">
-                        Landscape (16:9)
-                      </span>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-1">
+                          Landscape (16:9)
+                        </span>
+                        <button
+                          onClick={() =>
+                            handleDownload(workflow.story.coverArtURL_16_9, "16:9")
+                          }
+                          className="p-1 px-2 flex items-center gap-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-600 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wider shadow-sm border border-blue-100"
+                        >
+                          <Download className="h-3 w-3" />
+                          Download PNG
+                        </button>
+                      </div>
                       <img
                         src={workflow.story.coverArtURL_16_9}
                         alt="Cover Art 16:9"
@@ -527,10 +565,21 @@ const WorkflowDetailPage = () => {
                     </div>
                   )}
                   {workflow.story?.coverArtURL_1_1 && (
-                    <div className="space-y-2">
-                      <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest pl-1">
-                        Square (1:1)
-                      </span>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest pl-1">
+                          Square (1:1)
+                        </span>
+                        <button
+                          onClick={() =>
+                            handleDownload(workflow.story.coverArtURL_1_1, "1:1")
+                          }
+                          className="p-1 px-2 flex items-center gap-1 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wider shadow-sm border border-indigo-100"
+                        >
+                          <Download className="h-3 w-3" />
+                          Download PNG (3000px)
+                        </button>
+                      </div>
                       <img
                         src={workflow.story.coverArtURL_1_1}
                         alt="Cover Art 1:1"
