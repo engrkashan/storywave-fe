@@ -32,7 +32,7 @@ import DeleteModal from "../../../components/modals/DeleteModal";
 /* ------------------ HELPERS ------------------ */
 const resolveType = (story) => (story.video?.url ? "STORY" : "PODCAST");
 const resolveTypeLabel = (story) =>
-  story.video?.url ? "Video Story" : "Podcast";
+  story.isPodcast ? "Podcast" : "Video Story";
 const formatDate = (date) => {
   try {
     return formatDistanceToNow(new Date(date), { addSuffix: true });
