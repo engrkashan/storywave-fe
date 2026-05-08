@@ -488,6 +488,10 @@ const Overview = () => {
                           </div>
 
                           <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                            {story?.series && (
+                              <span>{story.series}</span>
+                            )}
+                            {story?.series && <span>•</span>}
                             <span>
                               {new Date(story.createdAt).toLocaleDateString(
                                 "en-US",
