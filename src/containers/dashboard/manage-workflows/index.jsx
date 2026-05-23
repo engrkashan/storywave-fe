@@ -18,19 +18,20 @@ import {
   BiCheckCircle,
   BiXCircle,
   BiCalendar,
-  BiShow,
   BiEdit,
-  BiChevronDown,
-  BiChevronUp,
   BiVideo,
+  BiMicrophone,
+  BiDotsVerticalRounded,
+  BiCollection,
 } from "react-icons/bi";
+import { Layers, ChevronDown, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import DeleteModal from "../../../components/modals/DeleteModal";
 
 /* ------------------ HELPERS ------------------ */
-const resolveType = (story) => (story.video?.url ? "STORY" : "PODCAST");
+const resolveType = (story) => (story.isPodcast ? "PODCAST" : "STORY");
 const resolveTypeLabel = (story) =>
   story.isPodcast ? "Podcast" : "Video Story";
 const formatDate = (date) => {
@@ -45,184 +46,227 @@ const formatDate = (date) => {
 const STATUS_MAP = {
   COMPLETED: {
     color: "bg-emerald-500 text-white",
-    icon: <BiCheckCircle className="w-4 h-4" />,
+    icon: <BiCheckCircle className="w-3 h-3" />,
     label: "Completed",
   },
   PENDING: {
     color: "bg-blue-500 text-white",
-    icon: <BiTime className="w-4 h-4" />,
+    icon: <BiTime className="w-3 h-3" />,
     label: "Processing",
   },
   FAILED: {
     color: "bg-red-500 text-white",
-    icon: <BiXCircle className="w-4 h-4" />,
+    icon: <BiXCircle className="w-3 h-3" />,
     label: "Failed",
   },
 };
 
-/* ------------------ CUSTOM DROPDOWN ------------------ */
-const FilterDropdown = memo(({ value, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+/* ------------------ FILTER CHIPS ------------------ */
+const FilterChips = memo(({ value, onChange }) => {
   const options = [
-    { value: "ALL", label: "All Types" },
-    { value: "STORY", label: "Stories" },
+    { value: "ALL", label: "All" },
+    { value: "STORY", label: "Videos" },
     { value: "PODCAST", label: "Podcasts" },
   ];
-  const selectedOption =
-    options.find((opt) => opt.value === value) || options[0];
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target))
-        setIsOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen((v) => !v)}
-        className="flex items-center justify-between gap-2 px-4 py-2.5 bg-white rounded-xl border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow transition-all duration-200 w-48 group"
-      >
-        <span className="font-medium text-gray-700">
-          {selectedOption.label}
-        </span>
-        <motion.span
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          className="text-gray-400 group-hover:text-gray-600"
+    <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            value === opt.value
+              ? "bg-gray-900 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
         >
-          {isOpen ? <BiChevronUp size={20} /> : <BiChevronDown size={20} />}
-        </motion.span>
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full mt-1.5 w-full rounded-xl border border-gray-200 shadow-lg overflow-hidden z-50 bg-white"
-          >
-            {options.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`w-full px-4 py-3 text-left flex items-center justify-between transition-colors ${value === option.value
-                  ? "bg-indigo-50 text-indigo-600 font-medium"
-                  : "hover:bg-gray-50 text-gray-700"
-                  }`}
-              >
-                <span>{option.label}</span>
-                {value === option.value && (
-                  <BiCheckCircle className="w-4 h-4 text-indigo-500" />
-                )}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {opt.label}
+        </button>
+      ))}
     </div>
   );
 });
 
 /* ------------------ WORKFLOW CARD ------------------ */
 const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
-  const status = STATUS_MAP[story.status] || STATUS_MAP.PENDING;
+  const navigate = useNavigate();
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+  const status = STATUS_MAP[story.status?.toUpperCase()] || STATUS_MAP.PENDING;
 
-  const renderHeaderContent = () => {
-    if (story?.isPodcast === false) {
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const has16_9 = story?.video?.video_16_9 || story?.coverArtURL_16_9 || story?.thumbnail;
+  const has9_16 = story?.video?.video_9_16;
+  
+  // Aspect ratio determination
+  let aspectClass = "aspect-video"; // default 16:9
+  if (story?.isPodcast) aspectClass = "aspect-square max-h-[300px]"; 
+  else if (has16_9) aspectClass = "aspect-video";
+  else if (has9_16) aspectClass = "aspect-[9/16]";
+
+  const renderMediaContent = () => {
+    if (story?.isPodcast) {
       return (
-        <div className="absolute inset-0 w-full h-full">
-          <img
-            className="w-full h-full object-cover"
-            src={
-              story?.thumbnail ||
-              "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=2059&auto=format&fit=crop"
-            }
-          />
-          <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <BiMicrophone className="w-12 h-12 text-white" />
+          </div>
         </div>
       );
     }
 
+    let mediaUrl = story?.thumbnail || story?.coverArtURL_16_9 || story?.coverArtURL_1_1;
+    let isVideo = false;
+
+    if (!mediaUrl && story?.video) {
+       mediaUrl = story.video.video_16_9 || story.video.video_9_16 || story.video.fileURL;
+       isVideo = !!mediaUrl;
+    }
+    
+    if (!mediaUrl) mediaUrl = "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=2059&auto=format&fit=crop";
+
+    if (isVideo) {
+      return (
+        <video 
+          className="absolute inset-0 w-full h-full object-cover" 
+          src={mediaUrl} 
+          muted 
+          loop 
+          playsInline
+          onMouseOver={(e) => e.target.play()}
+          onMouseOut={(e) => { e.target.pause(); e.target.currentTime = 0; }}
+        />
+      );
+    }
+
     return (
-      <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center">
-          <svg
-            className="w-12 h-12 text-white"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-          </svg>
-        </div>
-      </div>
+      <img
+        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        src={mediaUrl}
+        alt={story?.title}
+      />
     );
   };
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02, boxShadow: "0 12px 24px rgba(0,0,0,0.12)" }}
-      className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden transition-all duration-300"
-    >
-      <div className="h-40 relative overflow-hidden">
-        {renderHeaderContent()}
-      </div>
+    <div className="flex flex-col gap-3 group relative w-full max-w-sm mx-auto sm:max-w-none">
+      {/* Thumbnail Area */}
+      <Link 
+        to={`/dashboard/workflows/${story.id}`} 
+        className={`relative w-full rounded-xl overflow-hidden bg-gray-100 cursor-pointer ${aspectClass}`}
+      >
+        {renderMediaContent()}
+        
+        {/* Overlays */}
+        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+        
+        {/* Status / Duration Overlay */}
+        <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
+          {story?.video?.duration && (
+            <div className="px-1.5 py-0.5 bg-black/80 text-white text-xs font-semibold rounded backdrop-blur-sm">
+              {story.video.duration}
+            </div>
+          )}
+          {story.status !== "completed" && (
+            <div className={`px-2 py-0.5 text-xs font-semibold rounded backdrop-blur-md flex items-center gap-1 ${status.color}`}>
+              {status.icon}
+              {status.label}
+            </div>
+          )}
+        </div>
+      </Link>
 
-      <div className="p-5 flex flex-col justify-between h-[calc(100%-160px)]">
-        <h3 className="font-semibold text-lg line-clamp-2 mb-3 text-gray-800">
-          {story.title}
-        </h3>
-
-        <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
-          <span className="flex items-center gap-1">
-            <BiCalendar className="w-4 h-4" />
-            {formatDate(story.createdAt)}
-          </span>
-          <span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium">
-            {resolveTypeLabel(story)}
-          </span>
+      {/* Metadata Area */}
+      <div className="flex items-start gap-3 px-1">
+        {/* Avatar / Type Icon */}
+        <div className="flex-shrink-0 mt-0.5">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center">
+             {story?.isPodcast ? (
+               <BiMicrophone className="w-5 h-5 text-gray-500" />
+             ) : (
+               <BiVideo className="w-5 h-5 text-gray-500" />
+             )}
+          </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-          <Link to={`/dashboard/workflows/${story.id}`} title="View">
-            <button className="p-2 rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition">
-              <BiShow className="w-5 h-5" />
-            </button>
+        {/* Text Info */}
+        <div className="flex-1 min-w-0 pr-6">
+          <Link to={`/dashboard/workflows/${story.id}`}>
+             <h3 className="text-base font-semibold text-gray-900 leading-tight mb-1 break-words">
+                {story.title || "Untitled Story"}
+             </h3>
           </Link>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                onEdit(story);
-                window.location.href = "/dashboard/generate-story";
-              }}
-              title="Edit"
-              className="p-2 rounded-lg text-green-600 bg-green-50 hover:bg-green-100 transition"
-            >
-              <BiEdit className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => onDelete(story.id)}
-              title="Delete"
-              className="p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 transition"
-            >
-              <BiTrash className="w-5 h-5" />
-            </button>
+          
+          <div className="flex flex-col text-sm text-gray-500">
+            {story.series && (
+              <span className="font-medium text-indigo-600 truncate">
+                {story.series}
+              </span>
+            )}
+            <span className="flex items-center gap-1 truncate">
+               {resolveTypeLabel(story)} • {formatDate(story.createdAt)}
+            </span>
           </div>
         </div>
       </div>
-    </motion.div>
+
+      {/* Action Menu Button */}
+      <div className="absolute right-0 top-[calc(100%-4rem)] translate-y-2 mt-1 sm:translate-y-0" ref={menuRef}>
+        <button 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowMenu(!showMenu);
+          }}
+          className="p-1.5 text-gray-400 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <BiDotsVerticalRounded size={20} />
+        </button>
+
+        <AnimatePresence>
+          {showMenu && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.1 }}
+              className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(story);
+                  window.location.href = "/dashboard/generate-story";
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              >
+                <BiEdit size={16} /> Edit
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(story.id);
+                  setShowMenu(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <BiTrash size={16} /> Delete
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 });
 
@@ -231,6 +275,8 @@ const ManageWorkflows = () => {
   const dispatch = useDispatch();
   const { stories, status } = useSelector((s) => s.overview);
   const [filterType, setFilterType] = useState("ALL");
+  const [groupBySeries, setGroupBySeries] = useState(false);
+  const [collapsedSeries, setCollapsedSeries] = useState({});
   const [deleteId, setDeleteId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -242,6 +288,25 @@ const ManageWorkflows = () => {
     if (filterType === "ALL") return stories;
     return stories.filter((story) => resolveType(story) === filterType);
   }, [stories, filterType]);
+
+  // Group stories by their series field
+  const groupedStories = useMemo(() => {
+    const groups = {};
+    filteredStories.forEach((story) => {
+      const key = story.series?.trim() || "Unsorted";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(story);
+    });
+    // Sort: named series first, "Unsorted" last
+    return Object.entries(groups).sort(([a], [b]) => {
+      if (a === "Unsorted") return 1;
+      if (b === "Unsorted") return -1;
+      return a.localeCompare(b);
+    });
+  }, [filteredStories]);
+
+  const toggleSeries = (key) =>
+    setCollapsedSeries((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteId) return;
@@ -262,45 +327,121 @@ const ManageWorkflows = () => {
   /* ----------- LOADER ----------- */
   if (status === "loading") {
     return (
-      <div className="flex flex-col gap-2 h-screen justify-center items-center">
-        <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4" />
-        Loading Workflows...
+      <div className="flex flex-col gap-2 h-[calc(100vh-100px)] justify-center items-center">
+        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4" />
+        <span className="text-gray-500 font-medium">Loading your content...</span>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100/30">
+    <div className="p-4 md:p-8 min-h-[calc(100vh-80px)] bg-white max-w-[1800px] mx-auto">
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Manage Workflows</h1>
-        <FilterDropdown value={filterType} onChange={setFilterType} />
+      <div className="mb-6 sticky top-0 bg-white z-10 pb-4 pt-2 border-b border-gray-100">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4 tracking-tight">Your Content</h1>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <FilterChips value={filterType} onChange={setFilterType} />
+          {/* Group by Series Toggle */}
+          <button
+            onClick={() => setGroupBySeries((v) => !v)}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+              groupBySeries
+                ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            Group by Series
+          </button>
+        </div>
       </div>
 
       {/* GRID OR EMPTY STATE */}
       {filteredStories.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-          {filteredStories.map((story) => (
-            <WorkflowCard
-              key={story.id}
-              story={story}
-              onDelete={handleDeleteClick}
-              onEdit={(story) =>
-                localStorage.setItem("editWorkflowId", story.id)
-              }
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center w-full h-[70vh] bg-white shadow-md mx-auto text-center border border-gray-100 rounded-2xl mt-10">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <BiVideo className="w-10 h-10 text-gray-400" />
+        groupBySeries ? (
+          /* ── GROUPED VIEW ── */
+          <div className="space-y-10">
+            {groupedStories.map(([seriesName, items]) => (
+              <div key={seriesName}>
+                {/* Series Section Header */}
+                <button
+                  onClick={() => toggleSeries(seriesName)}
+                  className="flex items-center gap-3 mb-4 w-full group text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-100 transition-colors">
+                    <BiCollection className="w-4 h-4 text-indigo-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-base font-bold text-gray-900 leading-tight">
+                      {seriesName}
+                    </h2>
+                    <span className="text-xs text-gray-400 font-medium">
+                      {items.length} {items.length === 1 ? "item" : "items"}
+                    </span>
+                  </div>
+                  <div className="text-gray-400 group-hover:text-gray-700 transition-colors">
+                    {collapsedSeries[seriesName] ? (
+                      <ChevronRight className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </div>
+                  <div className="flex-1 h-px bg-gray-100 max-w-xs ml-2" />
+                </button>
+
+                {/* Series Cards Grid */}
+                <AnimatePresence initial={false}>
+                  {!collapsedSeries[seriesName] && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-10">
+                        {items.map((story) => (
+                          <WorkflowCard
+                            key={story.id}
+                            story={story}
+                            onDelete={handleDeleteClick}
+                            onEdit={(story) =>
+                              localStorage.setItem("editWorkflowId", story.id)
+                            }
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
           </div>
-          <p className="text-xl font-semibold text-gray-700 mb-2">
-            No Workflow Found
+        ) : (
+          /* ── FLAT VIEW ── */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-4 gap-y-10">
+            {filteredStories.map((story) => (
+              <WorkflowCard
+                key={story.id}
+                story={story}
+                onDelete={handleDeleteClick}
+                onEdit={(story) =>
+                  localStorage.setItem("editWorkflowId", story.id)
+                }
+              />
+            ))}
+          </div>
+        )
+      ) : (
+        <div className="flex flex-col items-center justify-center w-full h-[50vh] text-center mt-10">
+          <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+            <BiVideo className="w-10 h-10 text-gray-300" />
+          </div>
+          <p className="text-xl font-semibold text-gray-900 mb-2">
+            No Content Found
           </p>
           <p className="text-gray-500 max-w-sm">
-            You haven't created any stories yet.
+            You haven't created any stories yet. Click create to get started.
           </p>
         </div>
       )}
@@ -312,10 +453,11 @@ const ManageWorkflows = () => {
         onClose={() => setDeleteId(null)}
         onConfirm={handleDeleteConfirm}
         title="Confirm Delete"
-        description="Are you sure you want to delete this workflow? This action cannot be undone."
+        description="Are you sure you want to delete this content? This action cannot be undone."
       />
     </div>
   );
 };
 
 export default ManageWorkflows;
+
