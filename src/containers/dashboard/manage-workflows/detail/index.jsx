@@ -176,7 +176,7 @@ const WorkflowDetailPage = () => {
               <video controls src={workflow.video.video_9_16} className="w-full h-full object-contain" />
             </div>
           ) : (
-            <div className="justify-center items-center flex mx-auto relative rounded-2xl overflow-hidden bg-gray-900 shadow-sm border border-gray-800 row-span-2 flex items-center justify-center"
+            <div className="justify-center items-center flex mx-auto h-full relative rounded-2xl overflow-hidden bg-gray-900 shadow-sm border border-gray-800 row-span-2 flex items-center justify-center"
               style={{ aspectRatio: "9/16", maxHeight: "450px" }}>
               <BiVideo className="w-10 h-10 text-gray-600" />
               <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10">No 9:16 Video</span>
