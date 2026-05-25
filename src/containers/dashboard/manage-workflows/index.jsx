@@ -75,11 +75,10 @@ const FilterChips = memo(({ value, onChange }) => {
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            value === opt.value
+          className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${value === opt.value
               ? "bg-gray-900 text-white"
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
+            }`}
         >
           {opt.label}
         </button>
@@ -107,10 +106,10 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
 
   const has16_9 = story?.video?.video_16_9 || story?.coverArtURL_16_9 || story?.thumbnail;
   const has9_16 = story?.video?.video_9_16;
-  
+
   // Aspect ratio determination
   let aspectClass = "aspect-video"; // default 16:9
-  if (story?.isPodcast) aspectClass = "aspect-square max-h-[300px]"; 
+  if (story?.isPodcast) aspectClass = "aspect-square max-h-[300px]";
   else if (has16_9) aspectClass = "aspect-video";
   else if (has9_16) aspectClass = "aspect-[9/16]";
 
@@ -129,19 +128,19 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
     let isVideo = false;
 
     if (!mediaUrl && story?.video) {
-       mediaUrl = story.video.video_16_9 || story.video.video_9_16 || story.video.fileURL;
-       isVideo = !!mediaUrl;
+      mediaUrl = story.video.video_16_9 || story.video.video_9_16 || story.video.fileURL;
+      isVideo = !!mediaUrl;
     }
-    
+
     if (!mediaUrl) mediaUrl = "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=2059&auto=format&fit=crop";
 
     if (isVideo) {
       return (
-        <video 
-          className="absolute inset-0 w-full h-full object-cover" 
-          src={mediaUrl} 
-          muted 
-          loop 
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          src={mediaUrl}
+          muted
+          loop
           playsInline
           onMouseOver={(e) => e.target.play()}
           onMouseOut={(e) => { e.target.pause(); e.target.currentTime = 0; }}
@@ -161,15 +160,15 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
   return (
     <div className="flex flex-col gap-3 group relative w-full max-w-sm mx-auto sm:max-w-none">
       {/* Thumbnail Area */}
-      <Link 
-        to={`/dashboard/workflows/${story.id}`} 
+      <Link
+        to={`/dashboard/workflows/${story.id}`}
         className={`relative w-full rounded-xl overflow-hidden bg-gray-100 cursor-pointer ${aspectClass}`}
       >
         {renderMediaContent()}
-        
+
         {/* Overlays */}
         <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
-        
+
         {/* Status / Duration Overlay */}
         <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
           {story?.video?.duration && (
@@ -191,22 +190,22 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
         {/* Avatar / Type Icon */}
         <div className="flex-shrink-0 mt-0.5">
           <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-gray-100 to-gray-200 border border-gray-200 flex items-center justify-center">
-             {story?.isPodcast ? (
-               <BiMicrophone className="w-5 h-5 text-gray-500" />
-             ) : (
-               <BiVideo className="w-5 h-5 text-gray-500" />
-             )}
+            {story?.isPodcast ? (
+              <BiMicrophone className="w-5 h-5 text-gray-500" />
+            ) : (
+              <BiVideo className="w-5 h-5 text-gray-500" />
+            )}
           </div>
         </div>
 
         {/* Text Info */}
         <div className="flex-1 min-w-0 pr-6">
           <Link to={`/dashboard/workflows/${story.id}`}>
-             <h3 className="text-base font-semibold text-gray-900 leading-tight mb-1 break-words">
-                {story.title || "Untitled Story"}
-             </h3>
+            <h3 className="text-base font-semibold text-gray-900 leading-tight mb-1 break-words">
+              {story.title || "Untitled Story"}
+            </h3>
           </Link>
-          
+
           <div className="flex flex-col text-sm text-gray-500">
             {story.series && (
               <span className="font-medium text-indigo-600 truncate">
@@ -214,7 +213,7 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
               </span>
             )}
             <span className="flex items-center gap-1 truncate">
-               {resolveTypeLabel(story)} • {formatDate(story.createdAt)}
+              {resolveTypeLabel(story)} • {formatDate(story.createdAt)}
             </span>
           </div>
         </div>
@@ -222,7 +221,7 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
 
       {/* Action Menu Button */}
       <div className="absolute right-0 top-[calc(100%-4rem)] translate-y-2 mt-1 sm:translate-y-0" ref={menuRef}>
-        <button 
+        <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -240,7 +239,7 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.1 }}
-              className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+              className="absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[999]"
             >
               <button
                 onClick={(e) => {
@@ -344,11 +343,10 @@ const ManageWorkflows = () => {
           {/* Group by Series Toggle */}
           <button
             onClick={() => setGroupBySeries((v) => !v)}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all border ${
-              groupBySeries
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all border ${groupBySeries
                 ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
                 : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
-            }`}
+              }`}
           >
             <Layers className="w-4 h-4" />
             Group by Series
