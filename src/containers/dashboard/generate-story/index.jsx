@@ -11,6 +11,7 @@ import { checkImagePromptSafety } from "../../../utils/promptModerations";
 import {
   fetchOverview, fetchWorkflowById,
 } from "../../../redux/slices/overview.slice";
+import axiosInstance from "../../../middleware/axiosInstance";
 
 const GenerateStory = () => {
   const dispatch = useDispatch();
@@ -38,6 +39,7 @@ const GenerateStory = () => {
 
   const [isTextEditorOpen, setIsTextEditorOpen] = useState(false);
   const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -56,6 +58,7 @@ const GenerateStory = () => {
     coverArtPrompt: "",
     seoMetadata: "",
     visualSuggestions: "",
+    uploadedMediaUrl: "",
   });
 
   const loadingMessages = [
@@ -97,6 +100,7 @@ const GenerateStory = () => {
             ? JSON.stringify(m.seoContent, null, 2)
             : JSON.stringify({ Title: "", Description: "" }, null, 2),
           visualSuggestions: m.visualSuggestions || "",
+          uploadedMediaUrl: m.uploadedMediaUrl || "",
         });
         setShowImagePrompt(m.shouldGenerateImage || !!m.imagePrompt);
       })
@@ -118,6 +122,31 @@ const GenerateStory = () => {
   const storyLengthStr = `${lengthMinutes[lengthLevel - 1]} minutes`;
 
   const handleInputChange = (k, v) => setFormData((p) => ({ ...p, [k]: v }));
+
+  const handleMediaUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploadingMedia(true);
+    const formDataObj = new FormData();
+    formDataObj.append("file", file);
+
+    try {
+      const res = await axiosInstance.post("/media", formDataObj, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      if (res.data && res.data.media && res.data.media.fileUrl) {
+        handleInputChange("uploadedMediaUrl", res.data.media.fileUrl);
+        toast.success("Media uploaded successfully");
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to upload media");
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
 
   const executeGenerate = async (payload) => {
     try {
@@ -173,6 +202,7 @@ const GenerateStory = () => {
         }
       })(),
       visualSuggestions: formData.visualSuggestions,
+      uploadedMediaUrl: formData.uploadedMediaUrl,
     };
 
     if (showImagePrompt && formData.mediaType === "single_image" && formData.imagePrompt) {
@@ -401,14 +431,28 @@ const GenerateStory = () => {
                       </div>
                     </div>
 
-                    {formData.mediaType === "multi_image" && (
+                    <div className="space-y-4 pt-4 border-t border-gray-100">
+                      <label className="text-sm font-semibold text-gray-900">Direct Media Upload (Optional)</label>
+                      <p className="text-xs text-gray-500">Upload an image or video to use directly, bypassing AI generation.</p>
+                      <input 
+                        type="file" 
+                        accept="image/*,video/*"
+                        onChange={handleMediaUpload}
+                        disabled={isUploadingMedia}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 disabled:opacity-50"
+                      />
+                      {isUploadingMedia && <p className="text-xs text-amber-600">Uploading media...</p>}
+                      {formData.uploadedMediaUrl && <p className="text-xs text-green-600 truncate">Uploaded: {formData.uploadedMediaUrl}</p>}
+                    </div>
+
+                    {formData.mediaType === "multi_image" && !formData.uploadedMediaUrl && (
                       <div className="space-y-4 p-5 bg-white rounded-2xl border border-gray-200">
                         <div className="flex justify-between items-center"><span className="font-semibold text-gray-700 uppercase text-xs tracking-wider">Number of Scenes</span><span className="text-amber-600  text-lg">{formData.imageCount}</span></div>
                         <input type="range" min="2" max="50" value={formData.imageCount} onChange={(e) => handleInputChange("imageCount", parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none accent-amber-500" />
                       </div>
                     )}
 
-                    {formData.mediaType === "single_image" && (
+                    {formData.mediaType === "single_image" && !formData.uploadedMediaUrl && (
                       <div className="space-y-4">
                         <div className="flex justify-between items-center"><label className="text-sm font-semibold text-gray-900">Image Prompt</label><button type="button" onClick={() => setIsPromptEditorOpen(true)} className="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg  uppercase">Open Editor</button></div>
                         <textarea placeholder="Describe your image..." value={formData.imagePrompt} onChange={(e) => handleInputChange("imagePrompt", e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 h-32 resize-none" />
