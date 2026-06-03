@@ -32,14 +32,22 @@ const MyCreations = () => {
         id: item.id,
         title: item.title,
         type: item.type,
-        video: item.video?.url || item.video?.video_16_9 || item.video?.video_9_16 || null,
+        video:
+          item.video?.url ||
+          item.video?.video_16_9 ||
+          item.video?.video_9_16 ||
+          null,
         video_16_9: item.video?.video_16_9 || null,
         video_9_16: item.video?.video_9_16 || null,
         content: item.content || item.episode?.script || null,
         audio: item.voiceover?.audioURL || item.episode?.audioURL || null,
         duration: item.video?.duration || item.episode?.duration || null,
         createdAt: new Date(item.createdAt).toLocaleDateString(),
-        hasVideo: !!(item.video?.url || item.video?.video_16_9 || item.video?.video_9_16),
+        hasVideo: !!(
+          item.video?.url ||
+          item.video?.video_16_9 ||
+          item.video?.video_9_16
+        ),
       };
 
       if (creation.hasVideo) {
@@ -108,22 +116,24 @@ const MyCreations = () => {
         <div className="flex items-center mb-8 border-b border-gray-200">
           <button
             onClick={() => setActiveTab("story")}
-            className={`flex items-center gap-2 px-6 py-3 text-lg font-medium border-b-2 transition-all ${activeTab === "story"
-              ? "border-emerald-500 text-emerald-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+            className={`flex items-center gap-2 px-3 sm:px-6 py-3 text-sm sm:text-lg font-medium border-b-2 transition-all ${
+              activeTab === "story"
+                ? "border-emerald-500 text-emerald-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
           >
-            <BiFilm className="w-5 h-5" />
+            <BiFilm className="w-4 h-4 sm:w-5 sm:h-5" />
             Stories ({storyCreations.length})
           </button>
           <button
             onClick={() => setActiveTab("podcast")}
-            className={`flex items-center gap-2 px-6 py-3 text-lg font-medium border-b-2 transition-all ${activeTab === "podcast"
-              ? "border-emerald-500 text-emerald-600"
-              : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
+            className={`flex items-center gap-2 px-3 sm:px-6 py-3 text-sm sm:text-lg font-medium border-b-2 transition-all ${
+              activeTab === "podcast"
+                ? "border-emerald-500 text-emerald-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
           >
-            <BiPodcast className="w-5 h-5" />
+            <BiPodcast className="w-4 h-4 sm:w-5 sm:h-5" />
             Podcasts ({podcastCreations.length})
           </button>
         </div>
@@ -167,10 +177,11 @@ const MyCreations = () => {
                 {/* Type Badge */}
                 <div className="absolute top-4 left-4 z-10">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${activeTab === "story"
-                      ? "bg-emerald-500/90 text-white"
-                      : "bg-purple-500/90 text-white"
-                      }`}
+                    className={`px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
+                      activeTab === "story"
+                        ? "bg-emerald-500/90 text-white"
+                        : "bg-purple-500/90 text-white"
+                    }`}
                   >
                     {activeTab === "story" ? "Story" : "Podcast"}
                   </span>
@@ -186,7 +197,6 @@ const MyCreations = () => {
                         muted
                         loop
                         autoPlay={false}
-
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </>
@@ -196,10 +206,11 @@ const MyCreations = () => {
                         className={`text-center p-6 ${activeTab === "podcast" ? "animate-pulse-slow" : ""}`}
                       >
                         <div
-                          className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${activeTab === "story"
-                            ? "bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-500"
-                            : "bg-gradient-to-br from-purple-100 to-purple-200 text-purple-500"
-                            }`}
+                          className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                            activeTab === "story"
+                              ? "bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-500"
+                              : "bg-gradient-to-br from-purple-100 to-purple-200 text-purple-500"
+                          }`}
                         >
                           {activeTab === "story" ? (
                             <BiFilm className="w-10 h-10" />
@@ -265,43 +276,55 @@ const MyCreations = () => {
 
         {/* Modal */}
         {selectedCreation && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-3xl w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col lg:flex-row border border-gray-200">
-              <button
-                onClick={() => setSelectedCreation(null)}
-                className="absolute top-6 right-6 text-gray-600 hover:text-gray-900 transition-colors z-10 bg-white/80 hover:bg-gray-100 rounded-full p-2 border border-gray-200"
-              >
-                <BiX className="w-6 h-6" />
-              </button>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
+            <div className="bg-white rounded-none sm:rounded-3xl w-full h-full sm:h-auto max-w-6xl max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto overflow-x-hidden shadow-2xl flex flex-col lg:flex-row border border-gray-200 relative">
+              {/* Sticky Close Button for Mobile */}
+              <div className="sticky top-0 right-0 w-full flex justify-end p-3 sm:p-4 z-50 bg-white/80 sm:bg-transparent backdrop-blur-md sm:backdrop-blur-none sm:absolute sm:top-0 sm:right-0">
+                <button
+                  onClick={() => setSelectedCreation(null)}
+                  className="text-gray-600 hover:text-gray-900 transition-colors bg-white/90 hover:bg-gray-100 rounded-full p-2 shadow-md border border-gray-200"
+                >
+                  <BiX className="w-6 h-6" />
+                </button>
+              </div>
 
               {/* Left Side - Media */}
-              <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100/50 flex flex-col items-center justify-center p-6 lg:p-8 overflow-y-auto">
+              <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100/50 flex flex-col items-center justify-start p-4 pt-2 sm:p-6 lg:p-8">
                 {selectedCreation.hasVideo ? (
                   <div className="flex flex-col w-full gap-8">
                     {/* Landscape Version */}
-                    {(selectedCreation.video_16_9 || (!selectedCreation.video_9_16 && selectedCreation.video)) && (
+                    {(selectedCreation.video_16_9 ||
+                      (!selectedCreation.video_9_16 &&
+                        selectedCreation.video)) && (
                       <div className="flex flex-col w-full">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-semibold text-gray-700">Landscape (16:9)</span>
+                          <span className="text-sm font-semibold text-gray-700">
+                            Landscape (16:9)
+                          </span>
                         </div>
-                        <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-black">
+                        <div className="w-full  aspect-video rounded-2xl overflow-hidden shadow-md border border-gray-200 bg-black">
                           <video
-                            src={selectedCreation.video_16_9 || selectedCreation.video}
+                            src={
+                              selectedCreation.video_16_9 ||
+                              selectedCreation.video
+                            }
                             controls
-                            className="w-full h-full"
+                            className="w-full h-full  object-contain"
                           />
                         </div>
                         <button
                           onClick={() =>
                             downloadFileWithName(
-                              selectedCreation.video_16_9 || selectedCreation.video,
+                              selectedCreation.video_16_9 ||
+                                selectedCreation.video,
                               `${selectedCreation.title.replace(/[^a-z0-9]/gi, "_")}_landscape.mp4`,
                             )
                           }
                           className={`mt-4 inline-flex items-center w-fit gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all
-                            ${activeTab === "story"
-                              ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                              : "bg-purple-600 text-white hover:bg-purple-700"
+                            ${
+                              activeTab === "story"
+                                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                : "bg-purple-600 text-white hover:bg-purple-700"
                             }`}
                         >
                           <BiVideo className="w-4 h-4" />
@@ -314,13 +337,15 @@ const MyCreations = () => {
                     {selectedCreation.video_9_16 && (
                       <div className="flex flex-col w-full">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-semibold text-gray-700">Portrait (9:16) - TikTok/Instagram</span>
+                          <span className="text-sm font-semibold text-gray-700">
+                            Portrait (9:16) - TikTok/Instagram
+                          </span>
                         </div>
-                        <div className="w-full max-w-[320px] aspect-[9/16] mx-auto rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-black">
+                        <div className="w-full max-w-[320px] aspect-[9/16] mx-auto rounded-2xl overflow-hidden shadow-md border border-gray-200 bg-black">
                           <video
                             src={selectedCreation.video_9_16}
                             controls
-                            className="w-full h-full"
+                            className="w-full h-full object-contain"
                           />
                         </div>
                         <button
@@ -331,9 +356,10 @@ const MyCreations = () => {
                             )
                           }
                           className={`mt-4 mx-auto inline-flex items-center w-fit gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all
-                            ${activeTab === "story"
-                              ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                              : "bg-purple-600 text-white hover:bg-purple-700"
+                            ${
+                              activeTab === "story"
+                                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                : "bg-purple-600 text-white hover:bg-purple-700"
                             }`}
                         >
                           <BiVideo className="w-4 h-4" />
@@ -346,10 +372,11 @@ const MyCreations = () => {
                   <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                     <div className="text-center">
                       <div
-                        className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${activeTab === "story"
-                          ? "bg-gradient-to-br from-emerald-100 to-emerald-200"
-                          : "bg-gradient-to-br from-purple-100 to-purple-200"
-                          }`}
+                        className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${
+                          activeTab === "story"
+                            ? "bg-gradient-to-br from-emerald-100 to-emerald-200"
+                            : "bg-gradient-to-br from-purple-100 to-purple-200"
+                        }`}
                       >
                         {activeTab === "story" ? (
                           <BiFilm className="w-12 h-12 text-emerald-500" />
@@ -372,10 +399,11 @@ const MyCreations = () => {
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <div className="flex items-center gap-3 mb-3">
                     <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${activeTab === "story"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-purple-100 text-purple-700"
-                        }`}
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        activeTab === "story"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-purple-100 text-purple-700"
+                      }`}
                     >
                       {activeTab === "story" ? "Story" : "Podcast"}
                     </span>
@@ -384,26 +412,28 @@ const MyCreations = () => {
                       {selectedCreation.createdAt}
                     </span>
                   </div>
-                  <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
+                  <h3 className="text-xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
                     {selectedCreation.title}
                   </h3>
                 </div>
 
-                <div className="flex-1 overflow-y-auto space-y-6 pr-4">
+                <div className="flex-1 overflow-visible space-y-6 pr-0 sm:pr-4">
                   {/* Audio Player */}
                   {selectedCreation.audio && (
                     <div
-                      className={`rounded-2xl p-6 border ${activeTab === "story"
-                        ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-emerald-200"
-                        : "bg-gradient-to-r from-purple-50 to-purple-100/50 border-purple-200"
-                        }`}
+                      className={`rounded-2xl p-6 border ${
+                        activeTab === "story"
+                          ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 border-emerald-200"
+                          : "bg-gradient-to-r from-purple-50 to-purple-100/50 border-purple-200"
+                      }`}
                     >
                       <div className="flex items-center gap-3 mb-4">
                         <div
-                          className={`rounded-full p-2 ${activeTab === "story"
-                            ? "bg-emerald-500"
-                            : "bg-purple-500"
-                            }`}
+                          className={`rounded-full p-2 ${
+                            activeTab === "story"
+                              ? "bg-emerald-500"
+                              : "bg-purple-500"
+                          }`}
                         >
                           <BiHeadphone className="w-5 h-5 text-white" />
                         </div>
@@ -427,10 +457,11 @@ const MyCreations = () => {
                             )
                           }
                           className={`inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all
-      ${activeTab === "story"
-                              ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                              : "bg-purple-600 text-white hover:bg-purple-700"
-                            }`}
+      ${
+        activeTab === "story"
+          ? "bg-emerald-600 text-white hover:bg-emerald-700"
+          : "bg-purple-600 text-white hover:bg-purple-700"
+      }`}
                         >
                           <BiHeadphone className="w-4 h-4" />
                           Download Audio
@@ -450,7 +481,7 @@ const MyCreations = () => {
                           Content
                         </h4>
                       </div>
-                      <div className="text-gray-700 text-base leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto pr-3">
+                      <div className="text-gray-700 text-base leading-relaxed whitespace-pre-wrap max-h-none sm:max-h-64 overflow-y-visible sm:overflow-y-auto pr-0 sm:pr-3">
                         {selectedCreation.content}
                       </div>
                     </div>

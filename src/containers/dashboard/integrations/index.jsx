@@ -40,12 +40,12 @@ export default function Integrations() {
   ];
 
   return (
-    <div className="flex-1 px-8 py-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-semibold text-gray-900 mb-2">
+    <div className="flex-1 px-4 sm:px-8 py-6 sm:py-8">
+      <div className="mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-2">
           Integrations
         </h2>
-        <p className="text-gray-600 text-xl">
+        <p className="text-gray-600 text-lg sm:text-xl">
           Connect StoryWave with your favorite tools
         </p>
       </div>
@@ -72,10 +72,10 @@ export default function Integrations() {
               )}
             </div>
 
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
               {integration.name}
             </h3>
-            <p className="text-gray-600 text-lg leading-relaxed">
+            <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
               {integration.description}
             </p>
           </div>

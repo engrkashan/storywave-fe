@@ -57,7 +57,7 @@ const SummaryCard = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.45, ease: "easeOut" }}
       whileHover={{ y: -4, scale: 1.015 }}
-      className="relative overflow-hidden rounded-2xl p-5 border border-white/60 bg-white/70 backdrop-blur-sm shadow-sm hover:shadow-xl transition-all duration-300 group"
+      className="relative overflow-hidden rounded-2xl p-4 sm:p-5 border border-white/60 bg-white/70 backdrop-blur-sm shadow-sm hover:shadow-xl transition-all duration-300 group"
     >
       {/* Gradient background layer */}
       <div
@@ -72,11 +72,11 @@ const SummaryCard = ({
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-4">
           <div
-            className={`p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-md`}
+            className={`p-2.5 sm:p-3 rounded-xl bg-gradient-to-br ${gradient} shadow-md`}
           >
-            <Icon className="w-5 h-5 text-white" />
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-          <span className="text-3xl font-extrabold text-gray-900 tabular-nums">
+          <span className="text-2xl sm:text-3xl font-extrabold text-gray-900 tabular-nums">
             {animated}
           </span>
         </div>
@@ -220,6 +220,19 @@ const Overview = () => {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [deletingWorkflowId, setDeletingWorkflowId] = useState(null);
+
+  // Close filter dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest("#filter-dropdown-container")) {
+        setShowFilterDropdown(false);
+      }
+    };
+    if (showFilterDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showFilterDropdown]);
 
   // ── Dynamic counts from stories  ──────────────────
   const podcastCount = useMemo(
@@ -430,7 +443,7 @@ const Overview = () => {
             </div>
 
             {/* Filter dropdown */}
-            <div className="relative self-start sm:self-auto">
+            <div id="filter-dropdown-container" className="relative self-start sm:self-auto">
               <button
                 onClick={() => setShowFilterDropdown((v) => !v)}
                 className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl
@@ -638,7 +651,7 @@ const Overview = () => {
                       </div>
 
                       {/* Right: Actions */}
-                      <div className="flex sm:flex-col items-center justify-end gap-2 mt-4 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="flex sm:flex-col items-center justify-end gap-2 mt-4 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         {isCancellable && (
                           <button
                             onClick={(e) => {
