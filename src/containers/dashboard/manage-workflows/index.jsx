@@ -62,7 +62,7 @@ const FilterChips = memo(({ value, onChange }) => {
   ];
 
   return (
-    <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+    <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide">
       {options.map((opt) => (
         <button
           key={opt.value}
@@ -330,11 +330,13 @@ const ManageWorkflows = () => {
     <div className="p-4 md:p-8 min-h-[calc(100vh-80px)] bg-gray-50 max-w-[1800px] mx-auto">
       {/* HEADER */}
       <div className="mb-8 z-10 pb-4 pt-2">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4 tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 tracking-tight">
           Your Content
         </h1>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <FilterChips value={filterType} onChange={setFilterType} />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-wrap">
+          <div className="w-full sm:w-auto flex-1 overflow-hidden">
+            <FilterChips value={filterType} onChange={setFilterType} />
+          </div>
           {/* Group by Series Toggle */}
           <button
             onClick={() => setGroupBySeries((v) => !v)}

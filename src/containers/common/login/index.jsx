@@ -71,15 +71,15 @@ const Login = () => {
     <div className="relative h-screen w-full p-4 md:px-20 grid grid-cols-1 md:grid-cols-5 items-center justify-center gap-6 md:gap-10 bg-gradient-to-b from-[#f8be4c]/60 to-[#f0498f]/60">
       {/* LEFT */}
       <div className="w-full z-50 flex items-center justify-center md:justify-end h-full col-span-1 md:col-span-2">
-        <div className="w-full max-w-lg p-8 bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20">
+        <div className="w-full max-w-lg p-5 sm:p-8 bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20">
           <div className="flex items-center justify-center mb-5">
-            <img src="/logo.png" alt="Story Wave" className="h-32" />
+            <img src="/logo.png" alt="Story Wave" className="h-20 sm:h-32" />
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* EMAIL */}
             <div>
-              <label className="block font-medium text-gray-900 mb-2">
+              <label className="block font-medium text-white md:text-gray-900 mb-2">
                 Email address
               </label>
               <input
@@ -95,7 +95,7 @@ const Login = () => {
             {/* PASSWORD */}
             {!isForgotPassword && (
               <div>
-                <label className="block font-medium text-gray-900 mb-2">
+                <label className="block font-medium text-white md:text-gray-900 mb-2">
                   Password
                 </label>
                 <input
@@ -126,7 +126,7 @@ const Login = () => {
       </div>
 
       {/* RIGHT VIDEO */}
-      <div className="w-full h-full rounded-2xl  overflow-hidden col-span-1 md:col-span-3 shadow-2xl">
+      <div className="absolute md:relative bottom-0 md:block w-screen md:w-auto h-full md:rounded-2xl overflow-hidden col-span-1 md:col-span-3 md:shadow-2xl">
         <video
           src="/videos/hero.mp4"
           autoPlay
@@ -134,7 +134,7 @@ const Login = () => {
           muted
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl" />
+        <div className="absolute inset-0 bg-black/60 md:bg-gradient-to-t md:from-black/20 md:to-transparent md:rounded-2xl" />
       </div>
     </div>
   );

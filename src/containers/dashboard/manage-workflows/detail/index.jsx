@@ -4,22 +4,15 @@ import { useParams, Link } from "react-router-dom";
 import { fetchWorkflowById } from "../../../../redux/slices/overview.slice";
 import {
   ArrowLeft,
-  Calendar,
   CheckCircle,
   Clock,
-  DockIcon,
   Music,
   X,
   ExternalLink,
-  ChevronRight,
-  Info,
   Film,
   Image as ImageIcon,
   Copy,
   Download,
-  ChevronDown,
-  ChevronUp,
-  ListCheck,
 } from "lucide-react";
 import { BiAlarmExclamation, BiMicrophone, BiVideo } from "react-icons/bi";
 
@@ -164,10 +157,10 @@ const WorkflowDetailPage = () => {
 
     return (
       <div className="w-full px-4 sm:px-6 mb-8">
-        {/* Grid: 3 columns, auto rows. 9:16 video spans 2 rows. */}
-        <div className="grid grid-cols-3 items-center justify-center gap-3 sm:gap-4">
+        {/* Mobile: stacked flex with custom order. Desktop: 3-column grid. */}
+        <div className="flex flex-col md:grid md:grid-cols-3 items-start justify-center gap-6 sm:gap-4">
           {/* ── COLUMN 1 ── */}
-          <div>
+          <div className="order-1 md:order-1 w-full">
             {/* Video 16:9  (row 1) */}
             {has16_9Video ? (
               <div className="relative rounded-2xl overflow-hidden h-[30vh] bg-black shadow-sm border border-gray-100 group aspect-video">
@@ -225,7 +218,7 @@ const WorkflowDetailPage = () => {
           {/* ── COLUMN 2: 9:16 video spans 2 rows ── */}
           {has9_16Video ? (
             <div
-              className="justify-center items-center flex mx-auto relative rounded-2xl overflow-hidden bg-black shadow-sm border border-gray-100 row-span-2 group"
+              className="order-3 md:order-2 justify-center items-center flex mx-auto relative rounded-2xl overflow-hidden bg-black shadow-sm border border-gray-100 md:row-span-2 group w-full max-w-[320px] md:max-w-none"
               style={{ aspectRatio: "9/16", maxHeight: "60vh" }}
             >
               <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1">
@@ -239,7 +232,7 @@ const WorkflowDetailPage = () => {
             </div>
           ) : (
             <div
-              className="justify-center items-center flex mx-auto h-full relative rounded-2xl overflow-hidden bg-gray-900 shadow-sm border border-gray-800 row-span-2 flex items-center justify-center"
+              className="order-3 md:order-2 mx-auto h-full relative rounded-2xl overflow-hidden bg-gray-900 shadow-sm border border-gray-800 md:row-span-2 flex items-center justify-center w-full max-w-[320px] md:max-w-none"
               style={{ aspectRatio: "9/16", maxHeight: "450px" }}
             >
               <BiVideo className="w-10 h-10 text-gray-600" />
@@ -248,10 +241,10 @@ const WorkflowDetailPage = () => {
               </span>
             </div>
           )}
-          <div>
+          <div className="order-2 md:order-3 w-full grid grid-cols-2 md:block gap-4 md:gap-0">
             {/* ── COLUMN 3 ── */}
             {/* Cover 1:1  (row 1) */}
-            <div className="relative rounded-2xl overflow-hidden h-[30vh] bg-gray-100 shadow-sm border border-gray-200 group aspect-square">
+            <div className="relative rounded-2xl overflow-hidden h-auto md:h-[30vh] bg-gray-100 shadow-sm border border-gray-200 group aspect-square">
               <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1">
                 <ImageIcon className="w-3 h-3" /> Cover 1:1
               </span>
@@ -285,7 +278,7 @@ const WorkflowDetailPage = () => {
 
             {/* Audio / Voiceover  (row 2) */}
             {hasAudio ? (
-              <div className="mt-5 relative rounded-2xl h-[30vh] overflow-hidden bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm border border-indigo-100 p-4 flex flex-col items-center justify-center gap-3 aspect-square">
+              <div className="md:mt-5 relative rounded-2xl h-auto md:h-[30vh] overflow-hidden bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm border border-indigo-100 p-2 sm:p-4 flex flex-col items-center justify-center gap-1 sm:gap-3 aspect-square">
                 <span className="absolute top-2 left-2 bg-white/80 backdrop-blur-sm text-gray-700 px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1 border border-gray-200">
                   <BiMicrophone className="w-3 h-3" /> Audio
                 </span>
@@ -303,7 +296,7 @@ const WorkflowDetailPage = () => {
                 )}
               </div>
             ) : (
-              <div className="mt-5 relative rounded-2xl overflow-hidden bg-gray-50 shadow-sm border border-gray-200 flex items-center justify-center aspect-square">
+              <div className="md:mt-5 relative rounded-2xl overflow-hidden bg-gray-50 shadow-sm border border-gray-200 flex items-center justify-center aspect-square">
                 <BiMicrophone className="w-10 h-10 text-gray-200" />
                 <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10">
                   No Audio
@@ -319,7 +312,7 @@ const WorkflowDetailPage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Top Navbar / Back */}
-      <div className="px-6 py-4 flex items-center sticky top-0 bg-white/80 backdrop-blur-md z-40 shadow-sm border-b border-gray-100">
+      <div className="px-6 py-4 flex items-center relative md:sticky top-0 bg-white/80 backdrop-blur-md z-40 shadow-sm border-b border-gray-100">
         <Link
           to="/dashboard/manage-workflows"
           className="flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
@@ -330,7 +323,6 @@ const WorkflowDetailPage = () => {
       </div>
 
       <div className="w-full pt-6">
-        {/* MEDIA GRID: All assets in a responsive 3-column grid */}
         {renderMediaGrid()}
 
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-4">

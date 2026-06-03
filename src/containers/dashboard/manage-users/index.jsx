@@ -167,12 +167,60 @@ const ManageCreators = () => {
         </button>
       </div>
 
-      {/* Table */}
+      {/* List / Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {filteredUsers.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobile Card View */}
+          <div className="block sm:hidden divide-y divide-gray-100">
+            <AnimatePresence>
+              {filteredUsers.map((user) => (
+                <motion.div
+                  key={user.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="p-4 hover:bg-gray-50/50"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <div className="font-semibold text-gray-900">{user.fullName}</div>
+                      <div className="text-sm text-gray-500">{user.username}</div>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-white text-xs font-semibold ${user.role === "ADMIN" ? "bg-green-500" : ""} ${user.role === "CREATOR" ? "bg-blue-500" : ""}`}>
+                      {user.role}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600 mb-1 truncate">{user.email}</div>
+                  <div className="text-sm font-mono mb-3">
+                    {user.password && user.password !== "******" ? (
+                      <span className="text-red-600 font-medium">
+                        {user.password}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">•••••••</span>
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-2 border-t border-gray-100 pt-3">
+                    <IconBtn
+                      onClick={() => openEditModal(user)}
+                      icon={Edit2}
+                    />
+                    <IconBtn
+                      danger
+                      onClick={() => handleDelete(user.id)}
+                      icon={Trash2}
+                    />
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 text-gray-600 text-sm">
                 <tr>
@@ -239,6 +287,7 @@ const ManageCreators = () => {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

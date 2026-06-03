@@ -226,14 +226,14 @@ const GenerateStory = () => {
       )}
 
       {/* Header */}
-      <div className="mb-10">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mb-8 sm:mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Story Builder</h1>
-            <p className="text-gray-600 text-lg">Create and schedule AI-powered stories with rich multimedia</p>
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">Story Builder</h1>
+            <p className="text-gray-600 text-base sm:text-lg">Create and schedule AI-powered stories with rich multimedia</p>
           </div>
           {loading && (
-            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-xl shadow-md">
+            <div className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-white rounded-xl shadow-md self-start sm:self-auto">
               <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
               <p className="text-gray-700 font-medium">{loadingMessages[currentMessageIndex]}</p>
             </div>
@@ -241,20 +241,20 @@ const GenerateStory = () => {
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div><p className="text-sm text-gray-500">Stories Generated</p><p className="text-2xl font-semibold text-gray-900">{totalStories || 0}</p></div>
               <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-pink-100 rounded-xl flex items-center justify-center text-amber-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div><p className="text-sm text-gray-500">Scheduled</p><p className="text-2xl font-semibold text-gray-900">{scheduled?.length || 0}</p></div>
               <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div><p className="text-sm text-gray-500">Active Stories</p><p className="text-2xl font-semibold text-gray-900">{activeStories || 0}</p></div>
               <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-amber-100 rounded-xl flex items-center justify-center text-pink-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
@@ -266,8 +266,8 @@ const GenerateStory = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Main Form */}
         <div className="lg:col-span-7">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-            <div className="flex items-center gap-3 mb-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-8">
+            <div className="flex items-center gap-3 mb-6 sm:mb-8">
               <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-pink-600 rounded-xl flex items-center justify-center text-white"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></div>
               <h2 className="text-2xl font-bold text-gray-900">Create New Story</h2>
             </div>
@@ -276,9 +276,9 @@ const GenerateStory = () => {
               {/* Mode Selection */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-3">Generation Mode</label>
-                <div className="flex gap-4">
-                  <button type="button" onClick={() => setMode("now")} className={`flex-1 py-4 px-6 rounded-xl border-2 text-center font-medium transition-all ${mode === "now" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}><div className="flex flex-col items-center"><svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg><span>Generate Now</span></div></button>
-                  <button type="button" onClick={() => setMode("schedule")} className={`flex-1 py-4 px-6 rounded-xl border-2 text-center font-medium transition-all ${mode === "schedule" ? "border-pink-500 bg-pink-50 text-pink-700" : "border-gray-300 text-gray-700"}`}><div className="flex flex-col items-center"><svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>Schedule</span></div></button>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  <button type="button" onClick={() => setMode("now")} className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl border-2 text-center font-medium transition-all ${mode === "now" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}><div className="flex flex-col items-center"><svg className="w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg><span>Generate Now</span></div></button>
+                  <button type="button" onClick={() => setMode("schedule")} className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl border-2 text-center font-medium transition-all ${mode === "schedule" ? "border-pink-500 bg-pink-50 text-pink-700" : "border-gray-300 text-gray-700"}`}><div className="flex flex-col items-center"><svg className="w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>Schedule</span></div></button>
                 </div>
               </div>
 
@@ -435,18 +435,18 @@ const GenerateStory = () => {
                     </button>
                   </div>
                 </div>
-                <div className={`flex gap-4 transition-opacity ${formData.dualPlatform ? "opacity-50 pointer-events-none" : "opacity-100"}`}>
+                <div className={`flex flex-col sm:flex-row gap-3 sm:gap-4 transition-opacity ${formData.dualPlatform ? "opacity-50 pointer-events-none" : "opacity-100"}`}>
                   <button
                     type="button"
                     onClick={() => handleInputChange("aspectRatio", "9:16")}
-                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center font-medium transition-all ${formData.aspectRatio === "9:16" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
+                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center text-sm sm:text-base font-medium transition-all ${formData.aspectRatio === "9:16" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
                   >
                     TikTok / Instagram (9:16)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleInputChange("aspectRatio", "16:9")}
-                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center font-medium transition-all ${formData.aspectRatio === "16:9" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
+                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center text-sm sm:text-base font-medium transition-all ${formData.aspectRatio === "16:9" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
                   >
                     YouTube (16:9)
                   </button>
@@ -528,8 +528,8 @@ const GenerateStory = () => {
       {isTextEditorOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-modal">
-            <div className="p-8 border-b flex justify-between items-center bg-gray-50"><h2 className=" text-2xl text-gray-900 ">SCRIPT COMMAND CENTER</h2><button onClick={() => setIsTextEditorOpen(false)} className="px-6 py-2 bg-black text-white rounded-full font-semibold uppercase text-xs">Close Array</button></div>
-            <textarea value={formData.concept} onChange={e => handleInputChange("concept", e.target.value)} className="flex-1 p-12 text-xl font-medium leading-relaxed resize-none outline-none text-gray-800" placeholder="DEUCODE YOUR STORY HERE..." />
+            <div className="p-4 sm:p-8 border-b flex justify-between items-center bg-gray-50"><h2 className="text-xl sm:text-2xl text-gray-900">SCRIPT COMMAND CENTER</h2><button onClick={() => setIsTextEditorOpen(false)} className="px-4 sm:px-6 py-2 bg-black text-white rounded-full font-semibold uppercase text-xs">Close Array</button></div>
+            <textarea value={formData.concept} onChange={e => handleInputChange("concept", e.target.value)} className="flex-1 p-4 sm:p-12 text-base sm:text-xl font-medium leading-relaxed resize-none outline-none text-gray-800" placeholder="DEUCODE YOUR STORY HERE..." />
           </div>
         </div>
       )}
@@ -537,8 +537,8 @@ const GenerateStory = () => {
       {isPromptEditorOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-modal">
-            <div className="p-8 border-b flex justify-between items-center bg-amber-50"><h2 className=" text-2xl text-amber-900 ">VISUAL PROMPT ENGINE</h2><button onClick={() => setIsPromptEditorOpen(false)} className="px-6 py-2 bg-amber-600 text-white rounded-full font-semibold uppercase text-xs">Lock Prompt</button></div>
-            <textarea value={formData.imagePrompt} onChange={e => handleInputChange("imagePrompt", e.target.value)} className="flex-1 p-12 text-xl font-medium leading-relaxed resize-none outline-none text-amber-900 bg-amber-50/20" placeholder="INITIALIZE VISUAL PARAMETERS..." />
+            <div className="p-4 sm:p-8 border-b flex justify-between items-center bg-amber-50"><h2 className="text-xl sm:text-2xl text-amber-900">VISUAL PROMPT ENGINE</h2><button onClick={() => setIsPromptEditorOpen(false)} className="px-4 sm:px-6 py-2 bg-amber-600 text-white rounded-full font-semibold uppercase text-xs">Lock Prompt</button></div>
+            <textarea value={formData.imagePrompt} onChange={e => handleInputChange("imagePrompt", e.target.value)} className="flex-1 p-4 sm:p-12 text-base sm:text-xl font-medium leading-relaxed resize-none outline-none text-amber-900 bg-amber-50/20" placeholder="INITIALIZE VISUAL PARAMETERS..." />
           </div>
         </div>
       )}
