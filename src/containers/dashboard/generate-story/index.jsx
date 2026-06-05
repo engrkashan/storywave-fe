@@ -11,6 +11,7 @@ import { checkImagePromptSafety } from "../../../utils/promptModerations";
 import {
   fetchOverview, fetchWorkflowById,
 } from "../../../redux/slices/overview.slice";
+import axiosInstance from "../../../middleware/axiosInstance";
 
 const GenerateStory = () => {
   const dispatch = useDispatch();
@@ -38,6 +39,8 @@ const GenerateStory = () => {
 
   const [isTextEditorOpen, setIsTextEditorOpen] = useState(false);
   const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [isUploadingCharRef, setIsUploadingCharRef] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -56,6 +59,8 @@ const GenerateStory = () => {
     coverArtPrompt: "",
     seoMetadata: "",
     visualSuggestions: "",
+    uploadedMediaUrl: "",
+    characterReferenceBase64: "", // User-supplied character reference image (base64)
   });
 
   const loadingMessages = [
@@ -97,6 +102,7 @@ const GenerateStory = () => {
             ? JSON.stringify(m.seoContent, null, 2)
             : JSON.stringify({ Title: "", Description: "" }, null, 2),
           visualSuggestions: m.visualSuggestions || "",
+          uploadedMediaUrl: m.uploadedMediaUrl || "",
         });
         setShowImagePrompt(m.shouldGenerateImage || !!m.imagePrompt);
       })
@@ -118,6 +124,83 @@ const GenerateStory = () => {
   const storyLengthStr = `${lengthMinutes[lengthLevel - 1]} minutes`;
 
   const handleInputChange = (k, v) => setFormData((p) => ({ ...p, [k]: v }));
+
+  const handleMediaUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploadingMedia(true);
+    const formDataObj = new FormData();
+    formDataObj.append("file", file);
+
+    try {
+      const res = await axiosInstance.post("/media", formDataObj, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      if (res.data && res.data.media && res.data.media.fileUrl) {
+        handleInputChange("uploadedMediaUrl", res.data.media.fileUrl);
+        toast.success("Media uploaded successfully");
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to upload media");
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  const handleCharRefUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image is too large! Please select an image under 5MB.");
+      return;
+    }
+    
+    setIsUploadingCharRef(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Downscale image to max 800px to prevent huge base64 strings freezing Redux/Network
+        const MAX_DIM = 800;
+        let width = img.width;
+        let height = img.height;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Compress as JPEG
+        const base64Str = canvas.toDataURL("image/jpeg", 0.8);
+        handleInputChange("characterReferenceBase64", base64Str);
+        setIsUploadingCharRef(false);
+        toast.success("Character reference loaded ✅");
+      };
+      img.onerror = () => {
+        toast.error("Failed to read image data");
+        setIsUploadingCharRef(false);
+      };
+      img.src = event.target.result;
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read character reference file");
+      setIsUploadingCharRef(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const executeGenerate = async (payload) => {
     try {
@@ -173,6 +256,8 @@ const GenerateStory = () => {
         }
       })(),
       visualSuggestions: formData.visualSuggestions,
+      uploadedMediaUrl: formData.uploadedMediaUrl,
+      characterReferenceBase64: formData.characterReferenceBase64 || null,
     };
 
     if (showImagePrompt && formData.mediaType === "single_image" && formData.imagePrompt) {
@@ -226,14 +311,14 @@ const GenerateStory = () => {
       )}
 
       {/* Header */}
-      <div className="mb-8 sm:mb-10">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">Story Builder</h1>
-            <p className="text-gray-600 text-base sm:text-lg">Create and schedule AI-powered stories with rich multimedia</p>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Story Builder</h1>
+            <p className="text-gray-600 text-lg">Create and schedule AI-powered stories with rich multimedia</p>
           </div>
           {loading && (
-            <div className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-white rounded-xl shadow-md self-start sm:self-auto">
+            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-xl shadow-md">
               <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
               <p className="text-gray-700 font-medium">{loadingMessages[currentMessageIndex]}</p>
             </div>
@@ -241,20 +326,20 @@ const GenerateStory = () => {
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
-          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div><p className="text-sm text-gray-500">Stories Generated</p><p className="text-2xl font-semibold text-gray-900">{totalStories || 0}</p></div>
               <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-pink-100 rounded-xl flex items-center justify-center text-amber-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
             </div>
           </div>
-          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div><p className="text-sm text-gray-500">Scheduled</p><p className="text-2xl font-semibold text-gray-900">{scheduled?.length || 0}</p></div>
               <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
             </div>
           </div>
-          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div><p className="text-sm text-gray-500">Active Stories</p><p className="text-2xl font-semibold text-gray-900">{activeStories || 0}</p></div>
               <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-amber-100 rounded-xl flex items-center justify-center text-pink-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
@@ -266,8 +351,8 @@ const GenerateStory = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Main Form */}
         <div className="lg:col-span-7">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-8">
-            <div className="flex items-center gap-3 mb-6 sm:mb-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-8">
               <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-pink-600 rounded-xl flex items-center justify-center text-white"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></div>
               <h2 className="text-2xl font-bold text-gray-900">Create New Story</h2>
             </div>
@@ -276,9 +361,9 @@ const GenerateStory = () => {
               {/* Mode Selection */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-3">Generation Mode</label>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  <button type="button" onClick={() => setMode("now")} className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl border-2 text-center font-medium transition-all ${mode === "now" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}><div className="flex flex-col items-center"><svg className="w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg><span>Generate Now</span></div></button>
-                  <button type="button" onClick={() => setMode("schedule")} className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl border-2 text-center font-medium transition-all ${mode === "schedule" ? "border-pink-500 bg-pink-50 text-pink-700" : "border-gray-300 text-gray-700"}`}><div className="flex flex-col items-center"><svg className="w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>Schedule</span></div></button>
+                <div className="flex gap-4">
+                  <button type="button" onClick={() => setMode("now")} className={`flex-1 py-4 px-6 rounded-xl border-2 text-center font-medium transition-all ${mode === "now" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}><div className="flex flex-col items-center"><svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg><span>Generate Now</span></div></button>
+                  <button type="button" onClick={() => setMode("schedule")} className={`flex-1 py-4 px-6 rounded-xl border-2 text-center font-medium transition-all ${mode === "schedule" ? "border-pink-500 bg-pink-50 text-pink-700" : "border-gray-300 text-gray-700"}`}><div className="flex flex-col items-center"><svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>Schedule</span></div></button>
                 </div>
               </div>
 
@@ -401,14 +486,60 @@ const GenerateStory = () => {
                       </div>
                     </div>
 
-                    {formData.mediaType === "multi_image" && (
+                    <div className="space-y-4 pt-4 border-t border-gray-100">
+                      <label className="text-sm font-semibold text-gray-900">Direct Media Upload (Optional)</label>
+                      <p className="text-xs text-gray-500">Upload an image or video to use directly, bypassing AI generation.</p>
+                      <input 
+                        type="file" 
+                        accept="image/*,video/*"
+                        onChange={handleMediaUpload}
+                        disabled={isUploadingMedia}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 disabled:opacity-50"
+                      />
+                      {isUploadingMedia && <p className="text-xs text-amber-600">Uploading media...</p>}
+                      {formData.uploadedMediaUrl && <p className="text-xs text-green-600 truncate">Uploaded: {formData.uploadedMediaUrl}</p>}
+                    </div>
+
+                    {/* Character Reference Upload */}
+                    <div className="space-y-3 pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">Character Reference Image <span className="text-gray-400 font-normal">(Optional)</span></p>
+                          <p className="text-xs text-gray-500">Upload a photo of a character — AI will use it as a visual anchor for scenes featuring that character.</p>
+                        </div>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCharRefUpload}
+                        disabled={isUploadingCharRef}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
+                      />
+                      {isUploadingCharRef && <p className="text-xs text-purple-600 animate-pulse">Processing character reference...</p>}
+                      {formData.characterReferenceBase64 && (
+                        <div className="flex items-center gap-2">
+                          <img src={formData.characterReferenceBase64} alt="Character reference" className="w-12 h-12 rounded-lg object-cover border-2 border-purple-200" />
+                          <div>
+                            <p className="text-xs text-purple-700 font-semibold">Character reference ready ✓</p>
+                            <button type="button" onClick={() => handleInputChange("characterReferenceBase64", "")} className="text-xs text-red-400 hover:text-red-600">Remove</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {formData.mediaType === "multi_image" && !formData.uploadedMediaUrl && (
                       <div className="space-y-4 p-5 bg-white rounded-2xl border border-gray-200">
                         <div className="flex justify-between items-center"><span className="font-semibold text-gray-700 uppercase text-xs tracking-wider">Number of Scenes</span><span className="text-amber-600  text-lg">{formData.imageCount}</span></div>
                         <input type="range" min="2" max="50" value={formData.imageCount} onChange={(e) => handleInputChange("imageCount", parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none accent-amber-500" />
                       </div>
                     )}
 
-                    {formData.mediaType === "single_image" && (
+                    {formData.mediaType === "single_image" && !formData.uploadedMediaUrl && (
                       <div className="space-y-4">
                         <div className="flex justify-between items-center"><label className="text-sm font-semibold text-gray-900">Image Prompt</label><button type="button" onClick={() => setIsPromptEditorOpen(true)} className="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg  uppercase">Open Editor</button></div>
                         <textarea placeholder="Describe your image..." value={formData.imagePrompt} onChange={(e) => handleInputChange("imagePrompt", e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 h-32 resize-none" />
@@ -435,18 +566,18 @@ const GenerateStory = () => {
                     </button>
                   </div>
                 </div>
-                <div className={`flex flex-col sm:flex-row gap-3 sm:gap-4 transition-opacity ${formData.dualPlatform ? "opacity-50 pointer-events-none" : "opacity-100"}`}>
+                <div className={`flex gap-4 transition-opacity ${formData.dualPlatform ? "opacity-50 pointer-events-none" : "opacity-100"}`}>
                   <button
                     type="button"
                     onClick={() => handleInputChange("aspectRatio", "9:16")}
-                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center text-sm sm:text-base font-medium transition-all ${formData.aspectRatio === "9:16" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
+                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center font-medium transition-all ${formData.aspectRatio === "9:16" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
                   >
                     TikTok / Instagram (9:16)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleInputChange("aspectRatio", "16:9")}
-                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center text-sm sm:text-base font-medium transition-all ${formData.aspectRatio === "16:9" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
+                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center font-medium transition-all ${formData.aspectRatio === "16:9" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
                   >
                     YouTube (16:9)
                   </button>
@@ -528,8 +659,8 @@ const GenerateStory = () => {
       {isTextEditorOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-modal">
-            <div className="p-4 sm:p-8 border-b flex justify-between items-center bg-gray-50"><h2 className="text-xl sm:text-2xl text-gray-900">SCRIPT COMMAND CENTER</h2><button onClick={() => setIsTextEditorOpen(false)} className="px-4 sm:px-6 py-2 bg-black text-white rounded-full font-semibold uppercase text-xs">Close Array</button></div>
-            <textarea value={formData.concept} onChange={e => handleInputChange("concept", e.target.value)} className="flex-1 p-4 sm:p-12 text-base sm:text-xl font-medium leading-relaxed resize-none outline-none text-gray-800" placeholder="DEUCODE YOUR STORY HERE..." />
+            <div className="p-8 border-b flex justify-between items-center bg-gray-50"><h2 className=" text-2xl text-gray-900 ">SCRIPT COMMAND CENTER</h2><button onClick={() => setIsTextEditorOpen(false)} className="px-6 py-2 bg-black text-white rounded-full font-semibold uppercase text-xs">Close Array</button></div>
+            <textarea value={formData.concept} onChange={e => handleInputChange("concept", e.target.value)} className="flex-1 p-12 text-xl font-medium leading-relaxed resize-none outline-none text-gray-800" placeholder="DEUCODE YOUR STORY HERE..." />
           </div>
         </div>
       )}
@@ -537,8 +668,8 @@ const GenerateStory = () => {
       {isPromptEditorOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-modal">
-            <div className="p-4 sm:p-8 border-b flex justify-between items-center bg-amber-50"><h2 className="text-xl sm:text-2xl text-amber-900">VISUAL PROMPT ENGINE</h2><button onClick={() => setIsPromptEditorOpen(false)} className="px-4 sm:px-6 py-2 bg-amber-600 text-white rounded-full font-semibold uppercase text-xs">Lock Prompt</button></div>
-            <textarea value={formData.imagePrompt} onChange={e => handleInputChange("imagePrompt", e.target.value)} className="flex-1 p-4 sm:p-12 text-base sm:text-xl font-medium leading-relaxed resize-none outline-none text-amber-900 bg-amber-50/20" placeholder="INITIALIZE VISUAL PARAMETERS..." />
+            <div className="p-8 border-b flex justify-between items-center bg-amber-50"><h2 className=" text-2xl text-amber-900 ">VISUAL PROMPT ENGINE</h2><button onClick={() => setIsPromptEditorOpen(false)} className="px-6 py-2 bg-amber-600 text-white rounded-full font-semibold uppercase text-xs">Lock Prompt</button></div>
+            <textarea value={formData.imagePrompt} onChange={e => handleInputChange("imagePrompt", e.target.value)} className="flex-1 p-12 text-xl font-medium leading-relaxed resize-none outline-none text-amber-900 bg-amber-50/20" placeholder="INITIALIZE VISUAL PARAMETERS..." />
           </div>
         </div>
       )}

@@ -32,7 +32,7 @@ export const cancelWorkflow = createAsyncThunk(
   "overview/cancelWorkflow",
   async (workflowId, thunkAPI) => {
     try {
-      await axiosInstance.post(`/overview/cancel/${workflowId}`);
+      await axiosInstance.delete(`/story/workflow/${workflowId}`);
       return workflowId;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
@@ -120,13 +120,25 @@ const overviewSlice = createSlice({
       })
 
       // Cancel Workflow
+      .addCase(cancelWorkflow.pending, (state, action) => {
+        // Optimistically flag as cancelling in the UI
+        const workflowId = action.meta.arg;
+        const story = state.stories.find((s) => s.id === workflowId || s.workflowId === workflowId);
+        if (story) story.status = "CANCELLATION_REQUESTED";
+      })
       .addCase(cancelWorkflow.fulfilled, (state, action) => {
         const workflowId = action.payload;
-        const story = state.stories.find((s) => s.id === workflowId);
+        const story = state.stories.find((s) => s.id === workflowId || s.workflowId === workflowId);
         if (story) story.status = "CANCELLED";
         if (state.workflow && state.workflow.id === workflowId) {
           state.workflow.status = "CANCELLED";
         }
+      })
+      .addCase(cancelWorkflow.rejected, (state, action) => {
+        // Revert the optimistic update on failure
+        const workflowId = action.meta.arg;
+        const story = state.stories.find((s) => s.id === workflowId || s.workflowId === workflowId);
+        if (story && story.status === "CANCELLATION_REQUESTED") story.status = "PROCESSING";
       })
 
       // Delete Workflow

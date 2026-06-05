@@ -126,6 +126,11 @@ const getStatusStyle = (status) => {
         pill: "bg-blue-100 text-blue-700 border border-blue-200",
         dot: "bg-blue-500 animate-pulse",
       };
+    case "CANCELLATION_REQUESTED":
+      return {
+        pill: "bg-orange-100 text-orange-700 border border-orange-200",
+        dot: "bg-orange-500 animate-ping",
+      };
     default:
       return {
         pill: "bg-gray-100 text-gray-600 border border-gray-200",
@@ -528,7 +533,10 @@ const Overview = () => {
                     story.status === "COMPLETED" &&
                     (story.video?.url || story.audioURL);
                   const isCancellable =
-                    story.status === "PENDING" || story.status === "SCHEDULED";
+                    story.status === "PENDING" ||
+                    story.status === "SCHEDULED" ||
+                    story.status === "PROCESSING";
+                  const isCancelPending = story.status === "CANCELLATION_REQUESTED";
 
                   return (
                     <motion.div
@@ -549,24 +557,24 @@ const Overview = () => {
                         <div className="overflow-hidden rounded-xl shadow-sm border border-gray-100/80 bg-gray-50 aspect-square">
                           {story.isPodcast ? (
                             <img
-                              src="/poadcast.jpg"
+                              src="/microphone.png"
                               className="h-16 w-16 sm:h-20 sm:w-20  group-hover:scale-110 transition-transform duration-700 ease-in-out"
                               alt="Podcast"
                             />
                           ) : (
                             <img
-                              src="/video.jpg"
+                              src="/play.png"
                               className="h-16 w-16 sm:h-20 sm:w-20  group-hover:scale-110 transition-transform duration-700 ease-in-out"
                               alt="Video"
                             />
                           )}
                         </div>
                         {/* Type Icon Badge */}
-                        <div className={`absolute -bottom-2 -right-2 p-1.5 rounded-lg text-white shadow-lg ring-2 ring-white
+                        {/* <div className={`absolute -bottom-2 -right-2 p-1.5 rounded-lg text-white shadow-lg ring-2 ring-white
                           ${story.isPodcast ? "bg-gradient-to-br from-purple-500 to-[#f0498f]" : "bg-gradient-to-br from-[#f8be4c] to-[#f5876c]"}`}
                         >
-                           {story.isPodcast ? <IconPodcast className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <IconVideo className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                        </div>
+                          {story.isPodcast ? <IconPodcast className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <IconVideo className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                        </div> */}
                       </div>
 
                       {/* Center: Story Info */}
@@ -611,7 +619,7 @@ const Overview = () => {
                               {story.series}
                             </div>
                           )}
-                          
+
                           <div className="flex items-center gap-1.5 text-gray-500 bg-white/50 px-2 py-1 rounded-md border border-gray-100">
                             <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -652,15 +660,21 @@ const Overview = () => {
 
                       {/* Right: Actions */}
                       <div className="flex sm:flex-col items-center justify-end gap-2 mt-4 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {isCancellable && (
+                        {(isCancellable || isCancelPending) && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setWorkflowToCancel(story);
+                              if (!isCancelPending) setWorkflowToCancel(story);
                             }}
-                            className="flex-1 sm:flex-none px-4 py-2 sm:py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 hover:border-amber-300 rounded-xl sm:rounded-lg transition-all shadow-sm hover:shadow w-full sm:w-auto text-center"
+                            disabled={isCancelPending}
+                            className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 text-xs font-bold rounded-xl sm:rounded-lg transition-all shadow-sm hover:shadow w-full sm:w-auto text-center ${
+                              isCancelPending
+                                ? "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
+                                : "text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 hover:border-amber-300"
+                            }`}
+                            title={isCancelPending ? "Cancellation in progress..." : "Cancel this story"}
                           >
-                            Cancel
+                            {isCancelPending ? "Cancelling…" : "Cancel"}
                           </button>
                         )}
                         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -751,7 +765,7 @@ const Overview = () => {
                   <button
                     onClick={() => {
                       handleCancelWorkflow(
-                        workflowToCancel.workflow || workflowToCancel.id,
+                        workflowToCancel.workflowId || workflowToCancel.workflow || workflowToCancel.id,
                       );
                       setWorkflowToCancel(null);
                     }}
