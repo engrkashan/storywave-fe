@@ -55,9 +55,9 @@ const WorkflowDetailPage = () => {
   const formatDate = (date) =>
     date
       ? new Date(date).toLocaleString("en-US", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
       : "N/A";
 
   const getStatusIcon = (status) => {
@@ -157,13 +157,13 @@ const WorkflowDetailPage = () => {
 
     return (
       <div className="w-full px-4 sm:px-6 mb-8">
-        {/* Mobile: stacked flex with custom order. Desktop: 3-column grid. */}
-        <div className="flex flex-col md:grid md:grid-cols-3 items-start justify-center gap-6 sm:gap-4">
+        {/* Mobile & Tablet: stacked flex with custom order. Desktop: 3-column grid. */}
+        <div className="flex flex-col lg:grid lg:grid-cols-3 items-start justify-center gap-6 sm:gap-4">
           {/* ── COLUMN 1 ── */}
-          <div className="order-1 md:order-1 w-full">
+          <div className="order-1 lg:order-1 w-full space-y-5">
             {/* Video 16:9  (row 1) */}
             {has16_9Video ? (
-              <div className="relative rounded-2xl overflow-hidden h-[30vh] bg-black shadow-sm border border-gray-100 group aspect-video">
+              <div className="relative rounded-2xl overflow-hidden bg-black shadow-sm border border-gray-100 group w-full aspect-video">
                 <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1">
                   <Film className="w-3 h-3" /> Video 16:9
                 </span>
@@ -174,7 +174,7 @@ const WorkflowDetailPage = () => {
                 />
               </div>
             ) : (
-              <div className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200 aspect-video flex items-center justify-center">
+              <div className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200 aspect-video flex items-center justify-center w-full">
                 <BiVideo className="w-10 h-10 text-gray-300" />
                 <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10">
                   No Video
@@ -183,7 +183,7 @@ const WorkflowDetailPage = () => {
             )}
 
             {/* Cover 16:9  (row 2) */}
-            <div className="mt-5 relative rounded-2xl overflow-hidden h-[30vh] bg-gray-100 shadow-sm border border-gray-200 group aspect-video">
+            <div className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200 group w-full aspect-video">
               <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1">
                 <ImageIcon className="w-3 h-3" /> Cover 16:9
               </span>
@@ -197,11 +197,10 @@ const WorkflowDetailPage = () => {
                     ? "Download"
                     : "No image available"
                 }
-                className={`absolute top-2 right-2 backdrop-blur-sm text-white p-1.5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-all duration-200 ${
-                  workflow.story?.coverArtURL_16_9
-                    ? "bg-black/60 hover:bg-black/80 cursor-pointer shadow-md"
-                    : "bg-black/30 cursor-not-allowed"
-                }`}
+                className={`absolute top-2 right-2 backdrop-blur-sm text-white p-1.5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-all duration-200 ${workflow.story?.coverArtURL_16_9
+                  ? "bg-black/60 hover:bg-black/80 cursor-pointer shadow-md"
+                  : "bg-black/30 cursor-not-allowed"
+                  }`}
               >
                 <Download className="w-3.5 h-3.5" />
               </button>
@@ -215,11 +214,11 @@ const WorkflowDetailPage = () => {
               />
             </div>
           </div>
-          {/* ── COLUMN 2: 9:16 video spans 2 rows ── */}
+          {/* ── COLUMN 2: 9:16 video ── */}
           {has9_16Video ? (
             <div
-              className="order-3 md:order-2 justify-center items-center flex mx-auto relative rounded-2xl overflow-hidden bg-black shadow-sm border border-gray-100 md:row-span-2 group w-full max-w-[320px] md:max-w-none"
-              style={{ aspectRatio: "9/16", maxHeight: "60vh" }}
+              className="order-3 lg:order-2 justify-center items-center flex mx-auto relative rounded-2xl overflow-hidden bg-black shadow-sm border border-gray-100 group w-full max-w-[320px]"
+              style={{ aspectRatio: "9/16" }}
             >
               <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1">
                 <Film className="w-3 h-3" /> Video 9:16
@@ -232,8 +231,8 @@ const WorkflowDetailPage = () => {
             </div>
           ) : (
             <div
-              className="order-3 md:order-2 mx-auto h-full relative rounded-2xl overflow-hidden bg-gray-900 shadow-sm border border-gray-800 md:row-span-2 flex items-center justify-center w-full max-w-[320px] md:max-w-none"
-              style={{ aspectRatio: "9/16", maxHeight: "450px" }}
+              className="order-3 lg:order-2 mx-auto relative rounded-2xl overflow-hidden bg-gray-900 shadow-sm border border-gray-800 flex items-center justify-center w-full max-w-[320px] "
+              style={{ aspectRatio: "9/16" }}
             >
               <BiVideo className="w-10 h-10 text-gray-600" />
               <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10">
@@ -241,10 +240,10 @@ const WorkflowDetailPage = () => {
               </span>
             </div>
           )}
-          <div className="order-2 md:order-3 w-full grid grid-cols-2 md:block gap-4 md:gap-0">
+          <div className="order-2 lg:order-3 w-full grid grid-cols-2 lg:block gap-4 lg:gap-0 lg:space-y-5">
             {/* ── COLUMN 3 ── */}
             {/* Cover 1:1  (row 1) */}
-            <div className="relative rounded-2xl overflow-hidden h-auto md:h-[30vh] bg-gray-100 shadow-sm border border-gray-200 group aspect-square">
+            <div className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200 group w-full aspect-square">
               <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1">
                 <ImageIcon className="w-3 h-3" /> Cover 1:1
               </span>
@@ -258,11 +257,10 @@ const WorkflowDetailPage = () => {
                     ? "Download"
                     : "No image available"
                 }
-                className={`absolute top-2 right-2 backdrop-blur-sm text-white p-1.5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-all duration-200 ${
-                  workflow.story?.coverArtURL_1_1
-                    ? "bg-black/60 hover:bg-black/80 cursor-pointer shadow-md"
-                    : "bg-black/30 cursor-not-allowed"
-                }`}
+                className={`absolute top-2 right-2 backdrop-blur-sm text-white p-1.5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-all duration-200 ${workflow.story?.coverArtURL_1_1
+                  ? "bg-black/60 hover:bg-black/80 cursor-pointer shadow-md"
+                  : "bg-black/30 cursor-not-allowed"
+                  }`}
               >
                 <Download className="w-3.5 h-3.5" />
               </button>
@@ -278,7 +276,7 @@ const WorkflowDetailPage = () => {
 
             {/* Audio / Voiceover  (row 2) */}
             {hasAudio ? (
-              <div className="md:mt-5 relative rounded-2xl h-auto md:h-[30vh] overflow-hidden bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm border border-indigo-100 p-2 sm:p-4 flex flex-col items-center justify-center gap-1 sm:gap-3 aspect-square">
+              <div className="lg:mt-5 relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-50 to-purple-50 shadow-sm border border-indigo-100 p-2 sm:p-4 flex flex-col items-center justify-center gap-1 sm:gap-3 w-full ">
                 <span className="absolute top-2 left-2 bg-white/80 backdrop-blur-sm text-gray-700 px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1 border border-gray-200">
                   <BiMicrophone className="w-3 h-3" /> Audio
                 </span>
@@ -296,7 +294,7 @@ const WorkflowDetailPage = () => {
                 )}
               </div>
             ) : (
-              <div className="md:mt-5 relative rounded-2xl overflow-hidden bg-gray-50 shadow-sm border border-gray-200 flex items-center justify-center aspect-square">
+              <div className="lg:mt-5 relative rounded-2xl overflow-hidden bg-gray-50 shadow-sm border border-gray-200 flex items-center justify-center w-full ">
                 <BiMicrophone className="w-10 h-10 text-gray-200" />
                 <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10">
                   No Audio
@@ -476,11 +474,10 @@ const WorkflowDetailPage = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === tab.id
-                        ? "border-indigo-600 text-indigo-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }`}
+                    className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
+                      ? "border-indigo-600 text-indigo-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      }`}
                   >
                     {tab.label}
                   </button>
@@ -517,11 +514,10 @@ const WorkflowDetailPage = () => {
                     <button
                       key={platform}
                       onClick={() => setActiveSEOTab(platform)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
-                        activeSEOTab === platform
-                          ? "bg-indigo-600 text-white shadow-sm"
-                          : "text-gray-600 hover:bg-gray-200"
-                      }`}
+                      className={`px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${activeSEOTab === platform
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "text-gray-600 hover:bg-gray-200"
+                        }`}
                     >
                       {platform}
                     </button>
@@ -551,10 +547,10 @@ const WorkflowDetailPage = () => {
                           <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-gray-800 whitespace-pre-wrap">
                             {Array.isArray(value)
                               ? value.map((t) => (
-                                  <span className="inline-block mr-2 mb-2 text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md text-xs">
-                                    {t.startsWith("#") ? t : `#${t}`}
-                                  </span>
-                                ))
+                                <span className="inline-block mr-2 mb-2 text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md text-xs">
+                                  {t.startsWith("#") ? t : `#${t}`}
+                                </span>
+                              ))
                               : value}
                           </div>
                         </div>
