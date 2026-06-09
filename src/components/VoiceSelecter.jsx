@@ -29,38 +29,44 @@ const VoiceSelector = ({ value, onChange }) => {
     { id: "shimmer", label: "Shimmer", provider: "openai" },
   ];
 
-  // Fetch Fish Audio voices from backend
+  const [elevenLabsVoices, setElevenLabsVoices] = useState([]);
+
+  // Fetch Fish Audio and ElevenLabs voices
   useEffect(() => {
-    const fetchFishVoices = async () => {
+    const fetchVoices = async () => {
       setLoadingVoice(true);
 
       try {
-        // Call backend API instead of Fish Audio SDK directly
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/voice/fish-voices`
-        );
+        const [fishRes, elevenRes] = await Promise.allSettled([
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/api/voice/fish-voices`, { cache: 'no-store' }),
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/api/voice/elevenlabs-voices`, { cache: 'no-store' })
+        ]);
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (fishRes.status === "fulfilled" && fishRes.value.ok) {
+          const fishData = await fishRes.value.json();
+          setFishVoices(fishData.voices || []);
+        } else {
+          setFishVoices([]);
         }
 
-        const data = await response.json();
-        const voices = data.voices || [];
+        if (elevenRes.status === "fulfilled" && elevenRes.value.ok) {
+          const elevenData = await elevenRes.value.json();
+          setElevenLabsVoices(elevenData.voices || []);
+        } else {
+          setElevenLabsVoices([]);
+        }
 
-        setFishVoices(voices);
       } catch (err) {
-        console.error("Failed to fetch Fish voices:", err);
-        // Fallback: use empty array if API fails
-        setFishVoices([]);
+        console.error("Failed to fetch voices:", err);
       } finally {
         setLoadingVoice(false);
       }
     };
 
-    fetchFishVoices();
+    fetchVoices();
   }, []);
 
-  const allVoices = [...openaiVoices, ...fishVoices];
+  const allVoices = [...openaiVoices, ...fishVoices, ...elevenLabsVoices];
 
   // Generate voice preview
   useEffect(() => {
@@ -93,8 +99,8 @@ const VoiceSelector = ({ value, onChange }) => {
           // Create URL for audio tag
           currentUrl = URL.createObjectURL(audioBlob);
           setAudioSrc(currentUrl);
-        } else if (value.provider === "fish") {
-          // -------- Fish Audio Preview via Backend -------- //
+        } else if (value.provider === "fish" || value.provider === "elevenlabs") {
+          // -------- Preview via Backend -------- //
 
           const response = await fetch(
             `${import.meta.env.VITE_API_BASE_URL}/api/voice/preview`,
@@ -106,7 +112,7 @@ const VoiceSelector = ({ value, onChange }) => {
               body: JSON.stringify({
                 text: sampleText,
                 voiceId: value.id,
-                provider: "fish",
+                provider: value.provider,
               }),
             }
           );
@@ -114,7 +120,6 @@ const VoiceSelector = ({ value, onChange }) => {
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
-
 
           // Convert response to Blob
           const arrayBuffer = await response.arrayBuffer();
@@ -145,8 +150,29 @@ const VoiceSelector = ({ value, onChange }) => {
     };
   }, [value]);
 
+  const [selectedModel, setSelectedModel] = useState("");
+
+  const handleModelChange = (e) => {
+    const newModel = e.target.value;
+    setSelectedModel(newModel);
+    
+    if (value && value.provider !== newModel) {
+      onChange(null);
+    }
+  };
+
   return (
     <div className="flex flex-col space-y-3">
+      <select
+        value={selectedModel}
+        onChange={handleModelChange}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+      >
+        <option value="" disabled>Select Model...</option>
+        <option value="elevenlabs">Eleven Labs</option>
+        <option value="openai">OpenAI</option>
+        <option value="fish">Fish Audio</option>
+      </select>
 
       <select
         value={value?.id || ""}
@@ -154,25 +180,40 @@ const VoiceSelector = ({ value, onChange }) => {
           const selected = allVoices.find((v) => v.id === e.target.value);
           onChange(selected);
         }}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+        disabled={!selectedModel}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <option value="">Select voice...</option>
 
-        <optgroup label="OpenAI Voices">
-          {openaiVoices.map((v) => (
-            <option key={`openai-${v.id}`} value={v.id}>
-              {v.label}
-            </option>
-          ))}
-        </optgroup>
+        {selectedModel === "openai" && (
+          <optgroup label="OpenAI Voices">
+            {openaiVoices.map((v) => (
+              <option key={`openai-${v.id}`} value={v.id}>
+                {v.label}
+              </option>
+            ))}
+          </optgroup>
+        )}
 
-        <optgroup label="Fish Voices">
-          {fishVoices.map((v) => (
-            <option key={`fish-${v.id}`} value={v.id}>
-              {v.label}
-            </option>
-          ))}
-        </optgroup>
+        {selectedModel === "fish" && (
+          <optgroup label="Fish Voices">
+            {fishVoices.map((v) => (
+              <option key={`fish-${v.id}`} value={v.id}>
+                {v.label}
+              </option>
+            ))}
+          </optgroup>
+        )}
+
+        {selectedModel === "elevenlabs" && (
+          <optgroup label="Eleven Labs Voices">
+            {elevenLabsVoices.map((v) => (
+              <option key={`elevenlabs-${v.id}`} value={v.id}>
+                {v.label}
+              </option>
+            ))}
+          </optgroup>
+        )}
       </select>
 
       {loadingVoice ? (
