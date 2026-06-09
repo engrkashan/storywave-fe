@@ -6,12 +6,12 @@
 
 :root {
   /* Primary Colors */
-  --primary: #f8be4c;
-  /* Pink */
-  --primary-light: #f5876c;
-  /* Orange */
-  --primary-dark: #f0498f;
-  /* Violet */
+  --primary: #265073;
+  /* Deep Navy */
+  --primary-light: #3d6a8e;
+  /* Light Navy */
+  --primary-dark: #1e3e5b;
+  /* Dark Navy */
   --primary-gradient: linear-gradient(90deg,
       var(--primary),
       var(--primary-light),
@@ -19,12 +19,16 @@
   /* Gradient */
 
   /* Secondary Colors */
-  --secondary-light: #f5f5f5;
-  /* Light Gray */
-  --secondary-dark: #333333;
-  /* Dark Gray */
+  --secondary-light: #FCFDF9;
+  /* Light Cream-White */
+--secondary-dark: linear-gradient(135deg, #FF7A45 0%, #FF4FA3 100%);
+  /* Soft Warm Brown Base */
   --white: #ffffff;
   /* White */
+
+  /* Sidebar Theme */
+  --sidebar-bg: #FF7A45;
+  /* Orange Sidebar */
 
   /* Accent Colors */
   --accent-yellow: #ffd700;
@@ -33,12 +37,12 @@
   /* Neon Green */
 
   /* Text Colors */
-  --text-primary: #333333;
-  /* Dark Text */
-  --text-secondary: #666666;
-  /* Light Gray */
-  --link-text: #ff007f;
-  /* Pink for links */
+  --text-primary: #265073;
+  /* Deep Navy Text */
+  --text-secondary: #3d6a8e;
+  /* Softer Navy Text */
+  --link-text: #FF7A45;
+  /* Orange for links */
 }
 
 /* Background */
@@ -63,7 +67,7 @@
 }
 
 .bg-secondary-dark {
-  background-color: var(--secondary-dark);
+  background: var(--secondary-dark);
 }
 
 .bg-white {

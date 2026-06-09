@@ -1,49 +1,38 @@
 import Cookies from "js-cookie";
 import {
-  FileText,
-  FolderOpen,
   Home,
+  FileText,
+  LayoutGrid,
+  Share2,
+  Settings,
   LogOut,
   Menu,
-  Mic,
-  Share2,
-  User,
   X,
-  Speech,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const sidebarLinks = [
-  { to: "/overview", label: "Overview", icon: <Home className="text-xl" /> },
+  { to: "/overview", label: "Overview", icon: <Home className="w-5 h-5" /> },
   {
     to: "/dashboard/generate-story",
     label: "Story Builder",
-    icon: <FileText className="text-xl" />,
+    icon: <FileText className="w-5 h-5" />,
   },
-  // {
-  //   to: "/dashboard/podcast-studio",
-  //   label: "Podcast Studio",
-  //   icon: <Mic className="text-xl" />,
-  // },
-  // {
-  //   to: "/dashboard/voice-cloning",
-  //   label: "Voice Cloning",
-  //   icon: <Speech className="text-xl rotate-12" />,
-  // },
   {
     to: "/dashboard/my-creations",
     label: "My Creations",
-    icon: <FolderOpen className="text-xl" />,
+    icon: <LayoutGrid className="w-5 h-5" />,
   },
   {
     to: "/dashboard/integrations",
     label: "Publish & Share",
-    icon: <Share2 className="text-xl" />,
+    icon: <Share2 className="w-5 h-5" />,
   },
   {
     to: "/dashboard/profile",
     label: "My Account",
-    icon: <User className="text-xl" />,
+    icon: <Settings className="w-5 h-5" />,
   },
 ];
 
@@ -63,71 +52,85 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
       {/* Mobile Toggle Button */}
       <button
         onClick={toggleSidebar}
-        className="md:hidden fixed top-6 left-6 z-50 bg-gradient-to-r from-[#f8be4c] to-[#f0498f] text-white p-3 rounded-full shadow-lg transition-all hover:scale-105"
+        className="md:hidden fixed top-4 left-4 z-50 bg-gradient-to-r from-[#f8be4c] to-[#f0498f] text-white p-2.5 rounded-full shadow-lg transition-all hover:scale-105 cursor-pointer"
       >
-        <Menu className="text-2xl" />
+        <Menu className="w-5 h-5" />
       </button>
 
-      {/* Sidebar */}
+      {/* Thin Sidebar */}
       <div
-        className={`${
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        } transform transition-transform duration-300 ease-in-out 
-        w-72 h-full fixed left-0 top-0 z-40
-        bg-white/20 backdrop-blur-2xl border-r border-white/30
-        shadow-2xl rounded-r-3xl flex flex-col justify-between`}
+        className={`${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          } transform transition-transform duration-300 ease-in-out 
+        w-20 h-full fixed left-0 top-0 z-40
+        bg-white border-r border-gray-200
+        shadow-xl flex flex-col justify-between items-center py-8`}
       >
         {/* Close button on mobile */}
         <button
           onClick={toggleSidebar}
-          className="text-white text-3xl absolute top-6 right-6 md:hidden"
+          className="text-gray-500 hover:text-gray-800 absolute top-4 right-4 md:hidden cursor-pointer"
         >
-          <X />
+          <X className="w-5 h-5" />
         </button>
 
-        <div>
-          {/* Logo */}
-          <div className="flex items-center justify-center mb-10 mt-8">
+        {/* Logo and Navigation */}
+        <div className="flex flex-col items-center w-full gap-10">
+          {/* Storywave Official Logo */}
+          <Link to="/overview" className="relative group">
             <img
               src="/logo.png"
-              alt="logo"
-              className="w-auto h-24 drop-shadow-lg"
+              alt="Storywave Logo"
+              className="w-24 h-auto drop-shadow-md hover:scale-105 transition-all duration-300"
             />
-          </div>
+            <span className="absolute left-16 scale-0 group-hover:scale-100 transition-all duration-200 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md z-50 pointer-events-none origin-left">
+              Storywave Home
+            </span>
+          </Link>
 
-          {/* Navigation */}
-          <nav>
-            <ul className="space-y-4 px-4">
-              {sidebarLinks.map((link, index) => (
-                <li key={index}>
-                  <Link
-                    to={link.to}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-lg font-medium transition-all
-                      ${
-                        location.pathname === link.to
-                          ? "bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg scale-[1.02]"
-                          : "text-white/90 hover:bg-white/20 hover:text-white hover:scale-[1.02]"
-                      }`}
-                  >
-                    {link.icon}
-                    <span>{link.label}</span>
-                  </Link>
-                </li>
-              ))}
+          {/* Navigation Links */}
+          <nav className="w-full">
+            <ul className="flex flex-col items-center gap-6 w-full">
+              {sidebarLinks.map((link, index) => {
+                const isActive = location.pathname === link.to;
+                return (
+                  <li key={index}>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Link
+                        to={link.to}
+                        onClick={toggleSidebar}
+                        className={`w-12 h-12 flex items-center justify-center rounded-2xl transition-all relative group
+                          ${isActive
+                            ? "bg-gradient-to-r from-[#f8be4c]/90 to-[#f0498f]/90 text-white shadow-lg shadow-[#f0498f]/20"
+                            : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                          }`}
+                      >
+                        {link.icon}
+                        {/* Tooltip */}
+                        <span className="absolute left-16 scale-0 group-hover:scale-100 transition-all duration-200 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md z-50 pointer-events-none origin-left">
+                          {link.label}
+                        </span>
+                      </Link>
+                    </motion.div>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
         </div>
 
-        {/* Logout Button */}
-        <div className="px-4 pb-6">
-          <button
-            onClick={handleLogout}
-            className="flex items-center justify-center space-x-3 w-full px-4 py-3 rounded-xl text-lg font-semibold
-              bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg hover:scale-[1.03] transition-all"
-          >
-            <LogOut className="text-xl" />
-            <span>Logout</span>
-          </button>
+        {/* Logout at the bottom */}
+        <div className="flex flex-col items-center w-full">
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <button
+              onClick={handleLogout}
+              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 transition-all cursor-pointer shadow-sm relative group"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="absolute left-16 scale-0 group-hover:scale-100 transition-all duration-200 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap shadow-md z-50 pointer-events-none origin-left">
+                Logout
+              </span>
+            </button>
+          </motion.div>
         </div>
       </div>
     </>
