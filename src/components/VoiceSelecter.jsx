@@ -84,11 +84,18 @@ const VoiceSelector = ({ value, onChange }) => {
 
       try {
         if (value.provider === "openai") {
+          // Validate the voice ID against OpenAI's supported list to prevent 400 errors
+          const validOpenAIVoices = new Set(["alloy", "ash", "ballad", "cedar", "coral", "echo", "fable", "marin", "nova", "onyx", "sage", "shimmer", "verse"]);
+          const safeVoiceId = validOpenAIVoices.has(value.id) ? value.id : "onyx";
+
+          if (!validOpenAIVoices.has(value.id)) {
+            console.warn(`[OpenAI Preview] Unsupported voice ID '${value.id}', falling back to 'onyx'.`);
+          }
+
           const response = await openai.audio.speech.create({
-            model: "gpt-4o-mini-tts",
-            voice: value.id,
+            model: "tts-1", // Use the correct model for OpenAI TTS
+            voice: safeVoiceId,
             input: sampleText,
-            instructions: "Preview in natural storytelling tone.",
             response_format: "wav",
           });
 
