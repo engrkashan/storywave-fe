@@ -9,38 +9,109 @@ import {
 import VoiceSelector from "../../../components/VoiceSelecter";
 import { checkImagePromptSafety } from "../../../utils/promptModerations";
 import {
-  fetchOverview, fetchWorkflowById,
+  fetchOverview,
+  fetchWorkflowById,
 } from "../../../redux/slices/overview.slice";
 import axiosInstance from "../../../middleware/axiosInstance";
 
+/* ─────────────────────────────────────────────────────────────────
+   Reusable Toggle Switch
+───────────────────────────────────────────────────────────────── */
+const ToggleSwitch = ({ checked, onChange, colorOn = "bg-amber-500" }) => (
+  <button
+    type="button"
+    onClick={onChange}
+    className={`relative flex h-7 w-14 items-center rounded-full transition-all duration-300 shadow-inner ${checked ? colorOn : "bg-gray-200"
+      }`}
+  >
+    <span
+      className={`h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-300 ${checked ? "translate-x-7" : "translate-x-1"
+        }`}
+    />
+  </button>
+);
+
+/* ─────────────────────────────────────────────────────────────────
+   Section Header
+───────────────────────────────────────────────────────────────── */
+const SectionHeader = ({ step, title, subtitle }) => (
+  <div className="flex items-center gap-4 mb-6">
+    <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-pink-500 flex items-center justify-center shadow-lg shadow-amber-200/50">
+      <span className="text-white text-sm font-bold">{step}</span>
+    </div>
+    <div>
+      <h3 className="text-base font-bold text-gray-900 leading-tight">{title}</h3>
+      {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+    </div>
+  </div>
+);
+
+/* ─────────────────────────────────────────────────────────────────
+   AI Feature Card
+───────────────────────────────────────────────────────────────── */
+const FeatureCard = ({ icon, title, subtitle, checked, onChange, colorOn, accentBg, accentText }) => (
+  <div
+    onClick={onChange}
+    className={`relative cursor-pointer rounded-2xl p-5 border-2 transition-all duration-300 select-none ${checked
+      ? `border-transparent ${accentBg} shadow-lg`
+      : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
+      }`}
+  >
+    {/* Active glow */}
+    {checked && (
+      <div className="absolute inset-0 rounded-2xl opacity-20 blur-xl" style={{ background: "radial-gradient(circle, currentColor, transparent)" }} />
+    )}
+
+    <div className="relative flex flex-col gap-3">
+      {/* Top row: icon + toggle */}
+      <div className="flex items-center justify-between">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${checked ? "bg-white/40" : "bg-gray-100"}`}>
+          {icon}
+        </div>
+        <div onClick={(e) => e.stopPropagation()}>
+          <ToggleSwitch checked={checked} onChange={onChange} colorOn={colorOn} />
+        </div>
+      </div>
+      {/* Labels */}
+      <div>
+        <p className={`font-semibold text-sm ${checked ? accentText : "text-gray-700"}`}>{title}</p>
+        <p className={`text-xs mt-0.5 leading-relaxed ${checked ? `${accentText} opacity-70` : "text-gray-400"}`}>{subtitle}</p>
+      </div>
+      {/* Status pill */}
+      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit ${checked ? "bg-white/30 text-white" : "bg-gray-100 text-gray-400"
+        }`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${checked ? "bg-white animate-pulse" : "bg-gray-300"}`} />
+        {checked ? "Active" : "Off"}
+      </div>
+    </div>
+  </div>
+);
+
+/* ─────────────────────────────────────────────────────────────────
+   Main Component
+───────────────────────────────────────────────────────────────── */
 const GenerateStory = () => {
   const dispatch = useDispatch();
-  const scheduled = useSelector((state) => state.stories.scheduled);
-  const { totalStories, stories } = useSelector((state) => state.overview);
 
-  // Calculate active stories (PENDING, PROCESSING, SCHEDULED)
-  const activeStories = stories?.filter(
-    (s) => s.status === "PENDING" || s.status === "PROCESSING" || s.status === "SCHEDULED"
-  ).length || 0;
-
-  const [storyData, setStoryData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lengthLevel, setLengthLevel] = useState(2);
   const [showImagePrompt, setShowImagePrompt] = useState(true);
-  const [mode, setMode] = useState("now");
+  const [scheduleForLater, setScheduleForLater] = useState(false);
   const [scheduleInput, setScheduleInput] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [isTextEditorOpen, setIsTextEditorOpen] = useState(false);
+  const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
+  const [isCoverArtEditorOpen, setIsCoverArtEditorOpen] = useState(false);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [isUploadingCharRef, setIsUploadingCharRef] = useState(false);
+  // For single_image: which sub-mode is active — prompt | upload | reference
+  const [visualMode, setVisualMode] = useState("prompt");
 
-  // Warning modal state
+  // Warning modal
   const [showPromptWarning, setShowPromptWarning] = useState(false);
   const [blockedWords, setBlockedWords] = useState([]);
   const [pendingPayload, setPendingPayload] = useState(null);
-
-  const [isTextEditorOpen, setIsTextEditorOpen] = useState(false);
-  const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
-  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
-  const [isUploadingCharRef, setIsUploadingCharRef] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -53,14 +124,15 @@ const GenerateStory = () => {
     mediaType: "single_image",
     imageCount: 5,
     backgroundMusic: true,
+    soundEffects: false,
     aspectRatio: "16:9",
     dualPlatform: false,
     series: "",
     coverArtPrompt: "",
-    seoMetadata: "",
+    seoMetadata: JSON.stringify({ Title: "", Description: "" }, null, 2),
     visualSuggestions: "",
     uploadedMediaUrl: "",
-    characterReferenceBase64: "", // User-supplied character reference image (base64)
+    characterReferenceBase64: "",
   });
 
   const loadingMessages = [
@@ -95,6 +167,7 @@ const GenerateStory = () => {
           mediaType: m.mediaType || "single_image",
           imageCount: m.imageCount || 5,
           backgroundMusic: m.backgroundMusic ?? true,
+          soundEffects: m.soundEffects ?? false,
           aspectRatio: m.aspectRatio || "16:9",
           series: m.series || "",
           coverArtPrompt: m.coverArtPrompt || "",
@@ -103,6 +176,7 @@ const GenerateStory = () => {
             : JSON.stringify({ Title: "", Description: "" }, null, 2),
           visualSuggestions: m.visualSuggestions || "",
           uploadedMediaUrl: m.uploadedMediaUrl || "",
+          characterReferenceBase64: "",
         });
         setShowImagePrompt(m.shouldGenerateImage || !!m.imagePrompt);
       })
@@ -114,7 +188,7 @@ const GenerateStory = () => {
     if (!loading) return;
     const i = setInterval(
       () => setCurrentMessageIndex((p) => (p + 1) % loadingMessages.length),
-      2000,
+      2000
     );
     return () => clearInterval(i);
   }, [loading]);
@@ -128,18 +202,14 @@ const GenerateStory = () => {
   const handleMediaUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setIsUploadingMedia(true);
     const formDataObj = new FormData();
     formDataObj.append("file", file);
-
     try {
       const res = await axiosInstance.post("/media", formDataObj, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      if (res.data && res.data.media && res.data.media.fileUrl) {
+      if (res.data?.media?.fileUrl) {
         handleInputChange("uploadedMediaUrl", res.data.media.fileUrl);
         toast.success("Media uploaded successfully");
       }
@@ -153,18 +223,15 @@ const GenerateStory = () => {
   const handleCharRefUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image is too large! Please select an image under 5MB.");
       return;
     }
-    
     setIsUploadingCharRef(true);
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        // Downscale image to max 800px to prevent huge base64 strings freezing Redux/Network
         const MAX_DIM = 800;
         let width = img.width;
         let height = img.height;
@@ -182,8 +249,6 @@ const GenerateStory = () => {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-        
-        // Compress as JPEG
         const base64Str = canvas.toDataURL("image/jpeg", 0.8);
         handleInputChange("characterReferenceBase64", base64Str);
         setIsUploadingCharRef(false);
@@ -205,12 +270,8 @@ const GenerateStory = () => {
   const executeGenerate = async (payload) => {
     try {
       setLoading(true);
-      const res = await dispatch(generateStory(payload)).unwrap();
-      if (mode === "now") {
-        toast.success("Generating Your Story 🎉");
-      } else {
-        toast.success("Your Story is Scheduled ⏰");
-      }
+      await dispatch(generateStory(payload)).unwrap();
+      toast.success(scheduleForLater ? "Your Story is Scheduled ⏰" : "Generating Your Story 🎉");
     } catch (e) {
       toast.error(e?.error || "Something went wrong");
     } finally {
@@ -223,11 +284,9 @@ const GenerateStory = () => {
   const handleGenerate = () => {
     if (!formData.concept && !formData.url)
       return toast.error("Please provide a story concept or URL");
-
     if (!formData.title || !formData.tone || !formData.storyType)
       return toast.error("Please fill all required fields");
-
-    if (mode === "schedule" && !scheduleTime)
+    if (scheduleForLater && !scheduleTime)
       return toast.error("Please select a schedule time");
 
     const payload = {
@@ -240,20 +299,18 @@ const GenerateStory = () => {
       shouldGenerateImage: showImagePrompt,
       imagePrompt: formData.imagePrompt,
       storyLength: storyLengthStr,
-      scheduledAt: mode === "schedule" ? scheduleTime : null,
+      scheduledAt: scheduleForLater ? scheduleTime : null,
       mediaType: formData.mediaType,
       imageCount: formData.imageCount,
       backgroundMusic: formData.backgroundMusic,
+      soundEffects: formData.soundEffects,
       aspectRatio: formData.aspectRatio,
       dualPlatform: formData.dualPlatform,
       series: formData.series,
       coverArtPrompt: formData.coverArtPrompt,
       seoContent: (() => {
-        try {
-          return JSON.parse(formData.seoMetadata);
-        } catch (e) {
-          return {};
-        }
+        try { return JSON.parse(formData.seoMetadata); }
+        catch { return {}; }
       })(),
       visualSuggestions: formData.visualSuggestions,
       uploadedMediaUrl: formData.uploadedMediaUrl,
@@ -273,406 +330,798 @@ const GenerateStory = () => {
     executeGenerate(payload);
   };
 
+  /* ── input class helper ── */
+  const inputCls =
+    "w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 transition-all duration-200 shadow-sm";
+  const selectCls =
+    "w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 transition-all duration-200 shadow-sm appearance-none cursor-pointer";
+
+  /* ── section card class ── */
+  const sectionCard =
+    "bg-white rounded-3xl border border-gray-100 shadow-sm p-7 hover:shadow-md transition-shadow duration-300";
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-6 md:p-8">
-      {/* ⛔ WARNING MODAL */}
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-pink-50/20 p-6 md:p-8">
+
+      {/* ── WARNING MODAL ── */}
       {showPromptWarning && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4">
-          <div className="bg-white max-w-lg w-full rounded-2xl shadow-2xl p-8 animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="bg-white max-w-lg w-full rounded-3xl shadow-2xl p-8 animate-fadeIn">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900">Content Warning</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Content Warning</h2>
             </div>
-            <p className="text-gray-700 mb-6">
-              Your image prompt contains potentially sensitive or abusive words that may violate content guidelines.
+            <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+              Your image prompt contains potentially sensitive words that may violate content guidelines.
             </p>
             {blockedWords.length > 0 && (
-              <div className="bg-red-50 border border-red-200 p-4 rounded-xl mb-6">
-                <p className="text-sm font-medium text-red-800 mb-2">Detected words:</p>
+              <div className="bg-red-50 border border-red-100 p-4 rounded-2xl mb-6">
+                <p className="text-xs font-bold text-red-700 mb-2 uppercase tracking-wider">Detected words:</p>
                 <div className="flex flex-wrap gap-2">
-                  {blockedWords.map((word, index) => (
-                    <span key={index} className="px-3 py-1 bg-white border border-red-300 rounded-lg text-red-700 text-sm font-medium">
-                      {word}
-                    </span>
+                  {blockedWords.map((word, i) => (
+                    <span key={i} className="px-3 py-1 bg-white border border-red-200 rounded-lg text-red-600 text-sm font-medium">{word}</span>
                   ))}
                 </div>
               </div>
             )}
-            <div className="flex justify-end gap-4">
-              <button onClick={() => setShowPromptWarning(false)} className="px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-medium transition-colors duration-200">Edit Prompt</button>
-              <button onClick={() => executeGenerate(pendingPayload)} className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-medium hover:shadow-lg transition-all duration-200">Continue Anyway</button>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowPromptWarning(false)} className="px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm hover:bg-gray-200 transition-colors">Edit Prompt</button>
+              <button onClick={() => executeGenerate(pendingPayload)} className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold text-sm hover:shadow-lg transition-all">Continue Anyway</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Header */}
-      <div className="mb-10">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Story Builder</h1>
-            <p className="text-gray-600 text-lg">Create and schedule AI-powered stories with rich multimedia</p>
+      {/* ── TEXT EDITOR MODAL ── */}
+      {isTextEditorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">Script Editor</h2>
+              </div>
+              <button onClick={() => setIsTextEditorOpen(false)} className="px-5 py-2 bg-gray-900 text-white rounded-xl font-semibold text-sm hover:bg-gray-700 transition-colors">Done</button>
+            </div>
+            <textarea
+              value={formData.concept}
+              onChange={(e) => handleInputChange("concept", e.target.value)}
+              className="flex-1 p-10 text-lg font-medium leading-relaxed resize-none outline-none text-gray-800 placeholder-gray-300"
+              placeholder="Write or paste your story script here..."
+            />
           </div>
+        </div>
+      )}
+
+      {/* ── IMAGE PROMPT EDITOR MODAL ── */}
+      {isPromptEditorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-amber-100 flex justify-between items-center bg-gradient-to-r from-amber-50 to-orange-50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                </div>
+                <h2 className="text-lg font-bold text-amber-900">Visual Prompt Editor</h2>
+              </div>
+              <button onClick={() => setIsPromptEditorOpen(false)} className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold text-sm hover:shadow-md transition-all">Lock Prompt</button>
+            </div>
+            <textarea
+              value={formData.imagePrompt}
+              onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
+              className="flex-1 p-10 text-lg font-medium leading-relaxed resize-none outline-none text-amber-900 bg-amber-50/10 placeholder-amber-200"
+              placeholder="Describe your visual scene in detail..."
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── COVER ART EDITOR MODAL ── */}
+      {isCoverArtEditorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-pink-100 flex justify-between items-center bg-gradient-to-r from-pink-50 to-rose-50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-rose-500 rounded-xl flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                </div>
+                <h2 className="text-lg font-bold text-rose-900">Cover Art Editor</h2>
+              </div>
+              <button onClick={() => setIsCoverArtEditorOpen(false)} className="px-5 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-semibold text-sm hover:shadow-md transition-all">Save Cover Art</button>
+            </div>
+            <textarea
+              value={formData.coverArtPrompt}
+              onChange={(e) => handleInputChange("coverArtPrompt", e.target.value)}
+              className="flex-1 p-10 text-lg font-medium leading-relaxed resize-none outline-none text-rose-900 bg-rose-50/10 placeholder-rose-200"
+              placeholder="Describe the main cover art for your story (16:9 thumbnail)..."
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════ PAGE HEADER ══════════════════ */}
+      <div className="mb-10">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-pink-500 to-rose-500 flex items-center justify-center shadow-lg shadow-pink-200/60">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+                  Story Builder</h1>
+                <p className="text-gray-400 text-sm">Craft AI-powered stories with voice, visuals & music</p>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Loading ticker */}
           {loading && (
-            <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-xl shadow-md">
-              <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-gray-700 font-medium">{loadingMessages[currentMessageIndex]}</p>
+            <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-2xl shadow-md border border-amber-100">
+              <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-gray-700 text-sm font-medium">{loadingMessages[currentMessageIndex]}</p>
             </div>
           )}
         </div>
+      </div>
 
-        {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div><p className="text-sm text-gray-500">Stories Generated</p><p className="text-2xl font-semibold text-gray-900">{totalStories || 0}</p></div>
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-pink-100 rounded-xl flex items-center justify-center text-amber-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
+      {/* ══════════════════ FORM ══════════════════ */}
+      <div className="w-full grid grid-cols-1 lg:grid-cols-2 mx-auto gap-6">
+
+        <div className=" space-y-6">
+          {/* ── SECTION 1: Story Identity ── */}
+          <div className={sectionCard}>
+            <SectionHeader step="1" title="Story Identity" subtitle="Give your story a name, type, and optional series" />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Title */}
+              <div className="md:col-span-2">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Story Title <span className="text-pink-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. The Midnight Heist"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+
+              {/* Story Type */}
+              <div className="relative">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Story Type <span className="text-pink-500">*</span>
+                </label>
+                <select
+                  value={formData.storyType}
+                  onChange={(e) => handleInputChange("storyType", e.target.value)}
+                  className={selectCls}
+                >
+                  <option value="">Select a story type...</option>
+                  <option value="true_crime_fiction_cinematic">True Crime — Fiction Cinematic (Netflix-Style)</option>
+                  <option value="true_crime_nonfiction_forensic">True Crime — Nonfiction Forensic (Forensic Files)</option>
+                  <option value="manipulation_sexual_manipulation">Manipulation — Sexual Manipulation (Mature)</option>
+                  <option value="cultural_history_documentary">Cultural History — Documentary (National Geographic)</option>
+                  <option value="homesteading_howto_field_guide">Homesteading — How-To Field Guide</option>
+                  <option value="work_and_trades_shop_manual">Work & Trades — Shop Manual (How-To)</option>
+                  <option value="work_and_trades_shopfloordoc">Work & Trades — Shopfloor Doc (Profile)</option>
+                  <option value="investigative_discovery_journalistic">Investigative Discovery — Journalistic</option>
+                  <option value="storytelling_cinematic">Storytelling — Cinematic (Movie-Style)</option>
+                  <option value="conversation_narrated_documentary">Conversation — Narrated Documentary (Blended)</option>
+                  <option value="education_howto_trades">Education — How-To (Trades)</option>
+                </select>
+                <div className="pointer-events-none absolute right-4 top-[38px] text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </div>
+              </div>
+
+              {/* Series */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Series <span className="text-gray-300 font-normal normal-case">(optional)</span></label>
+                <input
+                  type="text"
+                  placeholder="e.g. The Midnight Chronicles"
+                  value={formData.series}
+                  onChange={(e) => handleInputChange("series", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div><p className="text-sm text-gray-500">Scheduled</p><p className="text-2xl font-semibold text-gray-900">{scheduled?.length || 0}</p></div>
-              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+
+          {/* ── SECTION 2: Content Source ── */}
+          <div className={sectionCard}>
+            <SectionHeader step="2" title="Content Source" subtitle="Provide a URL, script, or both as source material" />
+
+            <div className="space-y-5">
+              {/* Reference URL */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Reference URL <span className="text-gray-300 font-normal normal-case">(optional)</span></label>
+                <div className="relative">
+                  <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  <input
+                    type="url"
+                    placeholder="https://example.com/article"
+                    value={formData.url}
+                    onChange={(e) => handleInputChange("url", e.target.value)}
+                    className={`${inputCls} pl-11`}
+                  />
+                </div>
+              </div>
+
+              {/* Story Script */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Story Script</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsTextEditorOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                    Full Editor
+                  </button>
+                </div>
+                <textarea
+                  placeholder="Describe your story concept, paste a script, or let the URL guide the AI..."
+                  value={formData.concept}
+                  onChange={(e) => handleInputChange("concept", e.target.value)}
+                  className={`${inputCls} h-40 resize-none leading-relaxed`}
+                />
+              </div>
+
+              {/* Visual Suggestions */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Visual Suggestions <span className="text-gray-300 font-normal normal-case">(optional)</span></label>
+                <input
+                  type="text"
+                  placeholder="e.g. Use neon noir lighting, rainy streets, dark palette..."
+                  value={formData.visualSuggestions}
+                  onChange={(e) => handleInputChange("visualSuggestions", e.target.value)}
+                  className={inputCls}
+                />
+              </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div><p className="text-sm text-gray-500">Active Stories</p><p className="text-2xl font-semibold text-gray-900">{activeStories || 0}</p></div>
-              <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-amber-100 rounded-xl flex items-center justify-center text-pink-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+
+          {/* ── SECTION 3: Voice & Style ── */}
+          <div className={sectionCard}>
+            <SectionHeader step="3" title="Voice & Style" subtitle="Choose the narrator voice, tone, and story length" />
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Voice Selection */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Narrator Voice</label>
+                  <VoiceSelector value={formData.voice} onChange={(v) => handleInputChange("voice", v)} />
+                </div>
+
+                {/* Voice Tone */}
+                <div className="relative">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Voice Tone <span className="text-pink-500">*</span>
+                  </label>
+                  <select
+                    value={formData.tone}
+                    onChange={(e) => handleInputChange("tone", e.target.value)}
+                    className={selectCls}
+                  >
+                    <option value="">Select tone...</option>
+                    <option value="neutral">Neutral</option>
+                    <option value="excited">Excited & Energetic</option>
+                    <option value="calm">Calm & Soothing</option>
+                    <option value="mysterious">Mysterious & Intriguing</option>
+                    <option value="professional">Professional & Informative</option>
+                    <option value="playful">Playful & Fun</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-4 top-[38px] text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Story Length Slider */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Story Length</label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-400">{lengthLabels[lengthLevel - 1]}</span>
+                    <span className="px-3 py-1 bg-gradient-to-r from-amber-400 to-pink-500 text-white text-xs font-bold rounded-full shadow-sm">{storyLengthStr}</span>
+                  </div>
+                </div>
+                <div className="relative pt-1">
+                  <input
+                    type="range"
+                    min="1"
+                    max="3"
+                    value={lengthLevel}
+                    onChange={(e) => setLengthLevel(Number(e.target.value))}
+                    className="w-full h-2 rounded-full appearance-none accent-amber-500 cursor-pointer"
+                    style={{ background: `linear-gradient(to right, #f59e0b ${((lengthLevel - 1) / 2) * 100}%, #e5e7eb ${((lengthLevel - 1) / 2) * 100}%)` }}
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-300 font-semibold mt-2 px-0.5">
+                    <span>10 min</span><span>20 min</span><span>30 min</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── SECTION 4: Format & Platform ── */}
+          <div className={sectionCard}>
+            <SectionHeader step="4" title="Format & Platform" subtitle="Choose the output aspect ratio for your story" />
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Aspect Ratio</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs text-gray-400 font-medium">Generate Both (16:9 & 9:16)</span>
+                  <ToggleSwitch
+                    checked={formData.dualPlatform}
+                    onChange={() => handleInputChange("dualPlatform", !formData.dualPlatform)}
+                    colorOn="bg-amber-500"
+                  />
+                </div>
+              </div>
+              <div className={`grid grid-cols-2 gap-4 transition-opacity duration-300 ${formData.dualPlatform ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+                {[
+                  { ratio: "9:16", label: "TikTok / Reels", icon: "/apps/tiktok.svg", sub: "9:16 Vertical" },
+                  { ratio: "16:9", label: "YouTube", icon: "/apps/youtube.svg", sub: "16:9 Widescreen" },
+                ].map(({ ratio, label, icon, sub }) => (
+                  <button
+                    key={ratio}
+                    type="button"
+                    onClick={() => handleInputChange("aspectRatio", ratio)}
+                    className={`py-5 px-4 rounded-2xl border-2 text-center font-medium transition-all duration-200 ${formData.aspectRatio === ratio
+                      ? "border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50 shadow-md shadow-amber-100"
+                      : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
+                      }`}
+                  >
+                    <div className="mb-1 rounded-xl overflow-hidden w-fit h-fit mx-auto"><img src={icon} alt={label} className=" w-8 h-8" /></div>
+                    <div className={`text-sm font-bold ${formData.aspectRatio === ratio ? "text-amber-700" : "text-gray-700"}`}>{label}</div>
+                    <div className={`text-xs ${formData.aspectRatio === ratio ? "text-amber-500" : "text-gray-400"}`}>{sub}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+        <div className=" space-y-6">
+          {/* ── SECTION 5: AI Features ── */}
+          <div className={sectionCard}>
+            <SectionHeader step="5" title="AI Features" subtitle="Supercharge your story with AI-generated visuals, music & effects" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Main Form */}
-        <div className="lg:col-span-7">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-pink-600 rounded-xl flex items-center justify-center text-white"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg></div>
-              <h2 className="text-2xl font-bold text-gray-900">Create New Story</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Visual Generation */}
+              <FeatureCard
+                icon={
+                  <svg className={`w-5 h-5 ${showImagePrompt ? "text-amber-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                }
+                title="Visual Generation"
+                subtitle="AI artwork for every scene"
+                checked={showImagePrompt}
+                onChange={() => setShowImagePrompt(!showImagePrompt)}
+                colorOn="bg-amber-500"
+                accentBg="bg-gradient-to-br from-amber-400 to-orange-500"
+                accentText="text-white"
+              />
+
+              {/* Background Music */}
+              <FeatureCard
+                icon={
+                  <svg className={`w-5 h-5 ${formData.backgroundMusic ? "text-indigo-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                  </svg>
+                }
+                title="Background Music"
+                subtitle="Ambient atmospheric score"
+                checked={formData.backgroundMusic}
+                onChange={() => handleInputChange("backgroundMusic", !formData.backgroundMusic)}
+                colorOn="bg-indigo-500"
+                accentBg="bg-gradient-to-br from-indigo-400 to-violet-500"
+                accentText="text-white"
+              />
+
+              {/* Sound Effects */}
+              <FeatureCard
+                icon={
+                  <svg className={`w-5 h-5 ${formData.soundEffects ? "text-teal-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 6a7 7 0 010 12M8.464 8.464a5 5 0 000 7.072M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                }
+                title="Sound Effects"
+                subtitle="ElevenLabs SFX per scene"
+                checked={formData.soundEffects}
+                onChange={() => handleInputChange("soundEffects", !formData.soundEffects)}
+                colorOn="bg-teal-500"
+                accentBg="bg-gradient-to-br from-teal-400 to-emerald-500"
+                accentText="text-white"
+              />
             </div>
 
-            <form className="space-y-8">
-              {/* Mode Selection */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-3">Generation Mode</label>
-                <div className="flex gap-4">
-                  <button type="button" onClick={() => setMode("now")} className={`flex-1 py-4 px-6 rounded-xl border-2 text-center font-medium transition-all ${mode === "now" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}><div className="flex flex-col items-center"><svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg><span>Generate Now</span></div></button>
-                  <button type="button" onClick={() => setMode("schedule")} className={`flex-1 py-4 px-6 rounded-xl border-2 text-center font-medium transition-all ${mode === "schedule" ? "border-pink-500 bg-pink-50 text-pink-700" : "border-gray-300 text-gray-700"}`}><div className="flex flex-col items-center"><svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><span>Schedule</span></div></button>
+            {/* Sound Effects info banner */}
+            {formData.soundEffects && (
+              <div className="mt-4 flex items-start gap-3 p-4 bg-teal-50 border border-teal-100 rounded-2xl animate-fadeIn">
+                <div className="w-8 h-8 bg-teal-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-teal-800">ElevenLabs Sound Effects Enabled</p>
+                  <p className="text-xs text-teal-600 mt-0.5 leading-relaxed">Cinematic sound effects will be generated and layered for each scene. Works with all voice models.</p>
                 </div>
               </div>
+            )}
 
-              {mode === "schedule" && (
-                <div className="animate-fadeIn">
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">Schedule Date & Time <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <input type="datetime-local" value={scheduleInput} min={new Date().toISOString().slice(0, 16)} onChange={(e) => { setScheduleInput(e.target.value); setScheduleTime(new Date(e.target.value).toISOString()); }} className="w-full px-4 py-3.5 pl-12 border border-gray-300 rounded-xl focus:ring-amber-500" />
-                    <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  </div>
-                </div>
-              )}
+            {/* Visual Generation expanded options */}
+            {showImagePrompt && (
+              <div className="mt-6 pt-6 border-t border-gray-100 space-y-6 animate-fadeIn">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Visual Generation Settings</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* ── Media Type Tab Bar ── */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">Story Title <span className="text-red-500">*</span></label>
-                  <input type="text" placeholder="Enter title..." value={formData.title} onChange={(e) => handleInputChange("title", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">Story Type <span className="text-red-500">*</span></label>
-                  <select value={formData.storyType} onChange={(e) => handleInputChange("storyType", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500">
-                    <option value="">Select a story type...</option>
-                    <option value="true_crime_fiction_cinematic">
-                      True Crime - Fiction Cinematic (Netflix-Style)
-                    </option>
-                    <option value="true_crime_nonfiction_forensic">
-                      True Crime - Nonfiction Forensic (Forensic Files)
-                    </option>
-                    <option value="manipulation_sexual_manipulation">
-                      Manipulation - Sexual Manipulation (Mature)
-                    </option>
-                    <option value="cultural_history_documentary">
-                      Cultural History - Documentary (National Geographic)
-                    </option>
-                    <option value="homesteading_howto_field_guide">
-                      Homesteading - How-To Field Guide
-                    </option>
-                    <option value="work_and_trades_shop_manual">
-                      Work & Trades - Shop Manual (How-To)
-                    </option>
-                    <option value="work_and_trades_shopfloordoc">
-                      Work & Trades - Shopfloor Doc (Profile)
-                    </option>
-                    <option value="investigative_discovery_journalistic">
-                      Investigative Discovery - Journalistic
-                    </option>
-                    <option value="storytelling_cinematic">
-                      Storytelling - Cinematic (Movie-Style)
-                    </option>
-                    <option value="conversation_narrated_documentary">
-                      Conversation - Narrated Documentary (Blended)
-                    </option>
-                    <option value="education_howto_trades">
-                      Education - How-To (Trades)
-                    </option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Series & Visual Suggestions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">Series (Optional)</label>
-                  <input type="text" placeholder="e.g. The Midnight Chronicles" value={formData.series} onChange={(e) => handleInputChange("series", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">Visual Suggestions (Optional)</label>
-                  <input type="text" placeholder="e.g. Use neon noir lighting..." value={formData.visualSuggestions} onChange={(e) => handleInputChange("visualSuggestions", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500" />
-                </div>
-              </div>
-
-              {/* URL & Script */}
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">Reference URL (Optional)</label>
-                  <div className="relative"><input type="url" placeholder="https://..." value={formData.url} onChange={(e) => handleInputChange("url", e.target.value)} className="w-full px-4 py-3.5 pl-12 border border-gray-300 rounded-xl focus:ring-amber-500" /><svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg></div>
-                </div>
-                <div>
-                  <div className="flex justify-between items-center mb-3"><label className="text-sm font-semibold text-gray-900">Story Script</label><button type="button" onClick={() => setIsTextEditorOpen(true)} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium">Open Editor</button></div>
-                  <textarea placeholder="Describe or paste your script..." value={formData.concept} onChange={(e) => handleInputChange("concept", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500 h-48 resize-none" />
-                </div>
-              </div>
-
-              {/* Cover Art Prompt */}
-              <div className="space-y-4 pt-4 border-t border-gray-200">
-                <label className="text-sm font-semibold text-gray-900">Cover Art Prompt (Optional)</label>
-                <textarea placeholder="Specific prompt for the main cover art (16:9)..." value={formData.coverArtPrompt} onChange={(e) => handleInputChange("coverArtPrompt", e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 h-24 resize-none" />
-              </div>
-
-              {/* Visual Generation Card */}
-              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-6">
-                <div className="flex flex-col gap-6">
-                  {/* Visual Gen Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
-                      <div><h3 className="font-semibold text-gray-900 text-lg">Visual Generation</h3><p className="text-xs text-gray-500">Enable AI artwork to accompany your story</p></div>
-                    </div>
-                    <button type="button" onClick={() => setShowImagePrompt(!showImagePrompt)} className={`relative flex h-7 w-14 items-center rounded-full transition-colors ${showImagePrompt ? "bg-amber-500" : "bg-gray-300"}`}><span className={`h-6 w-6 rounded-full bg-white transition-transform ${showImagePrompt ? "translate-x-7" : "translate-x-1"}`} /></button>
-                  </div>
-
-                  {/* Music Toggle */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg></div>
-                      <div><h3 className="font-semibold text-gray-900 text-lg">Background Music</h3><p className="text-xs text-gray-500">Add an atmospheric ambient score</p></div>
-                    </div>
-                    <button type="button" onClick={() => handleInputChange("backgroundMusic", !formData.backgroundMusic)} className={`relative flex h-7 w-14 items-center rounded-full transition-colors ${formData.backgroundMusic ? "bg-indigo-500" : "bg-gray-300"}`}><span className={`h-6 w-6 rounded-full bg-white transition-transform ${formData.backgroundMusic ? "translate-x-7" : "translate-x-1"}`} /></button>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Media Type</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      {
+                        key: "single_image",
+                        label: "Single Image",
+                        sub: "One scene",
+                        icon: (
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="18" height="18" rx="3" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 15l5-5 4 4 3-3 6 6" />
+                            <circle cx="8.5" cy="8.5" r="1.5" strokeWidth={1.8} />
+                          </svg>
+                        ),
+                      },
+                      {
+                        key: "multi_image",
+                        label: "Multi Scene",
+                        sub: "Slideshow",
+                        icon: (
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="2" y="5" width="14" height="14" rx="2" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18 8h2a2 2 0 012 2v8a2 2 0 01-2 2H8a2 2 0 01-2-2v-2" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M2 14l4-4 4 4" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        key: "video",
+                        label: "Video",
+                        sub: "Animated",
+                        icon: (
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <rect x="2" y="5" width="15" height="14" rx="2" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 9l5-3v12l-5-3V9z" />
+                          </svg>
+                        ),
+                      },
+                    ].map(({ key, label, sub, icon }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => handleInputChange("mediaType", key)}
+                        className={`py-5 px-3 rounded-2xl border-2 text-center transition-all duration-200 flex flex-col items-center gap-2 ${formData.mediaType === key
+                          ? "border-amber-400 bg-gradient-to-b from-amber-50 to-orange-50 shadow-lg shadow-amber-100"
+                          : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
+                          }`}
+                      >
+                        <span className={formData.mediaType === key ? "text-amber-500" : "text-gray-400"}>{icon}</span>
+                        <div>
+                          <div className={`text-xs font-bold leading-tight ${formData.mediaType === key ? "text-amber-700" : "text-gray-600"
+                            }`}>{label}</div>
+                          <div className={`text-[10px] mt-0.5 ${formData.mediaType === key ? "text-amber-400" : "text-gray-300"
+                            }`}>{sub}</div>
+                        </div>
+                        {formData.mediaType === key && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                        )}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {showImagePrompt && (
-                  <div className="pt-6 border-t border-gray-200 space-y-6 animate-fadeIn">
-                    <div className="space-y-4">
-                      <label className="text-sm font-semibold text-gray-900">Media Type</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {["single_image", "multi_image", "video"].map((type) => (
-                          <button key={type} type="button" onClick={() => handleInputChange("mediaType", type)} className={`py-4 px-2 rounded-xl border-2 text-xs font-semibold transition-all capitalize ${formData.mediaType === type ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-200 text-gray-600"}`}>{type.replace("_", " ")}</button>
+                {/* ── Single Image — Exclusive Mode Selector ── */}
+                {formData.mediaType === "single_image" && (
+                  <div className="space-y-4 animate-fadeIn">
+                    {/* Mode picker tabs */}
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Content Source</label>
+                      <div className="flex rounded-2xl bg-gray-50 border border-gray-100 p-1 gap-1">
+                        {[
+                          {
+                            id: "prompt", label: "Write Prompt", icon: (
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            )
+                          },
+                          {
+                            id: "upload", label: "Direct Upload", icon: (
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                            )
+                          },
+                          {
+                            id: "reference", label: "Character Ref", icon: (
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            )
+                          },
+                        ].map(({ id, label, icon }) => (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => {
+                              setVisualMode(id);
+                              // Clear conflicting data when switching
+                              if (id !== "upload") handleInputChange("uploadedMediaUrl", "");
+                              if (id !== "reference") handleInputChange("characterReferenceBase64", "");
+                              if (id !== "prompt") handleInputChange("imagePrompt", "");
+                            }}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold transition-all duration-200 ${visualMode === id
+                              ? "bg-white text-amber-600 shadow-md border border-amber-100"
+                              : "text-gray-400 hover:text-gray-600"
+                              }`}
+                          >
+                            {icon} {label}
+                          </button>
                         ))}
                       </div>
                     </div>
 
-                    <div className="space-y-4 pt-4 border-t border-gray-100">
-                      <label className="text-sm font-semibold text-gray-900">Direct Media Upload (Optional)</label>
-                      <p className="text-xs text-gray-500">Upload an image or video to use directly, bypassing AI generation.</p>
-                      <input 
-                        type="file" 
-                        accept="image/*,video/*"
-                        onChange={handleMediaUpload}
-                        disabled={isUploadingMedia}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 disabled:opacity-50"
-                      />
-                      {isUploadingMedia && <p className="text-xs text-amber-600">Uploading media...</p>}
-                      {formData.uploadedMediaUrl && <p className="text-xs text-green-600 truncate">Uploaded: {formData.uploadedMediaUrl}</p>}
-                    </div>
-
-                    {/* Character Reference Upload */}
-                    <div className="space-y-3 pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
+                    {/* PROMPT mode */}
+                    {visualMode === "prompt" && (
+                      <div className="animate-fadeIn">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Image Prompt</label>
+                          <button type="button" onClick={() => setIsPromptEditorOpen(true)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                            Full Editor
+                          </button>
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">Character Reference Image <span className="text-gray-400 font-normal">(Optional)</span></p>
-                          <p className="text-xs text-gray-500">Upload a photo of a character — AI will use it as a visual anchor for scenes featuring that character.</p>
-                        </div>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCharRefUpload}
-                        disabled={isUploadingCharRef}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
-                      />
-                      {isUploadingCharRef && <p className="text-xs text-purple-600 animate-pulse">Processing character reference...</p>}
-                      {formData.characterReferenceBase64 && (
-                        <div className="flex items-center gap-2">
-                          <img src={formData.characterReferenceBase64} alt="Character reference" className="w-12 h-12 rounded-lg object-cover border-2 border-purple-200" />
-                          <div>
-                            <p className="text-xs text-purple-700 font-semibold">Character reference ready ✓</p>
-                            <button type="button" onClick={() => handleInputChange("characterReferenceBase64", "")} className="text-xs text-red-400 hover:text-red-600">Remove</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {formData.mediaType === "multi_image" && !formData.uploadedMediaUrl && (
-                      <div className="space-y-4 p-5 bg-white rounded-2xl border border-gray-200">
-                        <div className="flex justify-between items-center"><span className="font-semibold text-gray-700 uppercase text-xs tracking-wider">Number of Scenes</span><span className="text-amber-600  text-lg">{formData.imageCount}</span></div>
-                        <input type="range" min="2" max="100" value={formData.imageCount} onChange={(e) => handleInputChange("imageCount", parseInt(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none accent-amber-500" />
+                        <textarea
+                          placeholder="Describe your visual — lighting, setting, mood, characters..."
+                          value={formData.imagePrompt}
+                          onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
+                          className={`${inputCls} h-28 resize-none`}
+                        />
                       </div>
                     )}
 
-                    {formData.mediaType === "single_image" && !formData.uploadedMediaUrl && (
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center"><label className="text-sm font-semibold text-gray-900">Image Prompt</label><button type="button" onClick={() => setIsPromptEditorOpen(true)} className="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg  uppercase">Open Editor</button></div>
-                        <textarea placeholder="Describe your image..." value={formData.imagePrompt} onChange={(e) => handleInputChange("imagePrompt", e.target.value)} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-amber-500 h-32 resize-none" />
+                    {/* UPLOAD mode — styled card */}
+                    {visualMode === "upload" && (
+                      <div className="animate-fadeIn">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Upload Image</label>
+                        <label className={`flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 ${formData.uploadedMediaUrl
+                          ? "border-green-300 bg-green-50"
+                          : "border-gray-200 bg-gray-50 hover:border-amber-300 hover:bg-amber-50/30"
+                          }`}>
+                          <input type="file" accept="image/*" onChange={handleMediaUpload} disabled={isUploadingMedia} className="sr-only" />
+                          {isUploadingMedia ? (
+                            <>
+                              <span className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                              <p className="text-sm font-semibold text-amber-600">Uploading...</p>
+                            </>
+                          ) : formData.uploadedMediaUrl ? (
+                            <>
+                              <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
+                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-sm font-bold text-green-700">Uploaded successfully</p>
+                                <p className="text-xs text-green-500 mt-0.5 max-w-xs truncate">{formData.uploadedMediaUrl}</p>
+                              </div>
+                              <button type="button" onClick={(e) => { e.preventDefault(); handleInputChange("uploadedMediaUrl", ""); }} className="text-xs text-red-400 hover:text-red-600 font-medium">Remove & re-upload</button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
+                                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-sm font-semibold text-gray-600">Click to upload an image</p>
+                                <p className="text-xs text-gray-400 mt-0.5">Bypasses AI generation — uses your image directly</p>
+                              </div>
+                              <span className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 shadow-sm">Browse Files</span>
+                            </>
+                          )}
+                        </label>
                       </div>
                     )}
 
+                    {/* CHARACTER REFERENCE mode — styled card */}
+                    {visualMode === "reference" && (
+                      <div className="animate-fadeIn">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Character Reference Image</label>
+                        <label className={`flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 ${formData.characterReferenceBase64
+                          ? "border-purple-300 bg-purple-50"
+                          : "border-gray-200 bg-gray-50 hover:border-purple-300 hover:bg-purple-50/30"
+                          }`}>
+                          <input type="file" accept="image/*" onChange={handleCharRefUpload} disabled={isUploadingCharRef} className="sr-only" />
+                          {isUploadingCharRef ? (
+                            <>
+                              <span className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                              <p className="text-sm font-semibold text-purple-600">Processing...</p>
+                            </>
+                          ) : formData.characterReferenceBase64 ? (
+                            <>
+                              <img src={formData.characterReferenceBase64} alt="Character reference" className="w-20 h-20 rounded-2xl object-cover border-2 border-purple-200 shadow-md" />
+                              <div className="text-center">
+                                <p className="text-sm font-bold text-purple-700">Character reference ready ✓</p>
+                                <p className="text-xs text-purple-400 mt-0.5">AI will anchor character appearances to this image</p>
+                              </div>
+                              <button type="button" onClick={(e) => { e.preventDefault(); handleInputChange("characterReferenceBase64", ""); }} className="text-xs text-red-400 hover:text-red-600 font-medium">Remove & re-upload</button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center">
+                                <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-sm font-semibold text-gray-600">Upload a character photo</p>
+                                <p className="text-xs text-gray-400 mt-0.5">AI uses it as a visual anchor for scenes with that character</p>
+                              </div>
+                              <span className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 shadow-sm">Browse Files</span>
+                            </>
+                          )}
+                        </label>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
 
-              {/* Aspect Ratio Selection (Commented out for now) */}
+                {/* Multi-image scene count */}
+                {formData.mediaType === "multi_image" && (
+                  <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100 animate-fadeIn">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Number of Scenes</span>
+                      <span className="text-2xl font-bold text-amber-500">{formData.imageCount}</span>
+                    </div>
+                    <input
+                      type="range" min="2" max="100"
+                      value={formData.imageCount}
+                      onChange={(e) => handleInputChange("imageCount", parseInt(e.target.value))}
+                      className="w-full h-2 rounded-full appearance-none accent-amber-500 cursor-pointer"
+                      style={{ background: `linear-gradient(to right, #f59e0b ${((formData.imageCount - 2) / 98) * 100}%, #e5e7eb ${((formData.imageCount - 2) / 98) * 100}%)` }}
+                    />
+                    <div className="flex justify-between text-[10px] text-gray-300 font-semibold mt-2 px-0.5"><span>2</span><span>100</span></div>
+                  </div>
+                )}
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-gray-900">Final Format (Aspect Ratio)</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-gray-500">Generate Both (16:9 & 9:16)</span>
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange("dualPlatform", !formData.dualPlatform)}
-                      className={`relative flex h-6 w-11 items-center rounded-full transition-colors ${formData.dualPlatform ? "bg-amber-500" : "bg-gray-300"}`}
-                    >
-                      <span className={`h-5 w-5 rounded-full bg-white transition-transform ${formData.dualPlatform ? "translate-x-5" : "translate-x-1"}`} />
+                {/* Cover Art Prompt — styled like image prompt with editor */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Cover Art Prompt</label>
+                      <span className="text-gray-300 text-xs font-normal ml-1">(optional)</span>
+                    </div>
+                    <button type="button" onClick={() => setIsCoverArtEditorOpen(true)} className="flex items-center gap-1.5 text-xs font-semibold text-pink-600 bg-pink-50 px-3 py-1.5 rounded-lg hover:bg-pink-100 transition-colors">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                      Full Editor
                     </button>
                   </div>
-                </div>
-                <div className={`flex gap-4 transition-opacity ${formData.dualPlatform ? "opacity-50 pointer-events-none" : "opacity-100"}`}>
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange("aspectRatio", "9:16")}
-                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center font-medium transition-all ${formData.aspectRatio === "9:16" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
-                  >
-                    TikTok / Instagram (9:16)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange("aspectRatio", "16:9")}
-                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-center font-medium transition-all ${formData.aspectRatio === "16:9" ? "border-amber-500 bg-amber-50 text-amber-700" : "border-gray-300 text-gray-700"}`}
-                  >
-                    YouTube (16:9)
-                  </button>
-                </div>
-              </div>
-
-
-              {/* Voice & Length */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div><label className="block text-sm font-semibold text-gray-900 mb-2">Voice Selection</label><VoiceSelector value={formData.voice} onChange={(v) => handleInputChange("voice", v)} /></div>
-                <div><label className="block text-sm font-semibold text-gray-900 mb-2">Voice Tone</label><select value={formData.tone} onChange={(e) => handleInputChange("tone", e.target.value)} className="w-full px-4 py-3.5 border border-gray-300 rounded-xl focus:ring-amber-500">
-                  <option value="">Select tone...</option>
-                  <option value="neutral">Neutral</option>
-                  <option value="excited">Excited & Energetic</option>
-                  <option value="calm">Calm & Soothing</option>
-                  <option value="mysterious">Mysterious & Intriguing</option>
-                  <option value="professional">Professional & Informative</option>
-                  <option value="playful">Playful & Fun</option>
-                </select></div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="flex justify-between items-center"><label className="text-sm font-semibold text-gray-900">Story Length</label><span className="text-amber-600 font-semibold bg-amber-50 px-3 py-1 rounded-lg">{storyLengthStr}</span></div>
-                <input type="range" min="1" max="3" value={lengthLevel} onChange={(e) => setLengthLevel(Number(e.target.value))} className="w-full h-1.5 bg-gradient-to-r from-amber-300 to-pink-500 rounded-lg appearance-none accent-amber-500" />
-              </div>
-
-              {/* SEO Metadata */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <h3 className="font-semibold text-gray-900">SEO Content (JSON)</h3>
-                </div>
-                <div className="space-y-2">
                   <textarea
-                    placeholder=''
-                    value={formData.seoMetadata}
-                    onChange={(e) => handleInputChange("seoMetadata", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 bg-white h-40 font-mono text-sm resize-none"
+                    placeholder="Describe the main cover art (used for 16:9 thumbnail)..."
+                    value={formData.coverArtPrompt}
+                    onChange={(e) => handleInputChange("coverArtPrompt", e.target.value)}
+                    className={`${inputCls} h-20 resize-none`}
                   />
-                  <div className="flex justify-between items-center px-1">
-                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Must be valid JSON</p>
-                    {(() => {
-                      try {
-                        JSON.parse(formData.seoMetadata);
-                        return <span className="text-[10px] text-green-500 font-bold uppercase tracking-widest">Valid JSON</span>;
-                      } catch (e) {
-                        return <span className="text-[10px] text-red-500 font-bold uppercase tracking-widest">Invalid JSON</span>;
-                      }
-                    })()}
-                  </div>
                 </div>
-              </div>
-
-              <button type="button" onClick={handleGenerate} disabled={loading || !formData.title} className="w-full py-5 rounded-2xl  text-xl bg-gradient-to-r from-amber-500 via-pink-500 to-rose-600 text-white shadow-xl shadow-amber-200 hover:scale-[1.02] active:scale-95 transition-all disabled:grayscale disabled:opacity-50">
-                {loading ? "BRINGING TO LIFE..." : "GENERATE STORY"}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="lg:col-span-5 space-y-8">
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
-            <div className="flex items-center justify-between mb-8"><h2 className="text-2xl font-semibold text-gray-900 tracking-tight">Scheduled Generations</h2><span className="px-4 py-1 bg-amber-500 text-white  rounded-full text-xs">{scheduled?.length || 0}</span></div>
-            {!scheduled?.length ? <div className="text-center py-12 text-gray-400 font-medium">No active generations today</div> : (
-              <div className="space-y-4">
-                {scheduled.map(s => (
-                  <div key={s.workflowId} className="group p-5 bg-gray-50 rounded-2xl flex justify-between items-center hover:bg-white hover:shadow-lg transition-all border border-transparent hover:border-amber-200 cursor-pointer">
-                    <div className="flex flex-col gap-1"><span className="font-semibold text-sm text-gray-900 truncate max-w-[150px]">{s.title}</span><span className="text-[10px] text-gray-400 font-semibold uppercase">{new Date(s.scheduledAt).toLocaleDateString()}</span></div>
-                    <button onClick={(e) => { e.stopPropagation(); if (window.confirm("Cancel mission?")) dispatch(deleteScheduledStory(s.workflowId)); }} className="p-2 text-gray-300 hover:text-red-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-                  </div>
-                ))}
               </div>
             )}
           </div>
+
+          {/* ── SECTION 6: Advanced Options (always open) ── */}
+          <div className={sectionCard}>
+            <SectionHeader step="6" title="Advanced Options" subtitle="SEO metadata and custom JSON output settings" />
+
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">SEO Content <span className="font-normal text-gray-300 normal-case">(JSON)</span></label>
+            <textarea
+              value={formData.seoMetadata}
+              onChange={(e) => handleInputChange("seoMetadata", e.target.value)}
+              className={`${inputCls} h-40 font-mono text-sm resize-none`}
+            />
+            <div className="flex justify-between items-center px-1 mt-2">
+              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Must be valid JSON</p>
+              {(() => {
+                try {
+                  JSON.parse(formData.seoMetadata);
+                  return <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">✓ Valid JSON</span>;
+                } catch {
+                  return <span className="text-[10px] text-red-500 font-bold uppercase tracking-widest">✗ Invalid JSON</span>;
+                }
+              })()}
+            </div>
+          </div>
         </div>
+        {/* ── ACTION AREA ── */}
+        <div className="col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm p-7 space-y-5">
+          {/* Schedule toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-white rounded-xl shadow-sm flex items-center justify-center">
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-700">Schedule for Later</p>
+                <p className="text-xs text-gray-400">Pick a date & time to auto-generate</p>
+              </div>
+            </div>
+            <ToggleSwitch
+              checked={scheduleForLater}
+              onChange={() => setScheduleForLater(!scheduleForLater)}
+              colorOn="bg-pink-500"
+            />
+          </div>
+
+          {/* Date picker */}
+          {scheduleForLater && (
+            <div className="animate-fadeIn">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                Schedule Date & Time <span className="text-pink-500">*</span>
+              </label>
+              <div className="relative">
+                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <input
+                  type="datetime-local"
+                  value={scheduleInput}
+                  min={new Date().toISOString().slice(0, 16)}
+                  onChange={(e) => {
+                    setScheduleInput(e.target.value);
+                    setScheduleTime(new Date(e.target.value).toISOString());
+                  }}
+                  className={`${inputCls} pl-11`}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Generate button */}
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={loading || !formData.title}
+            className="w-full py-5 rounded-2xl text-base font-extrabold tracking-widest uppercase bg-gradient-to-r from-amber-400 via-pink-500 to-rose-500 text-white shadow-xl shadow-pink-200/60 hover:shadow-pink-300/70 hover:scale-[1.015] active:scale-[0.98] transition-all duration-200 disabled:grayscale disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+          >
+            {/* Shine sweep */}
+            <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
+            <span className="relative flex items-center justify-center gap-3">
+              {loading ? (
+                <>
+                  <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Bringing To Life...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  {scheduleForLater ? "Schedule Story" : "Generate Story"}
+                </>
+              )}
+            </span>
+          </button>
+        </div>
+
       </div>
-
-      {/* Modals */}
-      {isTextEditorOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-modal">
-            <div className="p-8 border-b flex justify-between items-center bg-gray-50"><h2 className=" text-2xl text-gray-900 ">SCRIPT COMMAND CENTER</h2><button onClick={() => setIsTextEditorOpen(false)} className="px-6 py-2 bg-black text-white rounded-full font-semibold uppercase text-xs">Close Array</button></div>
-            <textarea value={formData.concept} onChange={e => handleInputChange("concept", e.target.value)} className="flex-1 p-12 text-xl font-medium leading-relaxed resize-none outline-none text-gray-800" placeholder="DEUCODE YOUR STORY HERE..." />
-          </div>
-        </div>
-      )}
-
-      {isPromptEditorOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-modal">
-            <div className="p-8 border-b flex justify-between items-center bg-amber-50"><h2 className=" text-2xl text-amber-900 ">VISUAL PROMPT ENGINE</h2><button onClick={() => setIsPromptEditorOpen(false)} className="px-6 py-2 bg-amber-600 text-white rounded-full font-semibold uppercase text-xs">Lock Prompt</button></div>
-            <textarea value={formData.imagePrompt} onChange={e => handleInputChange("imagePrompt", e.target.value)} className="flex-1 p-12 text-xl font-medium leading-relaxed resize-none outline-none text-amber-900 bg-amber-50/20" placeholder="INITIALIZE VISUAL PARAMETERS..." />
-          </div>
-        </div>
-      )}
     </main>
   );
 };

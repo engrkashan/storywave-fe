@@ -96,6 +96,7 @@ const WorkflowDetailPage = () => {
     "audioURL",
     "storyLength",
     "storylength",
+    "characterReferenceBase64",
   ];
 
   const shouldExcludeKey = (key) => {
