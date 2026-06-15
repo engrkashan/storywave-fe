@@ -817,7 +817,13 @@ const GenerateStory = () => {
                       <button
                         key={key}
                         type="button"
-                        onClick={() => handleInputChange("mediaType", key)}
+                        onClick={() => {
+                          handleInputChange("mediaType", key);
+                          if (key !== "single_image" && visualMode === "upload") {
+                            setVisualMode("prompt");
+                            handleInputChange("uploadedMediaUrl", "");
+                          }
+                        }}
                         className={`py-5 px-3 rounded-2xl border-2 text-center transition-all duration-200 flex flex-col items-center gap-2 ${formData.mediaType === key
                           ? "border-amber-400 bg-gradient-to-b from-amber-50 to-orange-50 shadow-lg shadow-amber-100"
                           : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
@@ -838,30 +844,29 @@ const GenerateStory = () => {
                   </div>
                 </div>
 
-                {/* ── Single Image — Exclusive Mode Selector ── */}
-                {formData.mediaType === "single_image" && (
-                  <div className="space-y-4 animate-fadeIn">
-                    {/* Mode picker tabs */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Content Source</label>
-                      <div className="flex rounded-2xl bg-gray-50 border border-gray-100 p-1 gap-1">
-                        {[
-                          {
-                            id: "prompt", label: "Write Prompt", icon: (
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                            )
-                          },
-                          {
-                            id: "upload", label: "Direct Upload", icon: (
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                            )
-                          },
-                          {
-                            id: "reference", label: "Character Ref", icon: (
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                            )
-                          },
-                        ].map(({ id, label, icon }) => (
+                {/* ── Visual Content Source Selector ── */}
+                <div className="space-y-4 animate-fadeIn mt-6">
+                  {/* Mode picker tabs */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Content Source</label>
+                    <div className="flex rounded-2xl bg-gray-50 border border-gray-100 p-1 gap-1">
+                      {[
+                        {
+                          id: "prompt", label: "Write Prompt", icon: (
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          )
+                        },
+                        {
+                          id: "upload", label: "Direct Upload", icon: (
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                          )
+                        },
+                        {
+                          id: "reference", label: "Character Ref", icon: (
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                          )
+                        },
+                      ].filter((tab) => formData.mediaType === "single_image" || tab.id !== "upload").map(({ id, label, icon }) => (
                           <button
                             key={id}
                             type="button"
@@ -894,7 +899,7 @@ const GenerateStory = () => {
                           </button>
                         </div>
                         <textarea
-                          placeholder="Describe your visual — lighting, setting, mood, characters..."
+                          placeholder={formData.mediaType === "single_image" ? "Describe your visual — lighting, setting, mood, characters..." : "Use this prompt as a reference for the images or video scene character..."}
                           value={formData.imagePrompt}
                           onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
                           className={`${inputCls} h-28 resize-none`}
@@ -982,7 +987,6 @@ const GenerateStory = () => {
                       </div>
                     )}
                   </div>
-                )}
 
                 {/* Multi-image scene count */}
                 {formData.mediaType === "multi_image" && (
