@@ -106,7 +106,7 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
     }
 
     let mediaUrl =
-      story?.thumbnail || story?.coverArtURL_16_9 || story?.coverArtURL_1_1;
+      story?.thumbnail || story?.coverArtURL_16_9 || story?.coverArtURL_9_16;
     let isVideo = false;
 
     if (!mediaUrl && story?.video) {

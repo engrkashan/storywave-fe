@@ -20,6 +20,7 @@ import ManageWorkflows from "./containers/dashboard/manage-workflows";
 import WorkflowDetailPage from "./containers/dashboard/manage-workflows/detail";
 import ManageCreators from "./containers/dashboard/manage-users";
 import MyCreations from "./containers/dashboard/my-creations";
+import Publish from "./containers/dashboard/publish";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -42,6 +43,7 @@ const dashboardRoutes = [
   { path: "/dashboard/generate-story", element: <GenerateStory /> },
   { path: "/dashboard/profile", element: <Profile /> },
   { path: "/dashboard/my-creations", element: <MyCreations /> },
+  { path: "/dashboard/publish", element: <Publish /> },
 ];
 
 const creatorDashboardRoutes = [

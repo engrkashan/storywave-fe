@@ -133,6 +133,7 @@ const GenerateStory = () => {
     visualSuggestions: "",
     uploadedMediaUrl: "",
     characterReferenceBase64: "",
+    autoPublish: true,
   });
 
   const loadingMessages = [
@@ -315,6 +316,8 @@ const GenerateStory = () => {
       visualSuggestions: formData.visualSuggestions,
       uploadedMediaUrl: formData.uploadedMediaUrl,
       characterReferenceBase64: formData.characterReferenceBase64 || null,
+      autoPublish: formData.autoPublish,
+      autoPublishDelayMinutes: parseInt(localStorage.getItem("sw_auto_publish_delay_total_minutes") || "60", 10),
     };
 
     if (showImagePrompt && formData.mediaType === "single_image" && formData.imagePrompt) {
@@ -1097,6 +1100,19 @@ const GenerateStory = () => {
               </div>
             </div>
           )}
+
+          {/* Auto Publish Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl mb-4">
+            <div>
+              <p className="text-sm font-bold text-gray-800">Auto-Publish to Socials</p>
+              <p className="text-xs text-gray-500 mt-0.5">Automatically post this story once it's done</p>
+            </div>
+            <ToggleSwitch
+              checked={formData.autoPublish}
+              onChange={() => handleInputChange("autoPublish", !formData.autoPublish)}
+              colorOn="bg-emerald-500"
+            />
+          </div>
 
           {/* Generate button */}
           <button

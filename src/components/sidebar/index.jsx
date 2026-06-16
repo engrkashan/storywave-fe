@@ -10,6 +10,7 @@ import {
   Workflow,
   Share2,
   Users,
+  Send,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -36,8 +37,13 @@ const adminLinks = [
     icon: <Speech className="text-xl flex-shrink-0" />,
   },
   {
+    to: "/dashboard/publish",
+    label: "Publish to Social",
+    icon: <Send className="text-xl flex-shrink-0" />,
+  },
+  {
     to: "/dashboard/integrations",
-    label: "Publish & Share",
+    label: "Integrations",
     icon: <Share2 className="text-xl flex-shrink-0" />,
   },
 ];

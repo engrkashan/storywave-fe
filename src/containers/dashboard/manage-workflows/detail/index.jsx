@@ -146,7 +146,7 @@ const WorkflowDetailPage = () => {
   const primaryImage =
     workflow.story?.coverArtURL_16_9 ||
     workflow.story?.thumbnail ||
-    workflow.story?.coverArtURL_1_1 ||
+    workflow.story?.coverArtURL_9_16 ||
     workflow.story?.coverArtURL;
 
   const renderMediaGrid = () => {
@@ -243,22 +243,22 @@ const WorkflowDetailPage = () => {
           )}
           <div className="order-2 lg:order-3 w-full grid grid-cols-2 lg:block gap-4 lg:gap-0 lg:space-y-5">
             {/* ── COLUMN 3 ── */}
-            {/* Cover 1:1  (row 1) */}
+            {/* Cover 9:16  (row 1) */}
             <div className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200 group w-full aspect-square">
               <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1">
-                <ImageIcon className="w-3 h-3" /> Cover 1:1
+                <ImageIcon className="w-3 h-3" /> Cover 9:16
               </span>
               <button
                 onClick={() =>
-                  workflow.story?.coverArtURL_1_1 &&
-                  handleDownload(workflow.story.coverArtURL_1_1, "1:1")
+                  workflow.story?.coverArtURL_9_16 &&
+                  handleDownload(workflow.story.coverArtURL_9_16, "9:16")
                 }
                 title={
-                  workflow.story?.coverArtURL_1_1
+                  workflow.story?.coverArtURL_9_16
                     ? "Download"
                     : "No image available"
                 }
-                className={`absolute top-2 right-2 backdrop-blur-sm text-white p-1.5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-all duration-200 ${workflow.story?.coverArtURL_1_1
+                className={`absolute top-2 right-2 backdrop-blur-sm text-white p-1.5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-all duration-200 ${workflow.story?.coverArtURL_9_16
                   ? "bg-black/60 hover:bg-black/80 cursor-pointer shadow-md"
                   : "bg-black/30 cursor-not-allowed"
                   }`}
@@ -267,11 +267,11 @@ const WorkflowDetailPage = () => {
               </button>
               <img
                 src={
-                  workflow.story?.coverArtURL_1_1 ||
+                  workflow.story?.coverArtURL_9_16 ||
                   "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
                 }
                 className="w-full h-full object-cover"
-                alt="Cover Art 1:1"
+                alt="Cover Art 9:16"
               />
             </div>
 

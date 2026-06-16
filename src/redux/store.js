@@ -4,6 +4,7 @@ import adminSlice from "./slices/admin.slice.js";
 import storySlice from "./slices/story.slice.js";
 import creationsSlice from "./slices/creations.slice.js";
 import overviewSlice from "./slices/overview.slice.js";
+import publishSlice from "./slices/publish.slice.js";
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     stories: storySlice,
     admin: adminSlice,
     overview: overviewSlice,
+    publish: publishSlice,
   },
 });
