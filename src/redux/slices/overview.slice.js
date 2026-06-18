@@ -53,6 +53,21 @@ export const deleteWorkflow = createAsyncThunk(
   },
 );
 
+// Async thunk to bulk delete workflows
+export const bulkDeleteWorkflows = createAsyncThunk(
+  "overview/bulkDeleteWorkflows",
+  async (ids, thunkAPI) => {
+    try {
+      const response = await axiosInstance.delete("/overview/bulk", {
+        data: { ids },
+      });
+      return response.data.deletedIds;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 const initialState = {
   workflow: null,
   totalStories: 0,
@@ -168,6 +183,30 @@ const overviewSlice = createSlice({
         }
       })
       .addCase(deleteWorkflow.rejected, (state, action) => {
+        state.deleteStatus = "failed";
+        state.error = action.payload;
+      })
+
+      // Bulk Delete Workflows
+      .addCase(bulkDeleteWorkflows.pending, (state) => {
+        state.deleteStatus = "loading";
+      })
+      .addCase(bulkDeleteWorkflows.fulfilled, (state, action) => {
+        const deletedIds = action.payload; // array of deleted workflow IDs
+        state.deleteStatus = "succeeded";
+
+        const deletedSet = new Set(deletedIds);
+        const deletedStories = state.stories.filter((s) => deletedSet.has(s.id));
+
+        // Decrement counters
+        const podcastsDeleted = deletedStories.filter((s) => s.isPodcast).length;
+        state.totalStories = Math.max(0, state.totalStories - deletedStories.length);
+        state.podcasts = Math.max(0, state.podcasts - podcastsDeleted);
+
+        // Remove deleted stories from the list
+        state.stories = state.stories.filter((s) => !deletedSet.has(s.id));
+      })
+      .addCase(bulkDeleteWorkflows.rejected, (state, action) => {
         state.deleteStatus = "failed";
         state.error = action.payload;
       });

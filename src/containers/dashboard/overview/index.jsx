@@ -5,6 +5,8 @@ import {
   BiFilter,
   BiChevronDown,
   BiRefresh,
+  BiSelectMultiple,
+  BiX,
 } from "react-icons/bi";
 import DeleteModal from "../../../components/modals/DeleteModal";
 import Cookies from "js-cookie";
@@ -16,6 +18,7 @@ import {
   fetchOverview,
   cancelWorkflow,
   deleteWorkflow,
+  bulkDeleteWorkflows,
 } from "../../../redux/slices/overview.slice";
 import { toast } from "react-hot-toast";
 
@@ -226,6 +229,12 @@ const Overview = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [deletingWorkflowId, setDeletingWorkflowId] = useState(null);
 
+  // ── Bulk delete state ──────────────────────────────────────────────
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   // Close filter dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -238,6 +247,11 @@ const Overview = () => {
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showFilterDropdown]);
+
+  // Clear selections when exiting select mode
+  useEffect(() => {
+    if (!selectMode) setSelectedIds(new Set());
+  }, [selectMode]);
 
   // ── Dynamic counts from stories  ──────────────────
   const podcastCount = useMemo(
@@ -299,6 +313,10 @@ const Overview = () => {
     [stories, filterStatus],
   );
 
+  const allFilteredSelected =
+    filteredStories.length > 0 &&
+    filteredStories.every((s) => selectedIds.has(s.id));
+
   useEffect(() => {
     dispatch(fetchOverview());
     const interval = setInterval(() => dispatch(fetchOverview()), 60000);
@@ -359,6 +377,40 @@ const Overview = () => {
     }
   };
 
+  // ── Bulk delete helpers ────────────────────────────────────────────
+  const toggleSelectStory = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredStories.map((s) => s.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      await dispatch(bulkDeleteWorkflows([...selectedIds])).unwrap();
+      toast.success(
+        `${selectedIds.size} ${selectedIds.size === 1 ? "story" : "stories"} deleted successfully!`,
+      );
+      setShowBulkDeleteModal(false);
+      setSelectMode(false);
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+      toast.error("Failed to delete selected stories. Try again.");
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const filterLabel = {
     ALL: "All Stories",
     PENDING: "Pending",
@@ -393,19 +445,21 @@ const Overview = () => {
           </p>
         </div>
 
-        {/* Refresh button */}
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing || status === "loading"}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl
-            hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-200
-            disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-gray-700 shadow-sm self-start sm:self-auto"
-        >
-          <BiRefresh
-            className={`w-4 h-4 ${refreshing || status === "loading" ? "animate-spin" : ""}`}
-          />
-          Refresh
-        </button>
+        {/* Header action buttons */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing || status === "loading"}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl
+              hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all duration-200
+              disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-gray-700 shadow-sm"
+          >
+            <BiRefresh
+              className={`w-4 h-4 ${refreshing || status === "loading" ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </button>
+        </div>
       </motion.div>
 
       {/* ── Summary Cards (4-column overview) ───────────────────────────────── */}
@@ -447,56 +501,142 @@ const Overview = () => {
               </p>
             </div>
 
-            {/* Filter dropdown */}
-            <div id="filter-dropdown-container" className="relative self-start sm:self-auto">
-              <button
-                onClick={() => setShowFilterDropdown((v) => !v)}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl
-                  hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm transition-all duration-200
-                  text-sm font-semibold text-gray-700"
-              >
-                <BiFilter className="w-4 h-4 text-gray-500" />
-                {filterLabel[filterStatus]}
-                <BiChevronDown
-                  className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${showFilterDropdown ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              <AnimatePresence>
-                {showFilterDropdown && (
+            <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+              {/* Bulk delete mode toggle */}
+              <AnimatePresence mode="wait">
+                {selectMode ? (
                   <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-20 overflow-hidden"
+                    key="bulk-actions"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    className="flex items-center gap-2"
                   >
-                    {["ALL", "PENDING", "COMPLETED", "CANCELLED"].map((s) => {
-                      const dotColors = {
-                        ALL: "bg-gray-400",
-                        PENDING: "bg-blue-500",
-                        COMPLETED: "bg-emerald-500",
-                        CANCELLED: "bg-gray-500",
-                      };
-                      return (
-                        <button
-                          key={s}
-                          onClick={() => {
-                            setFilterStatus(s);
-                            setShowFilterDropdown(false);
-                          }}
-                          className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors text-sm flex items-center gap-2 ${filterStatus === s ? "bg-amber-50 text-amber-700 font-semibold" : "text-gray-700"}`}
-                        >
-                          <span
-                            className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColors[s]}`}
-                          />
-                          {filterLabel[s]}
-                        </button>
-                      );
-                    })}
+                    {/* Select All toggle */}
+                    <button
+                      onClick={toggleSelectAll}
+                      className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
+                    >
+                      <span
+                        className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          allFilteredSelected
+                            ? "bg-red-500 border-red-500"
+                            : "border-gray-400"
+                        }`}
+                      >
+                        {allFilteredSelected && (
+                          <svg
+                            className="w-2 h-2 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        )}
+                      </span>
+                      {allFilteredSelected ? "Deselect All" : "Select All"}
+                    </button>
+
+                    {/* Delete selected button */}
+                    <button
+                      onClick={() => {
+                        if (selectedIds.size > 0) setShowBulkDeleteModal(true);
+                      }}
+                      disabled={selectedIds.size === 0}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                        selectedIds.size > 0
+                          ? "bg-red-500 hover:bg-red-600 text-white shadow-red-200 hover:shadow-red-300"
+                          : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      }`}
+                    >
+                      <BiTrash className="w-4 h-4" />
+                      Delete{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
+                    </button>
+
+                    {/* Cancel select mode */}
+                    <button
+                      onClick={() => setSelectMode(false)}
+                      className="flex items-center gap-1 px-3 py-2 text-xs font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
+                    >
+                      <BiX className="w-4 h-4" />
+                      Cancel
+                    </button>
                   </motion.div>
+                ) : (
+                  <motion.button
+                    key="select-btn"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    onClick={() => setSelectMode(true)}
+                    disabled={filteredStories.length === 0}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl
+                      hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm transition-all duration-200
+                      text-sm font-semibold text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <BiSelectMultiple className="w-4 h-4 text-gray-500" />
+                    Select
+                  </motion.button>
                 )}
               </AnimatePresence>
+
+              {/* Filter dropdown */}
+              <div id="filter-dropdown-container" className="relative">
+                <button
+                  onClick={() => setShowFilterDropdown((v) => !v)}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl
+                    hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm transition-all duration-200
+                    text-sm font-semibold text-gray-700"
+                >
+                  <BiFilter className="w-4 h-4 text-gray-500" />
+                  {filterLabel[filterStatus]}
+                  <BiChevronDown
+                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${showFilterDropdown ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                <AnimatePresence>
+                  {showFilterDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-20 overflow-hidden"
+                    >
+                      {["ALL", "PENDING", "COMPLETED", "CANCELLED"].map((s) => {
+                        const dotColors = {
+                          ALL: "bg-gray-400",
+                          PENDING: "bg-blue-500",
+                          COMPLETED: "bg-emerald-500",
+                          CANCELLED: "bg-gray-500",
+                        };
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => {
+                              setFilterStatus(s);
+                              setShowFilterDropdown(false);
+                            }}
+                            className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors text-sm flex items-center gap-2 ${filterStatus === s ? "bg-amber-50 text-amber-700 font-semibold" : "text-gray-700"}`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColors[s]}`}
+                            />
+                            {filterLabel[s]}
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>
@@ -536,7 +676,9 @@ const Overview = () => {
                     story.status === "PENDING" ||
                     story.status === "SCHEDULED" ||
                     story.status === "PROCESSING";
-                  const isCancelPending = story.status === "CANCELLATION_REQUESTED";
+                  const isCancelPending =
+                    story.status === "CANCELLATION_REQUESTED";
+                  const isSelected = selectedIds.has(story.id);
 
                   return (
                     <motion.div
@@ -545,15 +687,73 @@ const Overview = () => {
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ delay: Math.min(idx * 0.05, 0.3), duration: 0.4, ease: "easeOut" }}
-                      onClick={() => navigate(`/dashboard/workflows/${story.id}`)}
-                      className="group relative flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 md:p-5 rounded-2xl
-                        bg-white/80 backdrop-blur-md border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]
-                        hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-amber-200/50 hover:bg-white
-                        transition-all duration-300 cursor-pointer"
+                      transition={{
+                        delay: Math.min(idx * 0.05, 0.3),
+                        duration: 0.4,
+                        ease: "easeOut",
+                      }}
+                      onClick={() => {
+                        if (selectMode) {
+                          toggleSelectStory(story.id);
+                        } else {
+                          navigate(`/dashboard/workflows/${story.id}`);
+                        }
+                      }}
+                      className={`group relative flex flex-col sm:flex-row gap-4 sm:gap-6 p-4 md:p-5 rounded-2xl
+                        bg-white/80 backdrop-blur-md border shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]
+                        hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:bg-white
+                        transition-all duration-300 cursor-pointer
+                        ${
+                          isSelected
+                            ? "border-red-300 bg-red-50/60 shadow-red-100"
+                            : "border-gray-100 hover:border-amber-200/50"
+                        }`}
                     >
+                      {/* Checkbox (visible in select mode) */}
+                      <AnimatePresence>
+                        {selectMode && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.7 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.7 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute top-3 left-3 z-10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSelectStory(story.id);
+                            }}
+                          >
+                            <div
+                              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 shadow-sm ${
+                                isSelected
+                                  ? "bg-red-500 border-red-500"
+                                  : "bg-white border-gray-300 hover:border-red-400"
+                              }`}
+                            >
+                              {isSelected && (
+                                <svg
+                                  className="w-3 h-3 text-white"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={3}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
                       {/* Left: Thumbnail & Type Overlay */}
-                      <div className="flex-shrink-0 relative self-start">
+                      <div
+                        className={`flex-shrink-0 relative self-start transition-all duration-200 ${selectMode ? "ml-6" : ""}`}
+                      >
                         <div className="overflow-hidden rounded-xl shadow-sm border border-gray-100/80 bg-gray-50 aspect-square">
                           {story.isPodcast ? (
                             <img
@@ -569,12 +769,6 @@ const Overview = () => {
                             />
                           )}
                         </div>
-                        {/* Type Icon Badge */}
-                        {/* <div className={`absolute -bottom-2 -right-2 p-1.5 rounded-lg text-white shadow-lg ring-2 ring-white
-                          ${story.isPodcast ? "bg-gradient-to-br from-purple-500 to-[#f0498f]" : "bg-gradient-to-br from-[#f8be4c] to-[#f5876c]"}`}
-                        >
-                          {story.isPodcast ? <IconPodcast className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <IconVideo className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                        </div> */}
                       </div>
 
                       {/* Center: Story Info */}
@@ -589,8 +783,12 @@ const Overview = () => {
                           </h4>
 
                           {/* Status Badge */}
-                          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider ${statusStyle.pill}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+                          <div
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider ${statusStyle.pill}`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`}
+                            />
                             {story.status}
                           </div>
 
@@ -621,34 +819,70 @@ const Overview = () => {
                           )}
 
                           <div className="flex items-center gap-1.5 text-gray-500 bg-white/50 px-2 py-1 rounded-md border border-gray-100">
-                            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <svg
+                              className="w-3.5 h-3.5 text-gray-400"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
                             </svg>
                             <span>
-                              {new Date(story.createdAt).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
+                              {new Date(story.createdAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                },
+                              )}
                             </span>
                           </div>
 
                           <div className="flex items-center gap-1.5 text-gray-500 bg-white/50 px-2 py-1 rounded-md border border-gray-100">
-                            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <svg
+                              className="w-3.5 h-3.5 text-gray-400"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
                             </svg>
                             <span>
-                              {new Date(story.createdAt).toLocaleTimeString("en-US", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {new Date(story.createdAt).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
                             </span>
                           </div>
 
                           {story.error && (
                             <div className="flex items-center gap-1.5 text-red-600 bg-red-50/80 px-2.5 py-1 rounded-md border border-red-100 shadow-sm max-w-[200px] sm:max-w-xs md:max-w-md">
-                              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              <svg
+                                className="w-3.5 h-3.5 flex-shrink-0"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                />
                               </svg>
                               <span className="truncate" title={story.error}>
                                 {story.error}
@@ -658,54 +892,61 @@ const Overview = () => {
                         </div>
                       </div>
 
-                      {/* Right: Actions */}
-                      <div className="flex sm:flex-col items-center justify-end gap-2 mt-4 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {(isCancellable || isCancelPending) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!isCancelPending) setWorkflowToCancel(story);
-                            }}
-                            disabled={isCancelPending}
-                            className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 text-xs font-bold rounded-xl sm:rounded-lg transition-all shadow-sm hover:shadow w-full sm:w-auto text-center ${
-                              isCancelPending
-                                ? "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
-                                : "text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 hover:border-amber-300"
-                            }`}
-                            title={isCancelPending ? "Cancellation in progress..." : "Cancel this story"}
-                          >
-                            {isCancelPending ? "Cancelling…" : "Cancel"}
-                          </button>
-                        )}
-                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                          {isDownloadable && (
+                      {/* Right: Actions (hidden in select mode) */}
+                      {!selectMode && (
+                        <div className="flex sm:flex-col items-center justify-end gap-2 mt-4 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          {(isCancellable || isCancelPending) && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDownload(story);
+                                if (!isCancelPending)
+                                  setWorkflowToCancel(story);
                               }}
-                              className="flex-1 sm:flex-none p-2.5 flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl sm:rounded-lg transition-all border border-blue-100 hover:border-blue-600 shadow-sm hover:shadow"
+                              disabled={isCancelPending}
+                              className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 text-xs font-bold rounded-xl sm:rounded-lg transition-all shadow-sm hover:shadow w-full sm:w-auto text-center ${
+                                isCancelPending
+                                  ? "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
+                                  : "text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 hover:border-amber-300"
+                              }`}
                               title={
-                                story.isPodcast
-                                  ? "Download audio"
-                                  : "Download video"
+                                isCancelPending
+                                  ? "Cancellation in progress..."
+                                  : "Cancel this story"
                               }
                             >
-                              <BiDownload className="w-4 h-4 sm:w-5 sm:h-5" />
+                              {isCancelPending ? "Cancelling…" : "Cancel"}
                             </button>
                           )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setWorkflowToDelete(story);
-                            }}
-                            className="flex-1 sm:flex-none p-2.5 flex items-center justify-center text-red-500 bg-red-50 hover:bg-red-500 hover:text-white rounded-xl sm:rounded-lg transition-all border border-red-100 hover:border-red-500 shadow-sm hover:shadow"
-                            title="Delete story"
-                          >
-                            <BiTrash className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </button>
+                          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                            {isDownloadable && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownload(story);
+                                }}
+                                className="flex-1 sm:flex-none p-2.5 flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl sm:rounded-lg transition-all border border-blue-100 hover:border-blue-600 shadow-sm hover:shadow"
+                                title={
+                                  story.isPodcast
+                                    ? "Download audio"
+                                    : "Download video"
+                                }
+                              >
+                                <BiDownload className="w-4 h-4 sm:w-5 sm:h-5" />
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setWorkflowToDelete(story);
+                              }}
+                              className="flex-1 sm:flex-none p-2.5 flex items-center justify-center text-red-500 bg-red-50 hover:bg-red-500 hover:text-white rounded-xl sm:rounded-lg transition-all border border-red-100 hover:border-red-500 shadow-sm hover:shadow"
+                              title="Delete story"
+                            >
+                              <BiTrash className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </motion.div>
                   );
                 })}
@@ -765,7 +1006,9 @@ const Overview = () => {
                   <button
                     onClick={() => {
                       handleCancelWorkflow(
-                        workflowToCancel.workflowId || workflowToCancel.workflow || workflowToCancel.id,
+                        workflowToCancel.workflowId ||
+                          workflowToCancel.workflow ||
+                          workflowToCancel.id,
                       );
                       setWorkflowToCancel(null);
                     }}
@@ -800,6 +1043,16 @@ const Overview = () => {
           }
         />
       )}
+
+      {/* ── Bulk Delete Confirmation Modal ───────────────────────────────────── */}
+      <DeleteModal
+        show={showBulkDeleteModal}
+        onClose={() => !bulkDeleting && setShowBulkDeleteModal(false)}
+        title={`Delete ${selectedIds.size} ${selectedIds.size === 1 ? "Story" : "Stories"}?`}
+        isLoading={bulkDeleting}
+        description={`Are you sure you want to permanently delete ${selectedIds.size} selected ${selectedIds.size === 1 ? "story" : "stories"}? This action cannot be undone.`}
+        onConfirm={handleBulkDelete}
+      />
     </main>
   );
 };
