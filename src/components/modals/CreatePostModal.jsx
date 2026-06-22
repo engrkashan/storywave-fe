@@ -179,7 +179,7 @@ export default function CreatePostModal({
     try {
       const fallbackThumbnail = selectedWorkflow?.thumbnail || "";
 
-      const promises = postConfigs.map((config) => {
+      const platformsConfig = postConfigs.map((config) => {
         const channel = channels.find(
           (c) => c.id === config.channelId || c.channel_id === config.channelId,
         );
@@ -238,23 +238,29 @@ export default function CreatePostModal({
           ];
         }
 
-        const payload = {
-          workflowId: globalConfig.workflowId,
+        return {
           platform: config.platform,
           channelId: config.channelId,
           channelName: channel?.name || channel?.username || config.channelId,
+          profileId: channel?.profileId,
           caption: finalCaption,
           title: config.title,
           tags,
           thumbnailUrl: tUrl,
           mediaUrl: mUrl,
-          scheduledAt: globalConfig.scheduledAt || undefined,
         };
-
-        return dispatch(schedulePost(payload)).unwrap();
       });
 
-      await Promise.all(promises);
+      const payload = {
+        workflowId: globalConfig.workflowId,
+        scheduledAt: globalConfig.scheduledAt || undefined,
+        scheduledTimezone: globalConfig.scheduledAt ? Intl.DateTimeFormat().resolvedOptions().timeZone : undefined,
+        idempotencyKey: crypto.randomUUID(),
+        platforms: platformsConfig,
+      };
+
+      await dispatch(schedulePost(payload)).unwrap();
+      
       toast.success("Posts scheduled successfully!");
       if (onCreated) onCreated();
       onClose();
