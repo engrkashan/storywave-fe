@@ -1,7 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, Link } from "react-router-dom";
-import { fetchWorkflowById } from "../../../../redux/slices/overview.slice";
+import {
+  fetchWorkflowById,
+  updateStoryCoverArt,
+} from "../../../../redux/slices/overview.slice";
+import { fetchChannels } from "../../../../redux/slices/publish.slice";
+import CreatePostModal from "../../../../components/modals/CreatePostModal";
+import axiosInstance from "../../../../middleware/axiosInstance";
+import { toast } from "react-hot-toast";
 import {
   ArrowLeft,
   CheckCircle,
@@ -13,6 +20,9 @@ import {
   Image as ImageIcon,
   Copy,
   Download,
+  Upload,
+  Trash2,
+  Clock1,
 } from "lucide-react";
 import { BiAlarmExclamation, BiMicrophone, BiVideo } from "react-icons/bi";
 
@@ -23,6 +33,68 @@ const WorkflowDetailPage = () => {
   const [activeSEOTab, setActiveSEOTab] = useState(null);
   const [activeTab, setActiveTab] = useState("metadata");
   const [descExpanded, setDescExpanded] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const fileInputRef = useRef(null);
+  const [uploadingRatio, setUploadingRatio] = useState(null);
+
+  const { channels } = useSelector(
+    (state) => state.publish || { channels: [] },
+  );
+
+  const handleCoverUploadClick = (ratio) => {
+    setUploadingRatio(ratio);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !uploadingRatio) return;
+
+    // Reset input
+    e.target.value = null;
+
+    const toastId = toast.loading(`Uploading ${uploadingRatio} cover art...`);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await axiosInstance.post("/media", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const fileUrl = res.data.media.fileUrl;
+      const ratioKey = `coverArtURL_${uploadingRatio.replace(":", "_")}`;
+
+      await dispatch(
+        updateStoryCoverArt({
+          storyId: workflow.story.id,
+          payload: { [ratioKey]: fileUrl },
+        }),
+      ).unwrap();
+
+      toast.success("Cover art updated successfully", { id: toastId });
+    } catch (err) {
+      toast.error("Failed to upload cover art", { id: toastId });
+    } finally {
+      setUploadingRatio(null);
+    }
+  };
+
+  const handleCoverDelete = async (ratio) => {
+    const toastId = toast.loading(`Deleting ${ratio} cover art...`);
+    try {
+      const ratioKey = `coverArtURL_${ratio.replace(":", "_")}`;
+      await dispatch(
+        updateStoryCoverArt({
+          storyId: workflow.story.id,
+          payload: { [ratioKey]: null },
+        }),
+      ).unwrap();
+      toast.success("Cover art deleted", { id: toastId });
+    } catch (err) {
+      toast.error("Failed to delete cover art", { id: toastId });
+    }
+  };
 
   const handleDownload = (url, ratio = "16:9") => {
     if (!url) return;
@@ -42,7 +114,9 @@ const WorkflowDetailPage = () => {
   };
 
   useEffect(() => {
-    if (id) dispatch(fetchWorkflowById(id));
+    // Initial fetch
+    dispatch(fetchWorkflowById(id));
+    dispatch(fetchChannels());
   }, [dispatch, id]);
 
   useEffect(() => {
@@ -55,9 +129,9 @@ const WorkflowDetailPage = () => {
   const formatDate = (date) =>
     date
       ? new Date(date).toLocaleString("en-US", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      })
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
       : "N/A";
 
   const getStatusIcon = (status) => {
@@ -152,12 +226,70 @@ const WorkflowDetailPage = () => {
   const renderMediaGrid = () => {
     const has16_9Video = !!primaryVideo;
     const has9_16Video = !!workflow.video?.video_9_16;
-    const hasCover16_9 = true; // always shown (placeholder fallback)
-    const hasCover1_1 = true; // always shown (placeholder fallback)
     const hasAudio = !isPodcast && !!workflow.voiceover?.audioURL;
+
+    const renderCoverCard = (ratio, title, url, placeholderUrl) => {
+      const hasImage = !!url;
+      const aspectClass =
+        ratio === "16:9"
+          ? "aspect-video"
+          : ratio === "1:1"
+            ? "aspect-square"
+            : "aspect-[9/16] w-full max-w-[320px] mx-auto";
+      return (
+        <div
+          className={`relative rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200 group w-full ${aspectClass}`}
+        >
+          <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1">
+            <ImageIcon className="w-3 h-3" /> {title}
+          </span>
+
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 flex items-center justify-center gap-3">
+            <button
+              onClick={() => handleCoverUploadClick(ratio)}
+              title="Upload"
+              className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-2.5 rounded-full transition-all duration-200 shadow-md"
+            >
+              <Upload className="w-4 h-4" />
+            </button>
+            {hasImage && (
+              <>
+                <button
+                  onClick={() => handleDownload(url, ratio)}
+                  title="Download"
+                  className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-2.5 rounded-full transition-all duration-200 shadow-md"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleCoverDelete(ratio)}
+                  title="Delete"
+                  className="bg-red-500/80 hover:bg-red-600 backdrop-blur-md text-white p-2.5 rounded-full transition-all duration-200 shadow-md"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
+
+          <img
+            src={url || placeholderUrl}
+            className={`w-full h-full object-cover ${!hasImage ? "opacity-50 blur-sm" : ""}`}
+            alt={title}
+          />
+        </div>
+      );
+    };
 
     return (
       <div className="w-full px-4 sm:px-6 mb-8">
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={handleFileChange}
+        />
         {/* Mobile & Tablet: stacked flex with custom order. Desktop: 3-column grid. */}
         <div className="flex flex-col lg:grid lg:grid-cols-3 items-start justify-center gap-6 sm:gap-4">
           {/* ── COLUMN 1 ── */}
@@ -184,36 +316,12 @@ const WorkflowDetailPage = () => {
             )}
 
             {/* Cover 16:9  (row 2) */}
-            <div className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200 group w-full aspect-video">
-              <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1">
-                <ImageIcon className="w-3 h-3" /> Cover 16:9
-              </span>
-              <button
-                onClick={() =>
-                  workflow.story?.coverArtURL_16_9 &&
-                  handleDownload(workflow.story.coverArtURL_16_9, "16:9")
-                }
-                title={
-                  workflow.story?.coverArtURL_16_9
-                    ? "Download"
-                    : "No image available"
-                }
-                className={`absolute top-2 right-2 backdrop-blur-sm text-white p-1.5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-all duration-200 ${workflow.story?.coverArtURL_16_9
-                  ? "bg-black/60 hover:bg-black/80 cursor-pointer shadow-md"
-                  : "bg-black/30 cursor-not-allowed"
-                  }`}
-              >
-                <Download className="w-3.5 h-3.5" />
-              </button>
-              <img
-                src={
-                  workflow.story?.coverArtURL_16_9 ||
-                  "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=2059&auto=format&fit=crop"
-                }
-                className="w-full h-full object-cover"
-                alt="Cover Art 16:9"
-              />
-            </div>
+            {renderCoverCard(
+              "16:9",
+              "Cover 16:9",
+              workflow.story?.coverArtURL_16_9,
+              "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=2059&auto=format&fit=crop",
+            )}
           </div>
           {/* ── COLUMN 2: 9:16 video ── */}
           {has9_16Video ? (
@@ -244,36 +352,20 @@ const WorkflowDetailPage = () => {
           <div className="order-2 lg:order-3 w-full grid grid-cols-2 lg:block gap-4 lg:gap-0 lg:space-y-5">
             {/* ── COLUMN 3 ── */}
             {/* Cover 9:16  (row 1) */}
-            <div className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-200 group w-full aspect-square">
-              <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 flex items-center gap-1">
-                <ImageIcon className="w-3 h-3" /> Cover 9:16
-              </span>
-              <button
-                onClick={() =>
-                  workflow.story?.coverArtURL_9_16 &&
-                  handleDownload(workflow.story.coverArtURL_9_16, "9:16")
-                }
-                title={
-                  workflow.story?.coverArtURL_9_16
-                    ? "Download"
-                    : "No image available"
-                }
-                className={`absolute top-2 right-2 backdrop-blur-sm text-white p-1.5 rounded-full z-10 opacity-0 group-hover:opacity-100 transition-all duration-200 ${workflow.story?.coverArtURL_9_16
-                  ? "bg-black/60 hover:bg-black/80 cursor-pointer shadow-md"
-                  : "bg-black/30 cursor-not-allowed"
-                  }`}
-              >
-                <Download className="w-3.5 h-3.5" />
-              </button>
-              <img
-                src={
-                  workflow.story?.coverArtURL_9_16 ||
-                  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
-                }
-                className="w-full h-full object-cover"
-                alt="Cover Art 9:16"
-              />
-            </div>
+            {renderCoverCard(
+              "9:16",
+              "Cover 9:16",
+              workflow.story?.coverArtURL_9_16,
+              "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop",
+            )}
+
+            {/* Cover 1:1  (row 1.5) */}
+            {renderCoverCard(
+              "1:1",
+              "Thumbnail 1:1",
+              workflow.story?.coverArtURL_1_1,
+              "https://images.unsplash.com/photo-1516280440502-a2eb9152c658?q=80&w=2000&auto=format&fit=crop",
+            )}
 
             {/* Audio / Voiceover  (row 2) */}
             {hasAudio ? (
@@ -311,7 +403,7 @@ const WorkflowDetailPage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Top Navbar / Back */}
-      <div className="px-6 py-4 flex items-center relative md:sticky top-0 bg-white/80 backdrop-blur-md z-40 shadow-sm border-b border-gray-100">
+      <div className="px-6 py-4 flex justify-between gap-4 items-center relative md:sticky top-0 bg-white/80 backdrop-blur-md z-40 shadow-sm border-b border-gray-100">
         <Link
           to="/dashboard/manage-workflows"
           className="flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
@@ -319,6 +411,12 @@ const WorkflowDetailPage = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Link>
+        <button
+          onClick={() => setIsScheduleModalOpen(true)}
+          className="flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
+        >
+          <Clock1 className="w-5 h-5 mr-2" /> Schedule Post
+        </button>
       </div>
 
       <div className="w-full pt-6">
@@ -475,10 +573,11 @@ const WorkflowDetailPage = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                      ? "border-indigo-600 text-indigo-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
+                    className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === tab.id
+                        ? "border-indigo-600 text-indigo-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
                   >
                     {tab.label}
                   </button>
@@ -515,10 +614,11 @@ const WorkflowDetailPage = () => {
                     <button
                       key={platform}
                       onClick={() => setActiveSEOTab(platform)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${activeSEOTab === platform
-                        ? "bg-indigo-600 text-white shadow-sm"
-                        : "text-gray-600 hover:bg-gray-200"
-                        }`}
+                      className={`px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
+                        activeSEOTab === platform
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "text-gray-600 hover:bg-gray-200"
+                      }`}
                     >
                       {platform}
                     </button>
@@ -548,10 +648,10 @@ const WorkflowDetailPage = () => {
                           <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-gray-800 whitespace-pre-wrap">
                             {Array.isArray(value)
                               ? value.map((t) => (
-                                <span className="inline-block mr-2 mb-2 text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md text-xs">
-                                  {t.startsWith("#") ? t : `#${t}`}
-                                </span>
-                              ))
+                                  <span className="inline-block mr-2 mb-2 text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md text-xs">
+                                    {t.startsWith("#") ? t : `#${t}`}
+                                  </span>
+                                ))
                               : value}
                           </div>
                         </div>
@@ -621,6 +721,32 @@ const WorkflowDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {isScheduleModalOpen && (
+        <CreatePostModal
+          channels={channels}
+          workflows={
+            workflow
+              ? [
+                  {
+                    id: workflow.id,
+                    title: workflow.title,
+                    thumbnail:
+                      workflow.story?.coverArtURL_16_9 ||
+                      workflow.story?.coverArtURL_9_16 ||
+                      workflow.story?.coverArtURL,
+                    video: workflow.video,
+                    audioURL: workflow.voiceover?.audioURL,
+                    story: workflow.story,
+                  },
+                ]
+              : []
+          }
+          initialWorkflowId={workflow?.id}
+          onClose={() => setIsScheduleModalOpen(false)}
+          onCreated={() => {}}
+        />
+      )}
     </div>
   );
 };
