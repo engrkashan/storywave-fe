@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
 import DeleteModal from "../../../components/modals/DeleteModal";
+import { TfiReload } from "react-icons/tfi";
 
 /* ------------------ HELPERS ------------------ */
 const resolveType = (story) => (story.isPodcast ? "PODCAST" : "STORY");
@@ -152,8 +153,8 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
     );
   };
 
-  // Handle edit
-  const handleEdit = (e) => {
+  // Handle Regenerate
+  const handleRegerate = (e) => {
     e.preventDefault();
     e.stopPropagation();
     onEdit(story);
@@ -237,12 +238,18 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
 
             {/* Actions */}
             <div className="flex items-center gap-2 translate-y-1 transition-all duration-300 group-hover:translate-y-0 ">
-              <button
-                onClick={handleEdit}
+              <Link
+                to={`/dashboard/workflows/${story.id}`}
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600  transition-all duration-300 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
                 aria-label="Edit"
               >
                 <BiEdit size={18} />
+              </Link>
+              <button
+                onClick={handleRegerate}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600  transition-all duration-300 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+              >
+                <TfiReload size={18} />
               </button>
 
               <button

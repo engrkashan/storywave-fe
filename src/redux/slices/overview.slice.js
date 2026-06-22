@@ -27,6 +27,19 @@ export const fetchWorkflowById = createAsyncThunk(
   },
 );
 
+// Async thunk to update story cover art
+export const updateStoryCoverArt = createAsyncThunk(
+  "overview/updateStoryCoverArt",
+  async ({ storyId, payload }, thunkAPI) => {
+    try {
+      const response = await axiosInstance.patch(`/story/${storyId}/cover-art`, payload);
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
 // Async thunk to cancel a workflow
 export const cancelWorkflow = createAsyncThunk(
   "overview/cancelWorkflow",
@@ -132,6 +145,18 @@ const overviewSlice = createSlice({
       .addCase(fetchWorkflowById.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
+      })
+
+      // Update Story Cover Art
+      .addCase(updateStoryCoverArt.fulfilled, (state, action) => {
+        if (state.workflow && state.workflow.story?.id === action.payload.story.id) {
+          state.workflow.story = {
+            ...state.workflow.story,
+            coverArtURL_1_1: action.payload.story.coverArtURL_1_1,
+            coverArtURL_16_9: action.payload.story.coverArtURL_16_9,
+            coverArtURL_9_16: action.payload.story.coverArtURL_9_16,
+          };
+        }
       })
 
       // Cancel Workflow
