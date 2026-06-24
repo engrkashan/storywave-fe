@@ -13,6 +13,9 @@ import {
   Plus,
   Trash2,
   CalendarClock,
+  Image,
+  Info,
+  AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -50,6 +53,69 @@ const PLATFORM_META = {
     border: "border-gray-200",
   },
 };
+
+// ─── Thumbnail validation helpers (mirrors backend rules) ─────────────────────
+
+const THUMBNAIL_RULES = {
+  youtube: {
+    allowedExts: ["jpg", "jpeg", "png"],
+    maxMB: 2,
+    minWidth: 640,
+    preferredLabel: "1280×720 (16:9)",
+    note: "JPG/PNG only · Max 2MB · Min 640px wide · 1280×720 recommended",
+  },
+  facebook: {
+    allowedExts: ["jpg", "jpeg", "png"],
+    maxMB: 10,
+    note: "JPG/PNG only · Max 10MB",
+  },
+  instagram: {
+    allowedExts: ["jpg", "jpeg", "png"],
+    maxMB: 8,
+    note: "JPG/PNG only · Max 8MB",
+  },
+  tiktok: null, // no external thumbnail
+};
+
+/**
+ * Returns a list of warning strings for a thumbnail URL + platform combination.
+ * Only checks format — size/dimension checks would need a fetch.
+ */
+function getThumbnailWarnings(thumbnailUrl, platform) {
+  if (!thumbnailUrl) return [];
+  const rules = THUMBNAIL_RULES[platform];
+  if (!rules) return [];
+
+  const warnings = [];
+  const ext = thumbnailUrl.split("?")[0].split(".").pop()?.toLowerCase();
+  if (ext && !rules.allowedExts.includes(ext)) {
+    warnings.push(
+      `Format ".${ext}" not supported. Use ${rules.allowedExts.join("/").toUpperCase()}.`,
+    );
+  }
+  return warnings;
+}
+
+/**
+ * Derive the ideal cover aspect ratio for a platform + video format combination.
+ */
+function getCoverAspectHint(platform, videoRatio, imageRatio) {
+  const ratio = videoRatio || imageRatio;
+  if (platform === "instagram") {
+    if (ratio === "9:16") return "9:16 (Reel / Story)";
+    if (ratio === "1:1") return "1:1 (Square feed video)";
+    if (ratio === "4:5") return "4:5 (Portrait feed video)";
+    return "1:1 or 4:5 recommended";
+  }
+  if (platform === "youtube") {
+    if (ratio === "9:16") return null; // Shorts — no thumbnail
+    return "1280×720 (16:9) recommended";
+  }
+  if (platform === "facebook") {
+    return "16:9 recommended for video posts";
+  }
+  return null;
+}
 
 export default function CreatePostModal({
   channels,
@@ -175,6 +241,19 @@ export default function CreatePostModal({
       }
     }
 
+    // Client-side thumbnail validation warnings (non-blocking — backend validates too)
+    for (const config of postConfigs) {
+      const tUrl = resolveThumbnailUrl(config, selectedWorkflow);
+      const warnings = getThumbnailWarnings(tUrl, config.platform);
+      if (warnings.length > 0) {
+        toast.error(
+          `${PLATFORM_META[config.platform].label} thumbnail: ${warnings[0]}`,
+          { duration: 5000 },
+        );
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const fallbackThumbnail = selectedWorkflow?.thumbnail || "";
@@ -192,23 +271,10 @@ export default function CreatePostModal({
           finalCaption = `[${config.coverTitle}]\n\n${finalCaption}`;
         }
 
-        let tUrl = fallbackThumbnail;
+        let tUrl =
+          resolveThumbnailUrl(config, selectedWorkflow) || fallbackThumbnail;
         let mUrl =
           selectedWorkflow?.video?.fileURL || selectedWorkflow?.audioURL || "";
-
-        if (config.imageFormat) {
-          const ratio = config.imageFormat.split("_")[1];
-          if (ratio === "16:9")
-            tUrl =
-              selectedWorkflow?.story?.coverArtURL_16_9 || fallbackThumbnail;
-          else if (ratio === "9:16")
-            tUrl =
-              selectedWorkflow?.story?.coverArtURL_9_16 || fallbackThumbnail;
-          else if (ratio === "1:1")
-            tUrl =
-              selectedWorkflow?.story?.coverArtURL_1_1 || fallbackThumbnail;
-          else tUrl = selectedWorkflow?.story?.coverArtURL || fallbackThumbnail;
-        }
 
         if (config.videoFormat) {
           const ratio = config.videoFormat.split("_")[1];
@@ -221,6 +287,14 @@ export default function CreatePostModal({
           else mUrl = selectedWorkflow?.video?.fileURL || mUrl;
         } else if (config.imageFormat && !config.videoFormat) {
           mUrl = tUrl;
+        }
+
+        // Derive aspect ratio from selected format
+        let aspectRatio = "16:9";
+        const activeFormat = config.videoFormat || config.imageFormat;
+        if (activeFormat) {
+          const ratioStr = activeFormat.split("_")[1];
+          if (ratioStr) aspectRatio = ratioStr;
         }
 
         // Parse tags
@@ -248,19 +322,22 @@ export default function CreatePostModal({
           tags,
           thumbnailUrl: tUrl,
           mediaUrl: mUrl,
+          aspectRatio,
         };
       });
 
       const payload = {
         workflowId: globalConfig.workflowId,
         scheduledAt: globalConfig.scheduledAt || undefined,
-        scheduledTimezone: globalConfig.scheduledAt ? Intl.DateTimeFormat().resolvedOptions().timeZone : undefined,
+        scheduledTimezone: globalConfig.scheduledAt
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : undefined,
         idempotencyKey: crypto.randomUUID(),
         platforms: platformsConfig,
       };
 
       await dispatch(schedulePost(payload)).unwrap();
-      
+
       toast.success("Posts scheduled successfully!");
       if (onCreated) onCreated();
       onClose();
@@ -270,6 +347,29 @@ export default function CreatePostModal({
       setSubmitting(false);
     }
   };
+
+  // ─── Helper: resolve the thumbnail URL for a given config ──────────────────
+  function resolveThumbnailUrl(config, workflow) {
+    if (!workflow) return "";
+    const activeFormat = config.imageFormat;
+    if (activeFormat) {
+      const ratio = activeFormat.split("_")[1];
+      if (ratio === "16:9")
+        return workflow?.story?.coverArtURL_16_9 || workflow?.thumbnail || "";
+      if (ratio === "9:16")
+        return workflow?.story?.coverArtURL_9_16 || workflow?.thumbnail || "";
+      if (ratio === "1:1")
+        return workflow?.story?.coverArtURL_1_1 || workflow?.thumbnail || "";
+      return workflow?.story?.coverArtURL || workflow?.thumbnail || "";
+    }
+    return workflow?.thumbnail || "";
+  }
+
+  // ─── Derive active aspect ratio from config ────────────────────────────────
+  function getActiveRatio(config) {
+    const f = config.videoFormat || config.imageFormat;
+    return f ? f.split("_")[1] : null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6">
@@ -404,6 +504,22 @@ export default function CreatePostModal({
                   const platformChannels = channels.filter(
                     (ch) => ch.platform?.toLowerCase() === config.platform,
                   );
+                  const activeRatio = getActiveRatio(config);
+                  const coverHint = getCoverAspectHint(
+                    config.platform,
+                    config.videoFormat ? activeRatio : null,
+                    config.imageFormat ? activeRatio : null,
+                  );
+                  const thumbnailUrl = resolveThumbnailUrl(
+                    config,
+                    selectedWorkflow,
+                  );
+                  const thumbnailWarnings = getThumbnailWarnings(
+                    thumbnailUrl,
+                    config.platform,
+                  );
+                  const isShort =
+                    config.platform === "youtube" && activeRatio === "9:16";
 
                   return (
                     <div
@@ -508,13 +624,13 @@ export default function CreatePostModal({
                                       );
                                     }
                                   }}
-                                  className={`flex  items-center gap-2 justify-center p-3 rounded-xl border-2 transition-all ${
+                                  className={`flex items-center gap-2 justify-center p-3 rounded-xl border-2 transition-all ${
                                     isSelected
                                       ? "border-amber-600 bg-amber-50 text-amber-600"
                                       : "border-gray-200 hover:border-amber-300 bg-white text-gray-600"
                                   }`}
                                 >
-                                  <span className="text-base font-semibold ">
+                                  <span className="text-base font-semibold">
                                     {format.ratio}
                                   </span>
                                   <span className="text-xs font-medium text-center">
@@ -527,6 +643,133 @@ export default function CreatePostModal({
                           {availableFormats.length === 0 && (
                             <p className="text-xs text-amber-600 mt-1">
                               ⚠️ No media found for this story.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* ── Thumbnail / Cover Info Panel ───────────────── */}
+                        <div
+                          className={`rounded-xl border p-3 text-xs space-y-1.5 ${
+                            thumbnailWarnings.length > 0
+                              ? "border-red-200 bg-red-50"
+                              : config.platform === "tiktok"
+                                ? "border-gray-200 bg-gray-50"
+                                : "border-blue-100 bg-blue-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 font-semibold text-gray-700">
+                            {thumbnailWarnings.length > 0 ? (
+                              <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+                            ) : (
+                              <Image className="w-3.5 h-3.5 text-blue-500" />
+                            )}
+                            {config.platform === "tiktok"
+                              ? "Cover Frame"
+                              : "Thumbnail / Cover"}
+                          </div>
+
+                          {/* TikTok: auto cover frame note */}
+                          {config.platform === "tiktok" && (
+                            <p className="text-gray-600 leading-snug">
+                              TikTok cover is auto-generated from a video frame
+                              timestamp (10% into the video). No external image
+                              is sent.
+                            </p>
+                          )}
+
+                          {/* YouTube Shorts: no thumbnail */}
+                          {isShort && (
+                            <p className="text-amber-700 leading-snug">
+                              YouTube Shorts do not support custom thumbnails —
+                              cover will be omitted automatically.
+                            </p>
+                          )}
+
+                          {/* YouTube regular: thumbnail rules */}
+                          {config.platform === "youtube" && !isShort && (
+                            <>
+                              <p className="text-gray-600 leading-snug">
+                                Thumbnail will be attached to the video.
+                                Requirements:
+                              </p>
+                              <ul className="list-disc list-inside text-gray-500 space-y-0.5">
+                                <li>JPG or PNG only (not WebP)</li>
+                                <li>Max 2MB</li>
+                                <li>Min width 640px · 1280×720 preferred</li>
+                              </ul>
+                              {thumbnailUrl && (
+                                <p className="text-green-700 truncate">
+                                  ✅ Using:{" "}
+                                  {thumbnailUrl
+                                    .split("/")
+                                    .pop()
+                                    ?.split("?")[0] || thumbnailUrl}
+                                </p>
+                              )}
+                            </>
+                          )}
+
+                          {/* Facebook: thumbnail rules */}
+                          {config.platform === "facebook" && (
+                            <>
+                              <p className="text-gray-600 leading-snug">
+                                Thumbnail attached for video posts. Max 10MB ·
+                                JPG/PNG. If rejected by Facebook, post will
+                                retry without thumbnail.
+                              </p>
+                              {thumbnailUrl && (
+                                <p className="text-green-700 truncate">
+                                  ✅ Using:{" "}
+                                  {thumbnailUrl
+                                    .split("/")
+                                    .pop()
+                                    ?.split("?")[0] || thumbnailUrl}
+                                </p>
+                              )}
+                            </>
+                          )}
+
+                          {/* Instagram: cover aspect ratio hint */}
+                          {config.platform === "instagram" && (
+                            <>
+                              {coverHint && (
+                                <p className="text-gray-600 leading-snug flex items-center gap-1">
+                                  <Info className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                                  Recommended cover:{" "}
+                                  <span className="font-semibold ml-1">
+                                    {coverHint}
+                                  </span>
+                                </p>
+                              )}
+                              <p className="text-gray-500 leading-snug">
+                                Cover image is used for Reels, Stories, and Feed
+                                Videos. If Meta rejects it, post retries without
+                                cover.
+                              </p>
+                              {thumbnailUrl && (
+                                <p className="text-green-700 truncate">
+                                  ✅ Using:{" "}
+                                  {thumbnailUrl
+                                    .split("/")
+                                    .pop()
+                                    ?.split("?")[0] || thumbnailUrl}
+                                </p>
+                              )}
+                            </>
+                          )}
+
+                          {/* Validation warnings */}
+                          {thumbnailWarnings.map((w, i) => (
+                            <p key={i} className="text-red-600 font-medium">
+                              ❌ {w}
+                            </p>
+                          ))}
+
+                          {/* No thumbnail available note */}
+                          {!thumbnailUrl && config.platform !== "tiktok" && (
+                            <p className="text-gray-400 italic">
+                              No cover art selected — post will be submitted
+                              without a thumbnail.
                             </p>
                           )}
                         </div>
