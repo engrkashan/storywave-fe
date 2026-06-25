@@ -107,6 +107,32 @@ const overviewSlice = createSlice({
       state.status = "idle";
       state.error = null;
     },
+    updateSocialPostStatus: (state, action) => {
+      const { id, workflowId, status, errorMessage, publishedAt } = action.payload;
+      
+      // Update in stories list
+      const story = state.stories.find(s => s.id === workflowId || s.workflowId === workflowId);
+      if (story && story.socialPosts) {
+        const post = story.socialPosts.find(p => p.id === id);
+        if (post) {
+          post.status = status;
+          post.errorMessage = errorMessage;
+          post.publishedAt = publishedAt;
+        }
+      }
+      
+      // Update in detail view
+      if (state.workflow && (state.workflow.id === workflowId || state.workflow.story?.id === workflowId)) {
+        if (state.workflow.socialPosts) {
+          const post = state.workflow.socialPosts.find(p => p.id === id);
+          if (post) {
+            post.status = status;
+            post.errorMessage = errorMessage;
+            post.publishedAt = publishedAt;
+          }
+        }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -238,5 +264,5 @@ const overviewSlice = createSlice({
   },
 });
 
-export const { clearWorkflowDetail } = overviewSlice.actions;
+export const { clearWorkflowDetail, updateSocialPostStatus } = overviewSlice.actions;
 export default overviewSlice.reducer;

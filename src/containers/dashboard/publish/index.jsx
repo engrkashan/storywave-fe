@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchPosts, fetchStats, fetchChannels, fetchWorkflowsForPublish, syncStatuses, cancelPost, reschedulePost, schedulePost } from "../../../redux/slices/publish.slice";
+import { fetchPosts, fetchStats, fetchChannels, fetchWorkflowsForPublish, syncStatuses, cancelPost, reschedulePost, schedulePost, updateLivePostStatus } from "../../../redux/slices/publish.slice";
 import {
   Calendar, List, BarChart2, Send, Clock, CheckCircle2,
   AlertCircle, XCircle, Loader2, RefreshCw, Plus, Trash2,
@@ -176,6 +176,29 @@ export default function Publish() {
   }, [dispatch, filterStatus, filterPlatform]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Live SSE connection for post statuses
+  useEffect(() => {
+    const sseUrl = `${import.meta.env.VITE_API_BASE_URL}/api/publish/live-status`;
+    const sse = new EventSource(sseUrl);
+    
+    sse.onmessage = (event) => {
+      if (event.data === "connected") return;
+    };
+    
+    sse.addEventListener("SOCIAL_POST_UPDATE", (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        dispatch(updateLivePostStatus(payload));
+      } catch (err) {
+        console.error("SSE parse error", err);
+      }
+    });
+
+    return () => {
+      sse.close();
+    };
+  }, [dispatch]);
 
   const handleCancel = async (postId) => {
     if (!confirm("Cancel this scheduled post?")) return;

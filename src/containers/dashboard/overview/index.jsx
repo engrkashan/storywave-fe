@@ -19,6 +19,7 @@ import {
   cancelWorkflow,
   deleteWorkflow,
   bulkDeleteWorkflows,
+  updateSocialPostStatus,
 } from "../../../redux/slices/overview.slice";
 import { toast } from "react-hot-toast";
 
@@ -321,6 +322,29 @@ const Overview = () => {
     dispatch(fetchOverview());
     const interval = setInterval(() => dispatch(fetchOverview()), 60000);
     return () => clearInterval(interval);
+  }, [dispatch]);
+
+  // Live SSE connection for post statuses
+  useEffect(() => {
+    const sseUrl = `${import.meta.env.VITE_API_BASE_URL}/api/publish/live-status`;
+    const sse = new EventSource(sseUrl);
+    
+    sse.onmessage = (event) => {
+      if (event.data === "connected") return;
+    };
+    
+    sse.addEventListener("SOCIAL_POST_UPDATE", (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        dispatch(updateSocialPostStatus(payload));
+      } catch (err) {
+        console.error("SSE parse error", err);
+      }
+    });
+
+    return () => {
+      sse.close();
+    };
   }, [dispatch]);
 
   const handleRefresh = async () => {

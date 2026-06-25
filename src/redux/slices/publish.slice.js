@@ -101,7 +101,17 @@ const initialState = {
 const publishSlice = createSlice({
   name: "publish",
   initialState,
-  reducers: {},
+  reducers: {
+    updateLivePostStatus: (state, action) => {
+      const { id, status, errorMessage, publishedAt } = action.payload;
+      const post = state.posts.find(p => p.id === id);
+      if (post) {
+        post.status = status;
+        if (errorMessage !== undefined) post.errorMessage = errorMessage;
+        if (publishedAt !== undefined) post.publishedAt = publishedAt;
+      }
+    }
+  },
   extraReducers: (builder) => {
     builder
       // Health
@@ -164,4 +174,5 @@ const publishSlice = createSlice({
   },
 });
 
+export const { updateLivePostStatus } = publishSlice.actions;
 export default publishSlice.reducer;
