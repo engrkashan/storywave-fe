@@ -19,6 +19,17 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+const generateId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 const PLATFORM_META = {
   youtube: {
     id: "youtube",
@@ -198,7 +209,7 @@ export default function CreatePostModal({
     }
 
     const newConfig = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       platform: platformId,
       channelId: "",
       caption: selectedWorkflow?.title || "",
@@ -332,7 +343,7 @@ export default function CreatePostModal({
         scheduledTimezone: globalConfig.scheduledAt
           ? Intl.DateTimeFormat().resolvedOptions().timeZone
           : undefined,
-        idempotencyKey: crypto.randomUUID(),
+        idempotencyKey: generateId(),
         platforms: platformsConfig,
       };
 
