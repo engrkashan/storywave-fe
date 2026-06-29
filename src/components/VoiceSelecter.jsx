@@ -157,8 +157,14 @@ const VoiceSelector = ({ value, onChange }) => {
     };
   }, [value]);
 
-  const [selectedModel, setSelectedModel] = useState("");
+  const [selectedModel, setSelectedModel] = useState(value?.provider || "");
 
+  // Keep selectedModel in sync if value is loaded externally (e.g. regenerate)
+  useEffect(() => {
+    if (value?.provider && value.provider !== selectedModel) {
+      setSelectedModel(value.provider);
+    }
+  }, [value?.provider]);
   const handleModelChange = (e) => {
     const newModel = e.target.value;
     setSelectedModel(newModel);
