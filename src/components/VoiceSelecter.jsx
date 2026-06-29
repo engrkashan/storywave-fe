@@ -162,14 +162,14 @@ const VoiceSelector = ({ value, onChange }) => {
   const handleModelChange = (e) => {
     const newModel = e.target.value;
     setSelectedModel(newModel);
-    
+
     if (value && value.provider !== newModel) {
       onChange(null);
     }
   };
 
   return (
-    <div className="flex flex-col space-y-3">
+    <div className="grid grid-cols-2 gap-4">
       <select
         value={selectedModel}
         onChange={handleModelChange}
@@ -224,11 +224,11 @@ const VoiceSelector = ({ value, onChange }) => {
       </select>
 
       {loadingVoice ? (
-        <div className="w-full px-4 py-2 bg-gray-200 rounded-lg text-center">
+        <div className="w-full px-4 py-2 bg-gray-200 rounded-lg text-center col-span-2">
           Loading preview...
         </div>
       ) : (
-        audioSrc && <audio controls src={audioSrc} className="w-full" />
+        audioSrc && <audio controls src={audioSrc} className="col-span-2" />
       )}
 
     </div>

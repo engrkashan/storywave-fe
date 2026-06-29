@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, memo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchOverview,
+  fetchWorkflowsPage,
   deleteWorkflow,
 } from "../../../redux/slices/overview.slice";
 import { toast } from "react-hot-toast";
@@ -68,11 +68,10 @@ const FilterChips = memo(({ value, onChange }) => {
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-            value === opt.value
-              ? "bg-gray-900 text-white shadow-sm"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm"
-          }`}
+          className={`whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${value === opt.value
+            ? "bg-gray-900 text-white shadow-sm"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm"
+            }`}
         >
           {opt.label}
         </button>
@@ -89,16 +88,13 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
     story?.video?.video_16_9 || story?.coverArtURL_16_9 || story?.thumbnail;
   const has9_16 = story?.video?.video_9_16;
 
-  // Aspect ratio determination
-  let aspectClass = "aspect-video"; // default 16:9
-  if (story?.isPodcast) aspectClass = "aspect-square max-h-[280px]";
-  else if (has16_9) aspectClass = "aspect-video";
-  else if (has9_16) aspectClass = "aspect-[9/16]";
+  // Fixed equal height for all card media frames
+  const aspectClass = "h-48 shrink-0 bg-black";
 
   const renderMediaContent = () => {
     if (story?.isPodcast) {
       return (
-        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-900 to-purple-900 flex items-center justify-center">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
             <BiMicrophone className="w-10 h-10 text-white" />
           </div>
@@ -124,7 +120,7 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
       return (
         <>
           <video
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-contain bg-black"
             src={mediaUrl}
             muted
             loop
@@ -146,7 +142,7 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
 
     return (
       <img
-        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        className="absolute inset-0 w-full h-full object-contain bg-black group-hover:scale-105 transition-transform duration-500"
         src={mediaUrl}
         alt={story?.title}
       />
@@ -168,12 +164,12 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
   };
 
   return (
-    <div className="group relative w-full max-w-sm mx-auto sm:max-w-none h-auto">
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200/70 bg-white shadow-sm transition-all duration-500 hover:-translate-y-1 hover:border-indigo-300 ">
+    <div className="group relative w-full max-w-sm mx-auto sm:max-w-none h-full">
+      <div className="relative h-full flex flex-col overflow-hidden rounded-2xl border border-gray-200/70 bg-white shadow-sm transition-all duration-500 hover:-translate-y-1 hover:border-indigo-300 ">
         {/* Thumbnail Area */}
         <Link
           to={`/dashboard/workflows/${story.id}`}
-          className={`relative block overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 ${aspectClass}`}
+          className={`relative block overflow-hidden ${aspectClass}`}
         >
           {/* Media */}
           <div className="h-full w-full transition-transform duration-700 group-hover:scale-105">
@@ -210,7 +206,7 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
         </Link>
 
         {/* Content */}
-        <div className="p-5">
+        <div className="p-5 flex-1 flex flex-col">
           {/* Title */}
           <Link to={`/dashboard/workflows/${story.id}`}>
             <h3 className="mb-3 line-clamp-5 text-[14px] font-semibold text-gray-900 transition-colors duration-300 group-hover:text-indigo-600">
@@ -230,8 +226,11 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
             </div>
           )}
 
+          {/* Spacer to push footer down */}
+          <div className="flex-1" />
+
           {/* Footer */}
-          <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
+          <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3 mt-3">
             <span className="text-xs font-medium text-gray-500">
               {formatDate(story.createdAt)}
             </span>
@@ -270,16 +269,39 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
 /* ------------------ MAIN COMPONENT ------------------ */
 const ManageWorkflows = () => {
   const dispatch = useDispatch();
-  const { stories, status } = useSelector((s) => s.overview);
+  const { stories, workflowsStatus, hasMore, paginationMeta } = useSelector((s) => s.overview);
   const [filterType, setFilterType] = useState("ALL");
   const [groupBySeries, setGroupBySeries] = useState(false);
   const [collapsedSeries, setCollapsedSeries] = useState({});
   const [deleteId, setDeleteId] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const observerTarget = useRef(null);
 
   useEffect(() => {
-    dispatch(fetchOverview());
+    dispatch(fetchWorkflowsPage({ page: 1, limit: 12 }));
   }, [dispatch]);
+
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && workflowsStatus !== "loading") {
+          dispatch(fetchWorkflowsPage({ page: paginationMeta.page + 1, limit: 12 }));
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [observerTarget, hasMore, workflowsStatus, paginationMeta.page, dispatch]);
 
   const filteredStories = useMemo(() => {
     if (filterType === "ALL") return stories;
@@ -322,7 +344,7 @@ const ManageWorkflows = () => {
   const handleDeleteClick = (id) => setDeleteId(id);
 
   /* ----------- LOADER ----------- */
-  if (status === "loading") {
+  if (workflowsStatus === "loading" && stories.length === 0) {
     return (
       <div className="flex flex-col gap-2 h-[calc(100vh-100px)] justify-center items-center">
         <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4" />
@@ -347,11 +369,10 @@ const ManageWorkflows = () => {
           {/* Group by Series Toggle */}
           <button
             onClick={() => setGroupBySeries((v) => !v)}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
-              groupBySeries
-                ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
-            }`}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${groupBySeries
+              ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+              : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+              }`}
           >
             <Layers className="w-4 h-4" />
             Group by Series
@@ -448,6 +469,13 @@ const ManageWorkflows = () => {
           </p>
         </div>
       )}
+
+      {/* Infinite Scroll Target */}
+      <div ref={observerTarget} className="py-4 flex justify-center h-12">
+        {workflowsStatus === "loading" && stories.length > 0 && (
+          <div className="w-8 h-8 rounded-full border-[3px] border-indigo-200 border-t-indigo-600 animate-spin" />
+        )}
+      </div>
 
       {/* DELETE MODAL */}
       <DeleteModal

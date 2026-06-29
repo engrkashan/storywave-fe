@@ -9,7 +9,7 @@ import {
 import VoiceSelector from "../../../components/VoiceSelecter";
 import { checkImagePromptSafety } from "../../../utils/promptModerations";
 import {
-  fetchOverview,
+  fetchOverviewStats,
   fetchWorkflowById,
 } from "../../../redux/slices/overview.slice";
 import axiosInstance from "../../../middleware/axiosInstance";
@@ -146,7 +146,7 @@ const GenerateStory = () => {
 
   useEffect(() => {
     dispatch(getScheduledStories());
-    dispatch(fetchOverview());
+    dispatch(fetchOverviewStats());
   }, [dispatch]);
 
   useEffect(() => {
@@ -606,13 +606,13 @@ const GenerateStory = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Voice Selection */}
-                <div>
+                <div className="col-span-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Narrator Voice</label>
                   <VoiceSelector value={formData.voice} onChange={(v) => handleInputChange("voice", v)} />
                 </div>
 
                 {/* Voice Tone */}
-                <div className="relative">
+                {/* <div className="relative">
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                     Voice Tone <span className="text-pink-500">*</span>
                   </label>
@@ -632,11 +632,11 @@ const GenerateStory = () => {
                   <div className="pointer-events-none absolute right-4 top-[38px] text-gray-400">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                   </div>
-                </div>
+                </div> */}
               </div>
 
               {/* Story Length Slider */}
-              <div>
+              {/* <div>
                 <div className="flex justify-between items-center mb-3">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Story Length</label>
                   <div className="flex items-center gap-2">
@@ -658,7 +658,7 @@ const GenerateStory = () => {
                     <span>10 min</span><span>20 min</span><span>30 min</span>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -870,126 +870,126 @@ const GenerateStory = () => {
                           )
                         },
                       ].filter((tab) => formData.mediaType === "single_image" || tab.id !== "upload").map(({ id, label, icon }) => (
-                          <button
-                            key={id}
-                            type="button"
-                            onClick={() => {
-                              setVisualMode(id);
-                              // Clear conflicting data when switching
-                              if (id !== "upload") handleInputChange("uploadedMediaUrl", "");
-                              if (id !== "reference") handleInputChange("characterReferenceBase64", "");
-                              if (id !== "prompt") handleInputChange("imagePrompt", "");
-                            }}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold transition-all duration-200 ${visualMode === id
-                              ? "bg-white text-amber-600 shadow-md border border-amber-100"
-                              : "text-gray-400 hover:text-gray-600"
-                              }`}
-                          >
-                            {icon} {label}
-                          </button>
-                        ))}
-                      </div>
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => {
+                            setVisualMode(id);
+                            // Clear conflicting data when switching
+                            if (id !== "upload") handleInputChange("uploadedMediaUrl", "");
+                            if (id !== "reference") handleInputChange("characterReferenceBase64", "");
+                            if (id !== "prompt") handleInputChange("imagePrompt", "");
+                          }}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold transition-all duration-200 ${visualMode === id
+                            ? "bg-white text-amber-600 shadow-md border border-amber-100"
+                            : "text-gray-400 hover:text-gray-600"
+                            }`}
+                        >
+                          {icon} {label}
+                        </button>
+                      ))}
                     </div>
-
-                    {/* PROMPT mode */}
-                    {visualMode === "prompt" && (
-                      <div className="animate-fadeIn">
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Image Prompt</label>
-                          <button type="button" onClick={() => setIsPromptEditorOpen(true)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
-                            Full Editor
-                          </button>
-                        </div>
-                        <textarea
-                          placeholder={formData.mediaType === "single_image" ? "Describe your visual — lighting, setting, mood, characters..." : "Use this prompt as a reference for the images or video scene character..."}
-                          value={formData.imagePrompt}
-                          onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
-                          className={`${inputCls} h-28 resize-none`}
-                        />
-                      </div>
-                    )}
-
-                    {/* UPLOAD mode — styled card */}
-                    {visualMode === "upload" && (
-                      <div className="animate-fadeIn">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Upload Image</label>
-                        <label className={`flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 ${formData.uploadedMediaUrl
-                          ? "border-green-300 bg-green-50"
-                          : "border-gray-200 bg-gray-50 hover:border-amber-300 hover:bg-amber-50/30"
-                          }`}>
-                          <input type="file" accept="image/*" onChange={handleMediaUpload} disabled={isUploadingMedia} className="sr-only" />
-                          {isUploadingMedia ? (
-                            <>
-                              <span className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                              <p className="text-sm font-semibold text-amber-600">Uploading...</p>
-                            </>
-                          ) : formData.uploadedMediaUrl ? (
-                            <>
-                              <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
-                                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-sm font-bold text-green-700">Uploaded successfully</p>
-                                <p className="text-xs text-green-500 mt-0.5 max-w-xs truncate">{formData.uploadedMediaUrl}</p>
-                              </div>
-                              <button type="button" onClick={(e) => { e.preventDefault(); handleInputChange("uploadedMediaUrl", ""); }} className="text-xs text-red-400 hover:text-red-600 font-medium">Remove & re-upload</button>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
-                                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-sm font-semibold text-gray-600">Click to upload an image</p>
-                                <p className="text-xs text-gray-400 mt-0.5">Bypasses AI generation — uses your image directly</p>
-                              </div>
-                              <span className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 shadow-sm">Browse Files</span>
-                            </>
-                          )}
-                        </label>
-                      </div>
-                    )}
-
-                    {/* CHARACTER REFERENCE mode — styled card */}
-                    {visualMode === "reference" && (
-                      <div className="animate-fadeIn">
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Character Reference Image</label>
-                        <label className={`flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 ${formData.characterReferenceBase64
-                          ? "border-purple-300 bg-purple-50"
-                          : "border-gray-200 bg-gray-50 hover:border-purple-300 hover:bg-purple-50/30"
-                          }`}>
-                          <input type="file" accept="image/*" onChange={handleCharRefUpload} disabled={isUploadingCharRef} className="sr-only" />
-                          {isUploadingCharRef ? (
-                            <>
-                              <span className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                              <p className="text-sm font-semibold text-purple-600">Processing...</p>
-                            </>
-                          ) : formData.characterReferenceBase64 ? (
-                            <>
-                              <img src={formData.characterReferenceBase64} alt="Character reference" className="w-20 h-20 rounded-2xl object-cover border-2 border-purple-200 shadow-md" />
-                              <div className="text-center">
-                                <p className="text-sm font-bold text-purple-700">Character reference ready ✓</p>
-                                <p className="text-xs text-purple-400 mt-0.5">AI will anchor character appearances to this image</p>
-                              </div>
-                              <button type="button" onClick={(e) => { e.preventDefault(); handleInputChange("characterReferenceBase64", ""); }} className="text-xs text-red-400 hover:text-red-600 font-medium">Remove & re-upload</button>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center">
-                                <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-sm font-semibold text-gray-600">Upload a character photo</p>
-                                <p className="text-xs text-gray-400 mt-0.5">AI uses it as a visual anchor for scenes with that character</p>
-                              </div>
-                              <span className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 shadow-sm">Browse Files</span>
-                            </>
-                          )}
-                        </label>
-                      </div>
-                    )}
                   </div>
+
+                  {/* PROMPT mode */}
+                  {visualMode === "prompt" && (
+                    <div className="animate-fadeIn">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Image Prompt</label>
+                        <button type="button" onClick={() => setIsPromptEditorOpen(true)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                          Full Editor
+                        </button>
+                      </div>
+                      <textarea
+                        placeholder={formData.mediaType === "single_image" ? "Describe your visual — lighting, setting, mood, characters..." : "Use this prompt as a reference for the images or video scene character..."}
+                        value={formData.imagePrompt}
+                        onChange={(e) => handleInputChange("imagePrompt", e.target.value)}
+                        className={`${inputCls} h-28 resize-none`}
+                      />
+                    </div>
+                  )}
+
+                  {/* UPLOAD mode — styled card */}
+                  {visualMode === "upload" && (
+                    <div className="animate-fadeIn">
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Upload Image</label>
+                      <label className={`flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 ${formData.uploadedMediaUrl
+                        ? "border-green-300 bg-green-50"
+                        : "border-gray-200 bg-gray-50 hover:border-amber-300 hover:bg-amber-50/30"
+                        }`}>
+                        <input type="file" accept="image/*" onChange={handleMediaUpload} disabled={isUploadingMedia} className="sr-only" />
+                        {isUploadingMedia ? (
+                          <>
+                            <span className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm font-semibold text-amber-600">Uploading...</p>
+                          </>
+                        ) : formData.uploadedMediaUrl ? (
+                          <>
+                            <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
+                              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm font-bold text-green-700">Uploaded successfully</p>
+                              <p className="text-xs text-green-500 mt-0.5 max-w-xs truncate">{formData.uploadedMediaUrl}</p>
+                            </div>
+                            <button type="button" onClick={(e) => { e.preventDefault(); handleInputChange("uploadedMediaUrl", ""); }} className="text-xs text-red-400 hover:text-red-600 font-medium">Remove & re-upload</button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
+                              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm font-semibold text-gray-600">Click to upload an image</p>
+                              <p className="text-xs text-gray-400 mt-0.5">Bypasses AI generation — uses your image directly</p>
+                            </div>
+                            <span className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 shadow-sm">Browse Files</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  )}
+
+                  {/* CHARACTER REFERENCE mode — styled card */}
+                  {visualMode === "reference" && (
+                    <div className="animate-fadeIn">
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Character Reference Image</label>
+                      <label className={`flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 ${formData.characterReferenceBase64
+                        ? "border-purple-300 bg-purple-50"
+                        : "border-gray-200 bg-gray-50 hover:border-purple-300 hover:bg-purple-50/30"
+                        }`}>
+                        <input type="file" accept="image/*" onChange={handleCharRefUpload} disabled={isUploadingCharRef} className="sr-only" />
+                        {isUploadingCharRef ? (
+                          <>
+                            <span className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm font-semibold text-purple-600">Processing...</p>
+                          </>
+                        ) : formData.characterReferenceBase64 ? (
+                          <>
+                            <img src={formData.characterReferenceBase64} alt="Character reference" className="w-20 h-20 rounded-2xl object-cover border-2 border-purple-200 shadow-md" />
+                            <div className="text-center">
+                              <p className="text-sm font-bold text-purple-700">Character reference ready ✓</p>
+                              <p className="text-xs text-purple-400 mt-0.5">AI will anchor character appearances to this image</p>
+                            </div>
+                            <button type="button" onClick={(e) => { e.preventDefault(); handleInputChange("characterReferenceBase64", ""); }} className="text-xs text-red-400 hover:text-red-600 font-medium">Remove & re-upload</button>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center">
+                              <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm font-semibold text-gray-600">Upload a character photo</p>
+                              <p className="text-xs text-gray-400 mt-0.5">AI uses it as a visual anchor for scenes with that character</p>
+                            </div>
+                            <span className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 shadow-sm">Browse Files</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  )}
+                </div>
 
                 {/* Multi-image scene count */}
                 {formData.mediaType === "multi_image" && (
@@ -999,13 +999,13 @@ const GenerateStory = () => {
                       <span className="text-2xl font-bold text-amber-500">{formData.imageCount}</span>
                     </div>
                     <input
-                      type="range" min="2" max="100"
+                      type="range" min="2" max="500"
                       value={formData.imageCount}
                       onChange={(e) => handleInputChange("imageCount", parseInt(e.target.value))}
                       className="w-full h-2 rounded-full appearance-none accent-amber-500 cursor-pointer"
-                      style={{ background: `linear-gradient(to right, #f59e0b ${((formData.imageCount - 2) / 98) * 100}%, #e5e7eb ${((formData.imageCount - 2) / 98) * 100}%)` }}
+                      style={{ background: `linear-gradient(to right, #f59e0b ${((formData.imageCount - 2) / 498) * 100}%, #e5e7eb ${((formData.imageCount - 2) / 498) * 100}%)` }}
                     />
-                    <div className="flex justify-between text-[10px] text-gray-300 font-semibold mt-2 px-0.5"><span>2</span><span>100</span></div>
+                    <div className="flex justify-between text-[10px] text-gray-300 font-semibold mt-2 px-0.5"><span>2</span><span>500</span></div>
                   </div>
                 )}
 
@@ -1102,7 +1102,7 @@ const GenerateStory = () => {
           )}
 
           {/* Auto Publish Toggle */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl mb-4">
+          {/* <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl mb-4">
             <div>
               <p className="text-sm font-bold text-gray-800">Auto-Publish to Socials</p>
               <p className="text-xs text-gray-500 mt-0.5">Automatically post this story once it's done</p>
@@ -1112,7 +1112,7 @@ const GenerateStory = () => {
               onChange={() => handleInputChange("autoPublish", !formData.autoPublish)}
               colorOn="bg-emerald-500"
             />
-          </div>
+          </div> */}
 
           {/* Generate button */}
           <button

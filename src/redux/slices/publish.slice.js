@@ -78,7 +78,7 @@ export const reschedulePost = createAsyncThunk("publish/reschedulePost", async (
 // but it's better to fetch workflows here specifically for publish.
 export const fetchWorkflowsForPublish = createAsyncThunk("publish/fetchWorkflows", async (_, thunkAPI) => {
   try {
-    const response = await axiosInstance.get("/overview");
+    const response = await axiosInstance.get("/overview/publish-options");
     return response.data;
   } catch (error) {
     return thunkAPI.rejectWithValue(error.response?.data || error.message);
@@ -149,7 +149,7 @@ const publishSlice = createSlice({
       })
       // Workflows
       .addCase(fetchWorkflowsForPublish.fulfilled, (state, action) => {
-        state.workflows = action.payload.stories || [];
+        state.workflows = action.payload || [];
       })
       // Sync
       .addCase(syncStatuses.pending, (state) => {

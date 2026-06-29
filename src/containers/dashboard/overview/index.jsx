@@ -11,11 +11,12 @@ import {
 import DeleteModal from "../../../components/modals/DeleteModal";
 import Cookies from "js-cookie";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
-  fetchOverview,
+  fetchOverviewStats,
+  fetchWorkflowsPage,
   cancelWorkflow,
   deleteWorkflow,
   bulkDeleteWorkflows,
@@ -220,9 +221,12 @@ const IconVoiceover = ({ className = "w-5 h-5" }) => (
 const Overview = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { totalStories, stories, status, voiceovers } = useSelector(
+  const { totalStories, stories, status, workflowsStatus, hasMore, paginationMeta, voiceovers } = useSelector(
     (state) => state.overview,
   );
+
+  // Intersection Observer ref for infinite scrolling
+  const observerTarget = useRef(null);
   const [workflowToCancel, setWorkflowToCancel] = useState(null);
   const [workflowToDelete, setWorkflowToDelete] = useState(null);
   const [filterStatus, setFilterStatus] = useState("ALL");
@@ -319,20 +323,45 @@ const Overview = () => {
     filteredStories.every((s) => selectedIds.has(s.id));
 
   useEffect(() => {
-    dispatch(fetchOverview());
-    const interval = setInterval(() => dispatch(fetchOverview()), 60000);
+    dispatch(fetchOverviewStats());
+    dispatch(fetchWorkflowsPage({ page: 1, limit: 12 }));
+
+    // We can still poll stats, but maybe not workflows to avoid messing up pagination
+    const interval = setInterval(() => dispatch(fetchOverviewStats()), 60000);
     return () => clearInterval(interval);
   }, [dispatch]);
+
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && workflowsStatus !== "loading") {
+          dispatch(fetchWorkflowsPage({ page: paginationMeta.page + 1, limit: 12 }));
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [observerTarget, hasMore, workflowsStatus, paginationMeta.page, dispatch]);
 
   // Live SSE connection for post statuses
   useEffect(() => {
     const sseUrl = `${import.meta.env.VITE_API_BASE_URL}/api/publish/live-status`;
     const sse = new EventSource(sseUrl);
-    
+
     sse.onmessage = (event) => {
       if (event.data === "connected") return;
     };
-    
+
     sse.addEventListener("SOCIAL_POST_UPDATE", (e) => {
       try {
         const payload = JSON.parse(e.data);
@@ -349,7 +378,10 @@ const Overview = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await dispatch(fetchOverview());
+    await Promise.all([
+      dispatch(fetchOverviewStats()),
+      dispatch(fetchWorkflowsPage({ page: 1, limit: 12 }))
+    ]);
     setTimeout(() => setRefreshing(false), 500);
   };
 
@@ -542,11 +574,10 @@ const Overview = () => {
                       className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
                     >
                       <span
-                        className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                          allFilteredSelected
+                        className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${allFilteredSelected
                             ? "bg-red-500 border-red-500"
                             : "border-gray-400"
-                        }`}
+                          }`}
                       >
                         {allFilteredSelected && (
                           <svg
@@ -573,11 +604,10 @@ const Overview = () => {
                         if (selectedIds.size > 0) setShowBulkDeleteModal(true);
                       }}
                       disabled={selectedIds.size === 0}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
-                        selectedIds.size > 0
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${selectedIds.size > 0
                           ? "bg-red-500 hover:bg-red-600 text-white shadow-red-200 hover:shadow-red-300"
                           : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      }`}
+                        }`}
                     >
                       <BiTrash className="w-4 h-4" />
                       Delete{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
@@ -727,10 +757,9 @@ const Overview = () => {
                         bg-white/80 backdrop-blur-md border shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]
                         hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:bg-white
                         transition-all duration-300 cursor-pointer
-                        ${
-                          isSelected
-                            ? "border-red-300 bg-red-50/60 shadow-red-100"
-                            : "border-gray-100 hover:border-amber-200/50"
+                        ${isSelected
+                          ? "border-red-300 bg-red-50/60 shadow-red-100"
+                          : "border-gray-100 hover:border-amber-200/50"
                         }`}
                     >
                       {/* Checkbox (visible in select mode) */}
@@ -748,11 +777,10 @@ const Overview = () => {
                             }}
                           >
                             <div
-                              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 shadow-sm ${
-                                isSelected
+                              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 shadow-sm ${isSelected
                                   ? "bg-red-500 border-red-500"
                                   : "bg-white border-gray-300 hover:border-red-400"
-                              }`}
+                                }`}
                             >
                               {isSelected && (
                                 <svg
@@ -927,11 +955,10 @@ const Overview = () => {
                                   setWorkflowToCancel(story);
                               }}
                               disabled={isCancelPending}
-                              className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 text-xs font-bold rounded-xl sm:rounded-lg transition-all shadow-sm hover:shadow w-full sm:w-auto text-center ${
-                                isCancelPending
+                              className={`flex-1 sm:flex-none px-4 py-2 sm:py-1.5 text-xs font-bold rounded-xl sm:rounded-lg transition-all shadow-sm hover:shadow w-full sm:w-auto text-center ${isCancelPending
                                   ? "text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed"
                                   : "text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 hover:border-amber-300"
-                              }`}
+                                }`}
                               title={
                                 isCancelPending
                                   ? "Cancellation in progress..."
@@ -975,6 +1002,13 @@ const Overview = () => {
                   );
                 })}
               </AnimatePresence>
+
+              {/* Infinite Scroll Target */}
+              <div ref={observerTarget} className="py-4 flex justify-center h-12">
+                {workflowsStatus === "loading" && stories.length > 0 && (
+                  <div className="w-8 h-8 rounded-full border-[3px] border-amber-200 border-t-amber-500 animate-spin" />
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1031,8 +1065,8 @@ const Overview = () => {
                     onClick={() => {
                       handleCancelWorkflow(
                         workflowToCancel.workflowId ||
-                          workflowToCancel.workflow ||
-                          workflowToCancel.id,
+                        workflowToCancel.workflow ||
+                        workflowToCancel.id,
                       );
                       setWorkflowToCancel(null);
                     }}

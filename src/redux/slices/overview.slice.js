@@ -1,12 +1,38 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosInstance from "../../middleware/axiosInstance";
 
-// Async thunk to fetch overview data
-export const fetchOverview = createAsyncThunk(
-  "overview/fetchOverview",
+// Async thunk to fetch overview stats
+export const fetchOverviewStats = createAsyncThunk(
+  "overview/fetchOverviewStats",
   async (_, thunkAPI) => {
     try {
-      const response = await axiosInstance.get("/overview");
+      const response = await axiosInstance.get("/overview/stats");
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+// Async thunk to fetch workflows with pagination
+export const fetchWorkflowsPage = createAsyncThunk(
+  "overview/fetchWorkflowsPage",
+  async ({ page = 1, limit = 20, type = "ALL" }, thunkAPI) => {
+    try {
+      const response = await axiosInstance.get(`/overview/workflows?page=${page}&limit=${limit}&type=${type}`);
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+// Async thunk to fetch publish options
+export const fetchPublishOptions = createAsyncThunk(
+  "overview/fetchPublishOptions",
+  async (_, thunkAPI) => {
+    try {
+      const response = await axiosInstance.get("/overview/publish-options");
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
@@ -93,7 +119,16 @@ const initialState = {
     cancelled: 0,
   },
   stories: [],
+  publishOptions: [],
+  paginationMeta: {
+    total: 0,
+    page: 1,
+    limit: 20,
+    totalPages: 0,
+  },
+  hasMore: true,
   status: "idle",
+  workflowsStatus: "idle",
   deleteStatus: "idle",
   error: null,
 };
@@ -136,12 +171,12 @@ const overviewSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Overview
-      .addCase(fetchOverview.pending, (state) => {
+      // Fetch Overview Stats
+      .addCase(fetchOverviewStats.pending, (state) => {
         state.status = "loading";
         state.error = null;
       })
-      .addCase(fetchOverview.fulfilled, (state, action) => {
+      .addCase(fetchOverviewStats.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.totalStories = action.payload.totalStories;
         state.videosCreated = action.payload.videosCreated;
@@ -152,11 +187,39 @@ const overviewSlice = createSlice({
           completed: 0,
           cancelled: 0,
         };
-        state.stories = action.payload.stories;
       })
-      .addCase(fetchOverview.rejected, (state, action) => {
+      .addCase(fetchOverviewStats.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
+      })
+
+      // Fetch Workflows Page
+      .addCase(fetchWorkflowsPage.pending, (state) => {
+        state.workflowsStatus = "loading";
+        state.error = null;
+      })
+      .addCase(fetchWorkflowsPage.fulfilled, (state, action) => {
+        state.workflowsStatus = "succeeded";
+        const newStories = action.payload.stories;
+        if (action.payload.meta.page === 1) {
+          state.stories = newStories;
+        } else {
+          // append if not already in state
+          const existingIds = new Set(state.stories.map(s => s.id));
+          const uniqueStories = newStories.filter(s => !existingIds.has(s.id));
+          state.stories = [...state.stories, ...uniqueStories];
+        }
+        state.paginationMeta = action.payload.meta;
+        state.hasMore = action.payload.meta.page < action.payload.meta.totalPages;
+      })
+      .addCase(fetchWorkflowsPage.rejected, (state, action) => {
+        state.workflowsStatus = "failed";
+        state.error = action.payload;
+      })
+
+      // Fetch Publish Options
+      .addCase(fetchPublishOptions.fulfilled, (state, action) => {
+        state.publishOptions = action.payload;
       })
 
       // Fetch Workflow by ID
