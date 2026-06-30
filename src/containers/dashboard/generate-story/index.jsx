@@ -285,7 +285,7 @@ const GenerateStory = () => {
   const handleGenerate = () => {
     if (!formData.concept && !formData.url)
       return toast.error("Please provide a story concept or URL");
-    if (!formData.title || !formData.tone || !formData.storyType)
+    if (!formData.title)
       return toast.error("Please fill all required fields");
     if (scheduleForLater && !scheduleTime)
       return toast.error("Please select a schedule time");
