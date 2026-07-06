@@ -117,6 +117,7 @@ const GenerateStory = () => {
     title: "",
     url: "",
     concept: "",
+    storyGuidelines: "",
     tone: "",
     imagePrompt: "",
     storyType: "",
@@ -161,6 +162,7 @@ const GenerateStory = () => {
           title: data.title || "",
           url: m.url || "",
           concept: m.textIdea || "",
+          storyGuidelines: m.storyGuidelines || "",
           tone: m.voiceTone || "",
           imagePrompt: m.imagePrompt || "",
           storyType: m.storyType || "",
@@ -293,6 +295,7 @@ const GenerateStory = () => {
     const payload = {
       title: formData.title,
       textIdea: formData.concept,
+      storyGuidelines: formData.storyGuidelines,
       url: formData.url,
       storyType: formData.storyType,
       voice: formData.voice,
@@ -582,6 +585,19 @@ const GenerateStory = () => {
                   value={formData.concept}
                   onChange={(e) => handleInputChange("concept", e.target.value)}
                   className={`${inputCls} h-40 resize-none leading-relaxed`}
+                />
+              </div>
+
+              {/* Story Guidelines */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Story Guidelines <span className="text-gray-300 font-normal normal-case">(optional)</span></label>
+                </div>
+                <textarea
+                  placeholder="Specific details about characters, scenes, tone, or how you want the story to be analyzed..."
+                  value={formData.storyGuidelines}
+                  onChange={(e) => handleInputChange("storyGuidelines", e.target.value)}
+                  className={`${inputCls} h-24 resize-none leading-relaxed`}
                 />
               </div>
 
