@@ -414,9 +414,13 @@ const Overview = () => {
     try {
       const fileUrl = story.video?.url || story.audioURL;
       if (!fileUrl) return;
+      const safeTitle = (story.title || "storywave")
+        .replace(/[^a-z0-9]/gi, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "");
       const fileName = story.video
-        ? `${story.title}.mp4`
-        : `${story.title}.mp3`;
+        ? `${safeTitle}.mp4`
+        : `${safeTitle}.mp3`;
       const response = await fetch(fileUrl, { mode: "cors" });
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
