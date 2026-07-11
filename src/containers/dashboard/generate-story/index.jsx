@@ -104,7 +104,8 @@ const GenerateStory = () => {
   const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
   const [isCoverArtEditorOpen, setIsCoverArtEditorOpen] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
-  const [isUploadingCharRef, setIsUploadingCharRef] = useState(false);
+  // Multi-character reference slots: which indices are currently processing
+  const [uploadingSlots, setUploadingSlots] = useState(new Set());
   // For single_image: which sub-mode is active — prompt | upload | reference
   const [visualMode, setVisualMode] = useState("prompt");
 
@@ -133,7 +134,8 @@ const GenerateStory = () => {
     seoMetadata: JSON.stringify({ Title: "", Description: "" }, null, 2),
     visualSuggestions: "",
     uploadedMediaUrl: "",
-    characterReferenceBase64: "",
+    // Multi-character references: [{ name, base64 }]
+    characterReferences: [],
     autoPublish: true,
   });
 
@@ -179,7 +181,8 @@ const GenerateStory = () => {
             : JSON.stringify({ Title: "", Description: "" }, null, 2),
           visualSuggestions: m.visualSuggestions || "",
           uploadedMediaUrl: m.uploadedMediaUrl || "",
-          characterReferenceBase64: "",
+          // characterReferences not restored from metadata (images re-uploaded each run)
+          characterReferences: [],
         });
         setShowImagePrompt(m.shouldGenerateImage || !!m.imagePrompt);
       })
@@ -223,14 +226,40 @@ const GenerateStory = () => {
     }
   };
 
-  const handleCharRefUpload = (e) => {
-    const file = e.target.files[0];
+  /* ── Multi-character reference slot management ── */
+
+  const MAX_CHAR_SLOTS = 10;
+
+  const handleAddCharacter = () => {
+    if (formData.characterReferences.length >= MAX_CHAR_SLOTS) return;
+    setFormData(prev => ({
+      ...prev,
+      characterReferences: [...prev.characterReferences, { name: "", base64: "" }],
+    }));
+  };
+
+  const handleRemoveCharacter = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      characterReferences: prev.characterReferences.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleCharNameChange = (index, value) => {
+    setFormData(prev => {
+      const updated = [...prev.characterReferences];
+      updated[index] = { ...updated[index], name: value };
+      return { ...prev, characterReferences: updated };
+    });
+  };
+
+  const handleCharRefUploadForSlot = (index, file) => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image is too large! Please select an image under 5MB.");
       return;
     }
-    setIsUploadingCharRef(true);
+    setUploadingSlots(prev => new Set(prev).add(index));
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
@@ -239,33 +268,31 @@ const GenerateStory = () => {
         let width = img.width;
         let height = img.height;
         if (width > MAX_DIM || height > MAX_DIM) {
-          if (width > height) {
-            height = Math.round((height * MAX_DIM) / width);
-            width = MAX_DIM;
-          } else {
-            width = Math.round((width * MAX_DIM) / height);
-            height = MAX_DIM;
-          }
+          if (width > height) { height = Math.round((height * MAX_DIM) / width); width = MAX_DIM; }
+          else { width = Math.round((width * MAX_DIM) / height); height = MAX_DIM; }
         }
         const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = width; canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
         const base64Str = canvas.toDataURL("image/jpeg", 0.8);
-        handleInputChange("characterReferenceBase64", base64Str);
-        setIsUploadingCharRef(false);
+        setFormData(prev => {
+          const updated = [...prev.characterReferences];
+          updated[index] = { ...updated[index], base64: base64Str };
+          return { ...prev, characterReferences: updated };
+        });
+        setUploadingSlots(prev => { const s = new Set(prev); s.delete(index); return s; });
         toast.success("Character reference loaded ✅");
       };
       img.onerror = () => {
         toast.error("Failed to read image data");
-        setIsUploadingCharRef(false);
+        setUploadingSlots(prev => { const s = new Set(prev); s.delete(index); return s; });
       };
       img.src = event.target.result;
     };
     reader.onerror = () => {
       toast.error("Failed to read character reference file");
-      setIsUploadingCharRef(false);
+      setUploadingSlots(prev => { const s = new Set(prev); s.delete(index); return s; });
     };
     reader.readAsDataURL(file);
   };
@@ -318,7 +345,11 @@ const GenerateStory = () => {
       })(),
       visualSuggestions: formData.visualSuggestions,
       uploadedMediaUrl: formData.uploadedMediaUrl,
-      characterReferenceBase64: formData.characterReferenceBase64 || null,
+      // Multi-character references — only send slots that have both name and image
+      characterReferences: formData.characterReferences
+        .filter(c => c.name.trim() && c.base64)
+        .map(c => ({ name: c.name.trim(), base64: c.base64 })),
+      characterReferenceBase64: null,
       autoPublish: formData.autoPublish,
       autoPublishDelayMinutes: parseInt(localStorage.getItem("sw_auto_publish_delay_total_minutes") || "60", 10),
     };
@@ -893,7 +924,7 @@ const GenerateStory = () => {
                             setVisualMode(id);
                             // Clear conflicting data when switching
                             if (id !== "upload") handleInputChange("uploadedMediaUrl", "");
-                            if (id !== "reference") handleInputChange("characterReferenceBase64", "");
+                            if (id !== "reference") handleInputChange("characterReferences", []);
                             if (id !== "prompt") handleInputChange("imagePrompt", "");
                           }}
                           className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold transition-all duration-200 ${visualMode === id
@@ -967,42 +998,101 @@ const GenerateStory = () => {
                     </div>
                   )}
 
-                  {/* CHARACTER REFERENCE mode — styled card */}
+                  {/* CHARACTER REFERENCE mode — multi-character slot list */}
                   {visualMode === "reference" && (
-                    <div className="animate-fadeIn">
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Character Reference Image</label>
-                      <label className={`flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 ${formData.characterReferenceBase64
-                        ? "border-purple-300 bg-purple-50"
-                        : "border-gray-200 bg-gray-50 hover:border-purple-300 hover:bg-purple-50/30"
-                        }`}>
-                        <input type="file" accept="image/*" onChange={handleCharRefUpload} disabled={isUploadingCharRef} className="sr-only" />
-                        {isUploadingCharRef ? (
-                          <>
-                            <span className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                            <p className="text-sm font-semibold text-purple-600">Processing...</p>
-                          </>
-                        ) : formData.characterReferenceBase64 ? (
-                          <>
-                            <img src={formData.characterReferenceBase64} alt="Character reference" className="w-20 h-20 rounded-2xl object-cover border-2 border-purple-200 shadow-md" />
-                            <div className="text-center">
-                              <p className="text-sm font-bold text-purple-700">Character reference ready ✓</p>
-                              <p className="text-xs text-purple-400 mt-0.5">AI will anchor character appearances to this image</p>
+                    <div className="animate-fadeIn space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Character References</label>
+                        <span className="text-xs text-gray-400">{formData.characterReferences.length}/{MAX_CHAR_SLOTS} characters</span>
+                      </div>
+
+                      {formData.characterReferences.length === 0 && (
+                        <div className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 text-center">
+                          <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center">
+                            <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-600">No character references yet</p>
+                            <p className="text-xs text-gray-400 mt-0.5">Add a slot for each character you want to anchor</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Character slots */}
+                      <div className="space-y-2">
+                        {formData.characterReferences.map((slot, index) => (
+                          <div key={index} className="flex items-center gap-3 p-3 rounded-2xl border border-gray-200 bg-gray-50 group">
+
+                            {/* Photo upload zone */}
+                            <label className="relative flex-shrink-0 cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="sr-only"
+                                onChange={e => handleCharRefUploadForSlot(index, e.target.files[0])}
+                              />
+                              <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 flex items-center justify-center transition-all ${
+                                slot.base64
+                                  ? "border-purple-300 bg-purple-50"
+                                  : "border-dashed border-gray-300 bg-white hover:border-purple-400 hover:bg-purple-50"
+                              }`}>
+                                {uploadingSlots.has(index) ? (
+                                  <span className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                                ) : slot.base64 ? (
+                                  <img src={slot.base64} alt={slot.name || `Char ${index + 1}`} className="w-full h-full object-cover" />
+                                ) : (
+                                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
+                                )}
+                              </div>
+                              {slot.base64 && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
+                                  <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                </div>
+                              )}
+                            </label>
+
+                            {/* Name input */}
+                            <div className="flex-1 min-w-0">
+                              <input
+                                type="text"
+                                placeholder={`Character ${index + 1} name (e.g. Marcus)`}
+                                value={slot.name}
+                                onChange={e => handleCharNameChange(index, e.target.value)}
+                                className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent placeholder:text-gray-400"
+                              />
+                              {slot.base64 && !slot.name && (
+                                <p className="text-xs text-amber-500 mt-1 pl-1">Add a name so the AI can match this photo to the right character</p>
+                              )}
                             </div>
-                            <button type="button" onClick={(e) => { e.preventDefault(); handleInputChange("characterReferenceBase64", ""); }} className="text-xs text-red-400 hover:text-red-600 font-medium">Remove & re-upload</button>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center">
-                              <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-sm font-semibold text-gray-600">Upload a character photo</p>
-                              <p className="text-xs text-gray-400 mt-0.5">AI uses it as a visual anchor for scenes with that character</p>
-                            </div>
-                            <span className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 shadow-sm">Browse Files</span>
-                          </>
-                        )}
-                      </label>
+
+                            {/* Remove button */}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCharacter(index)}
+                              className="flex-shrink-0 w-7 h-7 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+                              title="Remove character"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Add character button */}
+                      {formData.characterReferences.length < MAX_CHAR_SLOTS && (
+                        <button
+                          type="button"
+                          onClick={handleAddCharacter}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border-2 border-dashed border-purple-200 text-purple-500 text-sm font-semibold hover:border-purple-400 hover:bg-purple-50 transition-all"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                          Add Character
+                        </button>
+                      )}
+
+                      <p className="text-xs text-gray-400 pl-1">
+                        Name each character exactly as they appear in your story — AI uses the name to match the photo to the right character.
+                      </p>
                     </div>
                   )}
                 </div>
