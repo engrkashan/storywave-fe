@@ -171,6 +171,7 @@ const WorkflowDetailPage = () => {
     "storyLength",
     "storylength",
     "characterReferenceBase64",
+    "characterReferences",
   ];
 
   const shouldExcludeKey = (key) => {
