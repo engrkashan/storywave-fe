@@ -13,5 +13,3 @@ export default defineConfig({
     ]
   }
 });
-
-import { defineConfig } from 'vite'
