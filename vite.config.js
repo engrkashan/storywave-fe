@@ -4,4 +4,14 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  preview: {
+    host: true,
+    port: 4173,
+    allowedHosts: [
+      'storywave.cloud',
+      'www.storywave.cloud'
+    ]
+  }
 });
+
+import { defineConfig } from 'vite'
