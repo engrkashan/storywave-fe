@@ -126,6 +126,7 @@ const GenerateStory = () => {
     mediaType: "single_image",
     imageCount: 5,
     backgroundMusic: true,
+    backgroundMusicStyle: "",
     soundEffects: false,
     aspectRatio: "16:9",
     dualPlatform: false,
@@ -172,6 +173,7 @@ const GenerateStory = () => {
           mediaType: m.mediaType || "single_image",
           imageCount: m.imageCount || 5,
           backgroundMusic: m.backgroundMusic ?? true,
+          backgroundMusicStyle: m.backgroundMusicStyle || "",
           soundEffects: m.soundEffects ?? false,
           aspectRatio: m.aspectRatio || "16:9",
           series: m.series || "",
@@ -334,6 +336,7 @@ const GenerateStory = () => {
       mediaType: formData.mediaType,
       imageCount: formData.imageCount,
       backgroundMusic: formData.backgroundMusic,
+      backgroundMusicStyle: formData.backgroundMusicStyle,
       soundEffects: formData.soundEffects,
       aspectRatio: formData.aspectRatio,
       dualPlatform: formData.dualPlatform,
@@ -803,6 +806,27 @@ const GenerateStory = () => {
               />
             </div>
 
+            {/* Background Music Style Custom Prompt Input */}
+            {formData.backgroundMusic && (
+              <div className="mt-4 p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl animate-fadeIn">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-indigo-900">
+                    Background Music Style / Prompt
+                  </label>
+                  <span className="text-[10px] font-medium text-indigo-600 bg-indigo-100/70 px-2 py-0.5 rounded-md">
+                    Suno AI V5
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  className="w-full px-3.5 py-2.5 text-sm bg-white border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-gray-800 placeholder-gray-400"
+                  placeholder="e.g. slow dark ambient, suspenseful, minimalistic, cinematic tension"
+                  value={formData.backgroundMusicStyle || ""}
+                  onChange={(e) => handleInputChange("backgroundMusicStyle", e.target.value)}
+                />
+              </div>
+            )}
+
             {/* Sound Effects info banner */}
             {formData.soundEffects && (
               <div className="mt-4 flex items-start gap-3 p-4 bg-teal-50 border border-teal-100 rounded-2xl animate-fadeIn">
@@ -1031,11 +1055,10 @@ const GenerateStory = () => {
                                 className="sr-only"
                                 onChange={e => handleCharRefUploadForSlot(index, e.target.files[0])}
                               />
-                              <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 flex items-center justify-center transition-all ${
-                                slot.base64
+                              <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 flex items-center justify-center transition-all ${slot.base64
                                   ? "border-purple-300 bg-purple-50"
                                   : "border-dashed border-gray-300 bg-white hover:border-purple-400 hover:bg-purple-50"
-                              }`}>
+                                }`}>
                                 {uploadingSlots.has(index) ? (
                                   <span className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                                 ) : slot.base64 ? (
