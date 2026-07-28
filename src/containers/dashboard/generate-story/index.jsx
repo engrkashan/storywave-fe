@@ -828,19 +828,19 @@ const GenerateStory = () => {
             )}
 
             {/* Sound Effects info banner */}
-            {formData.soundEffects && (
+            {/* {formData.soundEffects && (
               <div className="mt-4 flex items-start gap-3 p-4 bg-teal-50 border border-teal-100 rounded-2xl animate-fadeIn">
                 <div className="w-8 h-8 bg-teal-100 rounded-xl flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 6a7 7 0 010 12M8.464 8.464a5 5 0 000 7.072M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-teal-800">ElevenLabs Sound Effects Enabled</p>
-                  <p className="text-xs text-teal-600 mt-0.5 leading-relaxed">Cinematic sound effects will be generated and layered for each scene. Works with all voice models.</p>
+                  <p className="text-sm font-semibold text-teal-800">ElevenLabs Sound Effects Enabled (Boosted Volume: 125%)</p>
+                  <p className="text-xs text-teal-600 mt-0.5 leading-relaxed">High-impact cinematic sound effects will be generated and layered with boosted volume (125%) and optimized sidechain compressor ducking.</p>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Visual Generation expanded options */}
             {showImagePrompt && (
@@ -1056,8 +1056,8 @@ const GenerateStory = () => {
                                 onChange={e => handleCharRefUploadForSlot(index, e.target.files[0])}
                               />
                               <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 flex items-center justify-center transition-all ${slot.base64
-                                  ? "border-purple-300 bg-purple-50"
-                                  : "border-dashed border-gray-300 bg-white hover:border-purple-400 hover:bg-purple-50"
+                                ? "border-purple-300 bg-purple-50"
+                                : "border-dashed border-gray-300 bg-white hover:border-purple-400 hover:bg-purple-50"
                                 }`}>
                                 {uploadingSlots.has(index) ? (
                                   <span className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
