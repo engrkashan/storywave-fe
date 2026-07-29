@@ -161,6 +161,21 @@ const GenerateStory = () => {
       .unwrap()
       .then((data) => {
         const m = data.metadata || {};
+        const rawCharRefs =
+          m.characterReferences ||
+          m.uploadedCharacterReferences ||
+          m.storyMetadata?.characterReferences ||
+          [];
+        const restoredCharRefs = Array.isArray(rawCharRefs)
+          ? rawCharRefs
+              .filter((c) => c && (c.url || c.base64))
+              .map((c) => ({
+                name: c.name || "",
+                base64: c.url || c.base64 || "",
+                url: c.url || (c.base64?.startsWith("http") ? c.base64 : ""),
+              }))
+          : [];
+
         setFormData({
           title: data.title || "",
           url: m.url || "",
@@ -173,7 +188,7 @@ const GenerateStory = () => {
           mediaType: m.mediaType || "single_image",
           imageCount: m.imageCount || 5,
           backgroundMusic: m.backgroundMusic ?? true,
-          backgroundMusicStyle: m.backgroundMusicStyle || "",
+          backgroundMusicStyle: m.backgroundMusicStyle || m.storyMetadata?.backgroundMusicStyle || "",
           soundEffects: m.soundEffects ?? false,
           aspectRatio: m.aspectRatio || "16:9",
           series: m.series || "",
@@ -183,9 +198,11 @@ const GenerateStory = () => {
             : JSON.stringify({ Title: "", Description: "" }, null, 2),
           visualSuggestions: m.visualSuggestions || "",
           uploadedMediaUrl: m.uploadedMediaUrl || "",
-          // characterReferences not restored from metadata (images re-uploaded each run)
-          characterReferences: [],
+          characterReferences: restoredCharRefs,
         });
+        if (restoredCharRefs.length > 0) {
+          setVisualMode("reference");
+        }
         setShowImagePrompt(m.shouldGenerateImage || !!m.imagePrompt);
       })
       .catch(() => toast.error("Failed to load workflow"))
@@ -348,10 +365,14 @@ const GenerateStory = () => {
       })(),
       visualSuggestions: formData.visualSuggestions,
       uploadedMediaUrl: formData.uploadedMediaUrl,
-      // Multi-character references — only send slots that have both name and image
+      // Multi-character references — send slots that have name and either base64 or url
       characterReferences: formData.characterReferences
-        .filter(c => c.name.trim() && c.base64)
-        .map(c => ({ name: c.name.trim(), base64: c.base64 })),
+        .filter(c => c.name.trim() && (c.base64 || c.url))
+        .map(c => ({
+          name: c.name.trim(),
+          base64: c.base64 || c.url,
+          url: c.url || (typeof c.base64 === "string" && c.base64.startsWith("http") ? c.base64 : undefined),
+        })),
       characterReferenceBase64: null,
       autoPublish: formData.autoPublish,
       autoPublishDelayMinutes: parseInt(localStorage.getItem("sw_auto_publish_delay_total_minutes") || "60", 10),

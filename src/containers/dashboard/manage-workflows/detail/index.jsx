@@ -171,7 +171,6 @@ const WorkflowDetailPage = () => {
     "storyLength",
     "storylength",
     "characterReferenceBase64",
-    "characterReferences",
   ];
 
   const shouldExcludeKey = (key) => {
@@ -785,11 +784,25 @@ const renderMetaValue = (value, key) => {
   }
 
   if (Array.isArray(value)) {
+    if (value.length > 0 && typeof value[0] === "object" && value[0] !== null && (value[0].url || value[0].base64)) {
+      return (
+        <div className="flex flex-wrap gap-3 mt-1">
+          {value.map((item, i) => (
+            <div key={i} className="flex items-center gap-2 p-2 bg-purple-50/60 border border-purple-100 rounded-xl">
+              {(item.url || item.base64) && (
+                <img src={item.url || item.base64} alt={item.name || `Ref ${i + 1}`} className="w-10 h-10 rounded-lg object-cover border border-purple-200" />
+              )}
+              <span className="text-xs font-semibold text-purple-900">{item.name || `Character ${i + 1}`}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
     return (
       <div className="flex flex-wrap gap-2">
         {value.map((v, i) => (
           <span key={i} className="bg-gray-100 px-2 py-1 rounded text-xs">
-            {v}
+            {typeof v === "object" ? JSON.stringify(v) : String(v)}
           </span>
         ))}
       </div>
