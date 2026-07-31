@@ -159,17 +159,20 @@ const VoiceSelector = ({ value, onChange }) => {
 
   const [selectedModel, setSelectedModel] = useState(value?.provider || "");
 
-  // Keep selectedModel in sync if value is loaded externally (e.g. regenerate)
+  // Keep selectedModel in sync if value is updated externally or cleared
   useEffect(() => {
-    if (value?.provider && value.provider !== selectedModel) {
+    if (!value) {
+      setSelectedModel("");
+    } else if (value?.provider && value.provider !== selectedModel) {
       setSelectedModel(value.provider);
     }
-  }, [value?.provider]);
+  }, [value]);
+
   const handleModelChange = (e) => {
     const newModel = e.target.value;
     setSelectedModel(newModel);
 
-    if (value && value.provider !== newModel) {
+    if (!newModel || (value && value.provider !== newModel)) {
       onChange(null);
     }
   };
@@ -179,9 +182,9 @@ const VoiceSelector = ({ value, onChange }) => {
       <select
         value={selectedModel}
         onChange={handleModelChange}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
       >
-        <option value="" disabled>Select Model...</option>
+        <option value="">No Voice / Select Model...</option>
         <option value="elevenlabs">Eleven Labs</option>
         <option value="openai">OpenAI</option>
         <option value="fish">Fish Audio</option>
@@ -190,13 +193,17 @@ const VoiceSelector = ({ value, onChange }) => {
       <select
         value={value?.id || ""}
         onChange={(e) => {
+          if (!e.target.value) {
+            onChange(null);
+            return;
+          }
           const selected = allVoices.find((v) => v.id === e.target.value);
-          onChange(selected);
+          onChange(selected || null);
         }}
         disabled={!selectedModel}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-400/40"
       >
-        <option value="">Select voice...</option>
+        <option value="">No Voice Selected...</option>
 
         {selectedModel === "openai" && (
           <optgroup label="OpenAI Voices">
@@ -229,12 +236,28 @@ const VoiceSelector = ({ value, onChange }) => {
         )}
       </select>
 
+      {value && (
+        <div className="col-span-2 flex justify-between items-center px-1 text-xs">
+          <span className="text-gray-500 font-medium">Selected: <strong className="text-amber-600">{value.label || value.id}</strong> ({value.provider})</span>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedModel("");
+              onChange(null);
+            }}
+            className="text-rose-500 hover:text-rose-700 font-semibold underline flex items-center gap-1 transition-colors"
+          >
+            ✕ Clear voice (No Voice)
+          </button>
+        </div>
+      )}
+
       {loadingVoice ? (
-        <div className="w-full px-4 py-2 bg-gray-200 rounded-lg text-center col-span-2">
-          Loading preview...
+        <div className="w-full px-4 py-2 bg-gray-200 rounded-lg text-center col-span-2 text-xs font-medium text-gray-600">
+          Loading voice preview...
         </div>
       ) : (
-        audioSrc && <audio controls src={audioSrc} className="col-span-2" />
+        audioSrc && <audio controls src={audioSrc} className="col-span-2 w-full" />
       )}
 
     </div>
