@@ -875,12 +875,10 @@ const GenerateStory = () => {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-purple-900">
-                    {formData.voice ? "Character Dialogue + Voiceover Blend" : "Native Character Voice & Dialogue (No External TTS)"}
+                    Native Character Voice & Dialogue (Gemini Omni Flash)
                   </p>
                   <p className="text-[11px] text-purple-700/80 mt-0.5 leading-relaxed">
-                    {formData.voice
-                      ? "Gemini Omni Flash will generate video with on-screen character lip sync, blended with your selected TTS voiceover narration."
-                      : "Gemini Omni Flash will directly synthesize video clips with spoken character audio and lip sync. External TTS voiceover is bypassed."}
+                    Gemini Omni Flash will generate real video clips with spoken character audio and lip sync. The character's native voice from the video is preserved with no external voiceover overwrite.
                   </p>
                 </div>
               </div>
