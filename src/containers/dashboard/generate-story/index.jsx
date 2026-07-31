@@ -580,6 +580,7 @@ const GenerateStory = () => {
                   <option value="storytelling_cinematic">Storytelling — Cinematic (Movie-Style)</option>
                   <option value="conversation_narrated_documentary">Conversation — Narrated Documentary (Blended)</option>
                   <option value="education_howto_trades">Education — How-To (Trades)</option>
+                  <option value="advertisement">Advertisement — Commercial Product & Brand Promo</option>
                 </select>
                 <div className="pointer-events-none absolute right-4 top-[38px] text-gray-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
