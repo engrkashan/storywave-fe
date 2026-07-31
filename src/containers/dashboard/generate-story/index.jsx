@@ -137,6 +137,8 @@ const GenerateStory = () => {
     uploadedMediaUrl: "",
     // Multi-character references: [{ name, base64 }]
     characterReferences: [],
+    enableLipSync: false,
+    useOmniAudio: false,
     autoPublish: true,
   });
 
@@ -824,6 +826,22 @@ const GenerateStory = () => {
                 onChange={() => handleInputChange("soundEffects", !formData.soundEffects)}
                 colorOn="bg-teal-500"
                 accentBg="bg-gradient-to-br from-teal-400 to-emerald-500"
+                accentText="text-white"
+              />
+
+              {/* Character Lip-Sync */}
+              <FeatureCard
+                icon={
+                  <svg className={`w-5 h-5 ${formData.enableLipSync ? "text-purple-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                  </svg>
+                }
+                title="Character Lip-Sync"
+                subtitle="Sync character mouth to audio"
+                checked={formData.enableLipSync}
+                onChange={() => handleInputChange("enableLipSync", !formData.enableLipSync)}
+                colorOn="bg-purple-500"
+                accentBg="bg-gradient-to-br from-purple-400 to-pink-500"
                 accentText="text-white"
               />
             </div>
