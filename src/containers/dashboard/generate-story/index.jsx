@@ -128,6 +128,7 @@ const GenerateStory = () => {
     backgroundMusic: true,
     backgroundMusicStyle: "",
     soundEffects: false,
+    characterTalk: false,
     aspectRatio: "16:9",
     dualPlatform: false,
     series: "",
@@ -192,6 +193,7 @@ const GenerateStory = () => {
           backgroundMusic: m.backgroundMusic ?? true,
           backgroundMusicStyle: m.backgroundMusicStyle || m.storyMetadata?.backgroundMusicStyle || "",
           soundEffects: m.soundEffects ?? false,
+          characterTalk: m.characterTalk ?? false,
           aspectRatio: m.aspectRatio || "16:9",
           series: m.series || "",
           coverArtPrompt: m.coverArtPrompt || "",
@@ -357,6 +359,7 @@ const GenerateStory = () => {
       backgroundMusic: formData.backgroundMusic,
       backgroundMusicStyle: formData.backgroundMusicStyle,
       soundEffects: formData.soundEffects,
+      characterTalk: formData.characterTalk,
       aspectRatio: formData.aspectRatio,
       dualPlatform: formData.dualPlatform,
       series: formData.series,
@@ -844,7 +847,44 @@ const GenerateStory = () => {
                 accentBg="bg-gradient-to-br from-purple-400 to-pink-500"
                 accentText="text-white"
               />
+
+              {/* Character Talk */}
+              <FeatureCard
+                icon={
+                  <svg className={`w-5 h-5 ${formData.characterTalk ? "text-violet-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                }
+                title="Character Talk"
+                subtitle="Native lip-sync dialogue video"
+                checked={formData.characterTalk}
+                onChange={() => handleInputChange("characterTalk", !formData.characterTalk)}
+                colorOn="bg-violet-500"
+                accentBg="bg-gradient-to-br from-violet-500 to-indigo-600"
+                accentText="text-white"
+              />
             </div>
+
+            {/* Character Talk Info Banner */}
+            {formData.characterTalk && (
+              <div className="mt-4 p-4 bg-purple-50/70 border border-purple-100 rounded-2xl animate-fadeIn flex items-start gap-3">
+                <div className="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-purple-900">
+                    {formData.voice ? "Character Dialogue + Voiceover Blend" : "Native Character Voice & Dialogue (No External TTS)"}
+                  </p>
+                  <p className="text-[11px] text-purple-700/80 mt-0.5 leading-relaxed">
+                    {formData.voice
+                      ? "Gemini Omni Flash will generate video with on-screen character lip sync, blended with your selected TTS voiceover narration."
+                      : "Gemini Omni Flash will directly synthesize video clips with spoken character audio and lip sync. External TTS voiceover is bypassed."}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Background Music Style Custom Prompt Input */}
             {formData.backgroundMusic && (
