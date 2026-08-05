@@ -101,6 +101,8 @@ const GenerateStory = () => {
   const [scheduleTime, setScheduleTime] = useState("");
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isTextEditorOpen, setIsTextEditorOpen] = useState(false);
+  const [isStoryGuidelinesEditorOpen, setIsStoryGuidelinesEditorOpen] = useState(false);
+  const [isVisualGuidelinesEditorOpen, setIsVisualGuidelinesEditorOpen] = useState(false);
   const [isPromptEditorOpen, setIsPromptEditorOpen] = useState(false);
   const [isCoverArtEditorOpen, setIsCoverArtEditorOpen] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
@@ -138,7 +140,6 @@ const GenerateStory = () => {
     uploadedMediaUrl: "",
     // Multi-character references: [{ name, base64 }]
     characterReferences: [],
-    enableLipSync: false,
     useOmniAudio: false,
     autoPublish: true,
   });
@@ -511,6 +512,52 @@ const GenerateStory = () => {
         </div>
       )}
 
+      {/* ── STORY GUIDELINES EDITOR MODAL ── */}
+      {isStoryGuidelinesEditorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">Story Guidelines Editor</h2>
+              </div>
+              <button onClick={() => setIsStoryGuidelinesEditorOpen(false)} className="px-5 py-2 bg-gray-900 text-white rounded-xl font-semibold text-sm hover:bg-gray-700 transition-colors">Done</button>
+            </div>
+            <textarea
+              value={formData.storyGuidelines}
+              onChange={(e) => handleInputChange("storyGuidelines", e.target.value)}
+              className="flex-1 p-10 text-lg font-medium leading-relaxed resize-none outline-none text-gray-800 placeholder-gray-300"
+              placeholder="Write or paste your detailed story guidelines, character notes, tone rules, or narrative structure here..."
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── VISUAL GUIDELINES EDITOR MODAL ── */}
+      {isVisualGuidelinesEditorOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-5xl h-[85vh] rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-amber-100 flex justify-between items-center bg-gradient-to-r from-amber-50 to-orange-50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                </div>
+                <h2 className="text-lg font-bold text-amber-900">Visual Guidelines Editor</h2>
+              </div>
+              <button onClick={() => setIsVisualGuidelinesEditorOpen(false)} className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold text-sm hover:shadow-md transition-all">Done</button>
+            </div>
+            <textarea
+              value={formData.visualSuggestions}
+              onChange={(e) => handleInputChange("visualSuggestions", e.target.value)}
+              className="flex-1 p-10 text-lg font-medium leading-relaxed resize-none outline-none text-amber-900 bg-amber-50/10 placeholder-amber-200"
+              placeholder="Write or paste your visual guidelines, lighting notes, color palettes, camera angles, or aesthetic style references here..."
+            />
+          </div>
+        </div>
+      )}
+
       {/* ══════════════════ PAGE HEADER ══════════════════ */}
       <div className="mb-10">
         <div className="flex items-start justify-between">
@@ -653,6 +700,14 @@ const GenerateStory = () => {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Story Guidelines <span className="text-gray-300 font-normal normal-case">(optional)</span></label>
+                  <button
+                    type="button"
+                    onClick={() => setIsStoryGuidelinesEditorOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                    Full Editor
+                  </button>
                 </div>
                 <textarea
                   placeholder="Specific details about characters, scenes, tone, or how you want the story to be analyzed..."
@@ -664,13 +719,22 @@ const GenerateStory = () => {
 
               {/* Visual Suggestions */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Visual Suggestions <span className="text-gray-300 font-normal normal-case">(optional)</span></label>
-                <input
-                  type="text"
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Visual Suggestions <span className="text-gray-300 font-normal normal-case">(optional)</span></label>
+                  <button
+                    type="button"
+                    onClick={() => setIsVisualGuidelinesEditorOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                    Full Editor
+                  </button>
+                </div>
+                <textarea
                   placeholder="e.g. Use neon noir lighting, rainy streets, dark palette..."
                   value={formData.visualSuggestions}
                   onChange={(e) => handleInputChange("visualSuggestions", e.target.value)}
-                  className={inputCls}
+                  className={`${inputCls} h-24 resize-none leading-relaxed`}
                 />
               </div>
             </div>
@@ -832,22 +896,6 @@ const GenerateStory = () => {
                 accentText="text-white"
               />
 
-              {/* Character Lip-Sync */}
-              <FeatureCard
-                icon={
-                  <svg className={`w-5 h-5 ${formData.enableLipSync ? "text-purple-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
-                  </svg>
-                }
-                title="Character Lip-Sync"
-                subtitle="Sync character mouth to audio"
-                checked={formData.enableLipSync}
-                onChange={() => handleInputChange("enableLipSync", !formData.enableLipSync)}
-                colorOn="bg-purple-500"
-                accentBg="bg-gradient-to-br from-purple-400 to-pink-500"
-                accentText="text-white"
-              />
-
               {/* Character Talk */}
               <FeatureCard
                 icon={
@@ -856,7 +904,7 @@ const GenerateStory = () => {
                   </svg>
                 }
                 title="Character Talk"
-                subtitle="Native lip-sync dialogue video"
+                subtitle="Native spoken character dialogue video"
                 checked={formData.characterTalk}
                 onChange={() => handleInputChange("characterTalk", !formData.characterTalk)}
                 colorOn="bg-violet-500"
@@ -878,7 +926,9 @@ const GenerateStory = () => {
                     Native Character Voice & Dialogue (Gemini Omni Flash)
                   </p>
                   <p className="text-[11px] text-purple-700/80 mt-0.5 leading-relaxed">
-                    Gemini Omni Flash will generate real video clips with spoken character audio and lip sync. The character's native voice from the video is preserved with no external voiceover overwrite.
+                    {formData.voice
+                      ? "Voiceover will narrate the script, and Omni video audio will play in the background seamlessly alongside the voiceover."
+                      : "Gemini Omni Flash will generate a real video with spoken character audio reading the script. External voiceover generation is bypassed."}
                   </p>
                 </div>
               </div>
