@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   generateStory,
   getScheduledStories,
@@ -92,6 +93,7 @@ const FeatureCard = ({ icon, title, subtitle, checked, onChange, colorOn, accent
 ───────────────────────────────────────────────────────────────── */
 const GenerateStory = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [lengthLevel, setLengthLevel] = useState(2);
@@ -324,8 +326,19 @@ const GenerateStory = () => {
   const executeGenerate = async (payload) => {
     try {
       setLoading(true);
-      await dispatch(generateStory(payload)).unwrap();
-      toast.success(scheduleForLater ? "Your Story is Scheduled ⏰" : "Generating Your Story 🎉");
+      const res = await dispatch(generateStory(payload)).unwrap();
+      toast.success(
+        scheduleForLater
+          ? "Your Story is Scheduled ⏰"
+          : "Story generation started! Opening Storywave Editor..."
+      );
+      if (!scheduleForLater) {
+        if (res?.workflowId) {
+          navigate(`/dashboard/editor/${res.workflowId}`);
+        } else {
+          navigate("/dashboard/editor");
+        }
+      }
     } catch (e) {
       toast.error(e?.error || "Something went wrong");
     } finally {

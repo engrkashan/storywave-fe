@@ -47,6 +47,16 @@ const STATUS_MAP = {
     icon: <BiTime className="w-3 h-3" />,
     label: "Processing",
   },
+  PROCESSING: {
+    color: "bg-blue-500/90 text-white",
+    icon: <BiTime className="w-3 h-3" />,
+    label: "Processing",
+  },
+  USER_CONFIRMATION_REQUIRED: {
+    color: "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md font-semibold",
+    icon: <BiEdit className="w-3.5 h-3.5" />,
+    label: "Review Required",
+  },
   FAILED: {
     color: "bg-red-500/90 text-white",
     icon: <BiXCircle className="w-3 h-3" />,
@@ -237,6 +247,15 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
 
             {/* Actions */}
             <div className="flex items-center gap-2 translate-y-1 transition-all duration-300 group-hover:translate-y-0 ">
+              {story.status === "USER_CONFIRMATION_REQUIRED" && (
+                <Link
+                  to={`/dashboard/editor/${story.id}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold shadow-md hover:scale-105 transition-all"
+                >
+                  <BiEdit size={14} />
+                  <span>Review Story</span>
+                </Link>
+              )}
               <Link
                 to={`/dashboard/workflows/${story.id}`}
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600  transition-all duration-300 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"

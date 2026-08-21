@@ -11,6 +11,7 @@ import {
   Share2,
   Users,
   Send,
+  Film,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -20,6 +21,11 @@ const adminLinks = [
     to: "/dashboard/generate-story",
     label: "Story Builder",
     icon: <FileText className="text-xl flex-shrink-0" />,
+  },
+  {
+    to: "/dashboard/editor",
+    label: "Storywave Editor",
+    icon: <Film className="text-xl flex-shrink-0" />,
   },
   {
     to: "/dashboard/manage-workflows",
@@ -58,6 +64,11 @@ const creatorLinks = [
     to: "/creator-dashboard/generate-story",
     label: "Story Builder",
     icon: <FileText className="text-xl flex-shrink-0" />,
+  },
+  {
+    to: "/dashboard/editor",
+    label: "Storywave Editor",
+    icon: <Film className="text-xl flex-shrink-0" />,
   },
   {
     to: "/creator-dashboard/manage-workflows",
