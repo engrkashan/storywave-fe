@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   fetchWorkflowById,
   updateStoryCoverArt,
@@ -28,6 +28,7 @@ import { BiAlarmExclamation, BiMicrophone, BiVideo } from "react-icons/bi";
 
 const WorkflowDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { workflow, status, error } = useSelector((state) => state.overview);
   const [activeSEOTab, setActiveSEOTab] = useState(null);
@@ -468,7 +469,10 @@ const WorkflowDetailPage = () => {
                 <button
                   onClick={() => {
                     localStorage.setItem("editWorkflowId", workflow.id);
-                    window.location.href = "/dashboard/generate-story";
+                    const targetPath = window.location.pathname.startsWith("/creator-dashboard")
+                      ? "/creator-dashboard/generate-story"
+                      : "/dashboard/generate-story";
+                    navigate(targetPath);
                   }}
                   className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-medium transition-colors shadow-sm"
                 >

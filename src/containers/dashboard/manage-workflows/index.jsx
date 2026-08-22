@@ -90,8 +90,8 @@ const FilterChips = memo(({ value, onChange }) => {
   );
 });
 
-/* ------------------  WORKFLOW CARD  ------------------ */
 const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
+  const navigate = useNavigate();
   const status = STATUS_MAP[story.status?.toUpperCase()] || STATUS_MAP.PENDING;
 
   const has16_9 =
@@ -160,11 +160,14 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
   };
 
   // Handle Regenerate
-  const handleRegerate = (e) => {
+  const handleRegenerate = (e) => {
     e.preventDefault();
     e.stopPropagation();
     onEdit(story);
-    window.location.href = "/dashboard/generate-story";
+    const targetPath = window.location.pathname.startsWith("/creator-dashboard")
+      ? "/creator-dashboard/generate-story"
+      : "/dashboard/generate-story";
+    navigate(targetPath);
   };
 
   const handleDeleteClick = (e) => {
@@ -264,7 +267,9 @@ const WorkflowCard = memo(({ story, onEdit, onDelete }) => {
                 <BiEdit size={18} />
               </Link>
               <button
-                onClick={handleRegerate}
+                onClick={handleRegenerate}
+                title="Regenerate in Story Builder"
+                aria-label="Regenerate"
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600  transition-all duration-300 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
               >
                 <TfiReload size={18} />
