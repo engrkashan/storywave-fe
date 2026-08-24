@@ -140,7 +140,7 @@ const EditorDetailPage = () => {
           })
         ).unwrap();
         toast.dismiss("char-upload");
-        charRefPayload = uploadRes.characterReference;
+        charRefPayload = uploadRes?.characterReference || uploadRes?.data?.characterReference || uploadRes;
       }
 
       dispatch(optimisticSetSceneStatus({ sceneId: scene.id, status: "REGENERATING" }));
@@ -179,7 +179,7 @@ const EditorDetailPage = () => {
           })
         ).unwrap();
         toast.dismiss("char-upload");
-        charRefPayload = uploadRes.characterReference;
+        charRefPayload = uploadRes?.characterReference || uploadRes?.data?.characterReference || uploadRes;
       }
 
       dispatch(optimisticSetSceneStatus({ sceneId: scene.id, status: "REGENERATING" }));
