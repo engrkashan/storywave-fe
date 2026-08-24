@@ -50,15 +50,71 @@ export const updateScenePrompt = createAsyncThunk(
   }
 );
 
-// Request regeneration of a scene
+// Request regeneration of a scene (Image or Veo 3 Video)
 export const regenerateScene = createAsyncThunk(
   "editor/regenerateScene",
-  async ({ workflowId, sceneId }, thunkAPI) => {
+  async ({ workflowId, sceneId, prompt, characterReference, generateAsVideo }, thunkAPI) => {
     try {
       const response = await axiosInstance.post(
-        `/editor/workflows/${workflowId}/scenes/${sceneId}/regenerate`
+        `/editor/workflows/${workflowId}/scenes/${sceneId}/regenerate`,
+        { prompt, characterReference, generateAsVideo }
       );
-      return { sceneId, data: response.data };
+      return { sceneId, generateAsVideo, data: response.data };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
+    }
+  }
+);
+
+// Directly replace a scene frame with an uploaded custom image
+export const replaceSceneFrame = createAsyncThunk(
+  "editor/replaceSceneFrame",
+  async ({ workflowId, sceneId, file, imageUrl, imageBase64 }, thunkAPI) => {
+    try {
+      let response;
+      if (file instanceof File || file instanceof Blob) {
+        const formData = new FormData();
+        formData.append("image", file);
+        response = await axiosInstance.post(
+          `/editor/workflows/${workflowId}/scenes/${sceneId}/replace-frame`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+      } else {
+        response = await axiosInstance.post(
+          `/editor/workflows/${workflowId}/scenes/${sceneId}/replace-frame`,
+          { imageUrl, imageBase64 }
+        );
+      }
+      return { sceneId, data: response.data?.data || response.data };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
+    }
+  }
+);
+
+// Upload a character reference image for scene regeneration
+export const uploadCharacterReference = createAsyncThunk(
+  "editor/uploadCharacterReference",
+  async ({ workflowId, sceneId, file, name }, thunkAPI) => {
+    try {
+      let response;
+      if (file instanceof File || file instanceof Blob) {
+        const formData = new FormData();
+        formData.append("image", file);
+        if (name) formData.append("name", name);
+        response = await axiosInstance.post(
+          `/editor/workflows/${workflowId}/scenes/${sceneId}/upload-ref`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+      } else {
+        response = await axiosInstance.post(
+          `/editor/workflows/${workflowId}/scenes/${sceneId}/upload-ref`,
+          { imageUrl: file, name }
+        );
+      }
+      return response.data?.data || response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
     }
@@ -198,6 +254,38 @@ const editorSlice = createSlice({
           if (scene) {
             scene.userEditedPrompt = prompt;
             scene.activePrompt = prompt;
+          }
+        }
+      })
+
+      // replaceSceneFrame
+      .addCase(replaceSceneFrame.fulfilled, (state, action) => {
+        const { sceneId, data } = action.payload;
+        if (state.currentWorkflow?.scenes) {
+          const scene = state.currentWorkflow.scenes.find((s) => s.id === sceneId);
+          if (scene && data) {
+            scene.assetUrl = data.assetUrl || scene.assetUrl;
+            scene.assetPublicId = data.assetPublicId || scene.assetPublicId;
+            scene.assetType = "image";
+            scene.activeVersion = data.activeVersion || scene.activeVersion;
+            scene.status = "GENERATED";
+            if (data.version) {
+              scene.versions = [data.version, ...(scene.versions || [])];
+            }
+          }
+        }
+      })
+
+      // regenerateScene
+      .addCase(regenerateScene.fulfilled, (state, action) => {
+        const { sceneId, generateAsVideo } = action.payload;
+        if (state.currentWorkflow?.scenes) {
+          const scene = state.currentWorkflow.scenes.find((s) => s.id === sceneId);
+          if (scene) {
+            scene.status = "REGENERATING";
+            if (generateAsVideo) {
+              scene.mediaType = "video";
+            }
           }
         }
       })

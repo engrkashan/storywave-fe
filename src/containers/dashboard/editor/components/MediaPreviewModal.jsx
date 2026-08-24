@@ -16,6 +16,33 @@ const MediaPreviewModal = ({ isOpen, onClose, scene }) => {
 
   const isVideo = scene.assetType === "video" || scene.mediaType === "video" || scene.assetUrl.endsWith(".mp4");
 
+  const handleDownload = async () => {
+    if (!scene.assetUrl) return;
+    try {
+      const ext = isVideo ? "mp4" : "png";
+      const filename = `scene_${String(scene.index + 1).padStart(2, "0")}_v${scene.activeVersion || 1}_${scene.ratio?.replace(":", "_") || "16_9"}.${ext}`;
+
+      const res = await fetch(scene.assetUrl);
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      const a = document.createElement("a");
+      a.href = scene.assetUrl;
+      a.target = "_blank";
+      a.download = `scene_${scene.index + 1}.${isVideo ? "mp4" : "png"}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn"
@@ -45,6 +72,15 @@ const MediaPreviewModal = ({ isOpen, onClose, scene }) => {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10"
+              title="Download Frame"
+            >
+              <Download size={14} />
+              <span>Download Frame</span>
+            </button>
             <a
               href={scene.assetUrl}
               target="_blank"

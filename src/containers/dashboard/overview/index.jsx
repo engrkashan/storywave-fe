@@ -98,6 +98,44 @@ const SummaryCard = ({
   );
 };
 
+// ─── Summary Card Skeleton ───────────────────────────────────────────────────
+const SummaryCardSkeleton = ({ delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 16 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay, duration: 0.3 }}
+    className="relative overflow-hidden rounded-2xl p-4 sm:p-5 border border-gray-100 bg-white/70 backdrop-blur-sm shadow-xs animate-pulse"
+  >
+    <div className="flex items-start justify-between mb-4">
+      <div className="w-10 h-10 rounded-xl bg-gray-200" />
+      <div className="w-12 h-8 rounded-lg bg-gray-200" />
+    </div>
+    <div className="w-24 h-4 rounded bg-gray-200 mb-1.5" />
+    <div className="w-36 h-3 rounded bg-gray-100" />
+  </motion.div>
+);
+
+// ─── Story Row Skeleton ──────────────────────────────────────────────────────
+const StoryRowSkeleton = ({ index = 0 }) => (
+  <div
+    style={{ animationDelay: `${index * 80}ms` }}
+    className="p-4 sm:p-4.5 rounded-2xl border border-gray-100 bg-white/80 backdrop-blur-sm shadow-2xs animate-pulse flex items-center justify-between gap-4"
+  >
+    <div className="flex items-center gap-3.5 flex-1 min-w-0">
+      <div className="w-12 sm:w-14 h-12 sm:h-14 rounded-xl bg-gray-200 shrink-0" />
+      <div className="space-y-2 flex-1 min-w-0">
+        <div className="w-2/3 h-4 rounded-md bg-gray-200" />
+        <div className="w-1/3 h-3 rounded-md bg-gray-100" />
+      </div>
+    </div>
+    <div className="flex items-center gap-3 shrink-0">
+      <div className="w-20 h-6 rounded-full bg-gray-100 hidden sm:block" />
+      <div className="w-8 h-8 rounded-xl bg-gray-100" />
+      <div className="w-8 h-8 rounded-xl bg-gray-100" />
+    </div>
+  </div>
+);
+
 // ─── Status badge helper ──────────────────────────────────────────────────────
 const getStatusStyle = (status) => {
   switch (status) {
@@ -478,8 +516,25 @@ const Overview = () => {
     CANCELLED: "Cancelled",
   };
 
+  const isPageLoading = (status === "loading" || workflowsStatus === "loading");
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30 px-4 py-8 sm:px-6 md:px-8">
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30 px-4 py-8 sm:px-6 md:px-8 relative">
+      {/* ── Global API Loading Bar ────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {(isPageLoading || refreshing) && (
+          <motion.div
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-0 left-0 right-0 z-50 h-1 bg-gradient-to-r from-amber-400 via-purple-500 to-pink-500 shadow-sm"
+          >
+            <div className="h-full w-full bg-white/40 animate-pulse" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Page Header ──────────────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -16 }}
@@ -517,25 +572,42 @@ const Overview = () => {
             <BiRefresh
               className={`w-4 h-4 ${refreshing || status === "loading" ? "animate-spin" : ""}`}
             />
-            Refresh
+            <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
           </button>
         </div>
       </motion.div>
 
       {/* ── Summary Cards (4-column overview) ───────────────────────────────── */}
       <section className="mb-8">
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="text-xs font-semibold uppercase tracking-widest text-gray-600 mb-3"
-        >
-          Dashboard Summary
-        </motion.p>
+        <div className="flex items-center justify-between mb-3">
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="text-xs font-semibold uppercase tracking-widest text-gray-600"
+          >
+            Dashboard Summary
+          </motion.p>
+          {status === "loading" && stories.length > 0 && (
+            <span className="text-[11px] text-amber-600 font-semibold flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+              Updating stats...
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {summaryCards.map((card, i) => (
-            <SummaryCard key={card.label} {...card} delay={i * 0.08} />
-          ))}
+          {status === "loading" && stories.length === 0 ? (
+            <>
+              <SummaryCardSkeleton delay={0} />
+              <SummaryCardSkeleton delay={0.05} />
+              <SummaryCardSkeleton delay={0.1} />
+              <SummaryCardSkeleton delay={0.15} />
+            </>
+          ) : (
+            summaryCards.map((card, i) => (
+              <SummaryCard key={card.label} {...card} delay={i * 0.08} />
+            ))
+          )}
         </div>
       </section>
 
@@ -701,10 +773,12 @@ const Overview = () => {
 
         {/* Stories list body */}
         <div className="p-4 sm:p-6">
-          {status === "loading" && stories.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-56 gap-3">
-              <div className="w-11 h-11 rounded-full border-[3px] border-amber-200 border-t-amber-500 animate-spin" />
-              <p className="text-gray-500 text-sm">Loading your stories…</p>
+          {(status === "loading" || workflowsStatus === "loading") && stories.length === 0 ? (
+            <div className="space-y-3">
+              <StoryRowSkeleton index={0} />
+              <StoryRowSkeleton index={1} />
+              <StoryRowSkeleton index={2} />
+              <StoryRowSkeleton index={3} />
             </div>
           ) : filteredStories.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-16 gap-3">

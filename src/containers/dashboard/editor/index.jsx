@@ -16,6 +16,20 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
+const EditorCardSkeleton = () => (
+  <div className="rounded-3xl border border-gray-200/80 bg-white shadow-xs overflow-hidden flex flex-col animate-pulse">
+    <div className="h-48 bg-gray-200" />
+    <div className="p-5 space-y-3">
+      <div className="w-3/4 h-5 rounded-md bg-gray-200" />
+      <div className="w-1/2 h-3 rounded-md bg-gray-100" />
+      <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+        <div className="w-20 h-4 rounded bg-gray-100" />
+        <div className="w-24 h-8 rounded-xl bg-gray-200" />
+      </div>
+    </div>
+  </div>
+);
+
 const EditorListPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -30,7 +44,14 @@ const EditorListPage = () => {
   };
 
   return (
-    <div className="min-h-screen pb-16 px-4 sm:px-8 pt-6 sm:pt-10 max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen pb-16 px-4 sm:px-8 pt-6 sm:pt-10 max-w-7xl mx-auto space-y-8 relative">
+      {/* Top Global Loading Bar */}
+      {listLoading && (
+        <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 shadow-xs">
+          <div className="h-full w-full bg-white/40 animate-pulse" />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -56,15 +77,22 @@ const EditorListPage = () => {
           className="self-start sm:self-auto px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold shadow-sm hover:shadow flex items-center gap-2 transition-all disabled:opacity-50"
         >
           <RefreshCw size={15} className={listLoading ? "animate-spin" : ""} />
-          <span>Refresh</span>
+          <span>{listLoading ? "Loading..." : "Refresh"}</span>
         </button>
       </div>
 
       {/* Content */}
       {listLoading && workflows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-500 space-y-4">
-          <div className="w-12 h-12 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin" />
-          <p className="text-sm font-medium">Loading stories awaiting review...</p>
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 text-xs text-amber-700 font-semibold bg-amber-50 px-4 py-2 rounded-xl border border-amber-200 w-fit">
+            <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+            <span>Fetching review stories...</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <EditorCardSkeleton />
+            <EditorCardSkeleton />
+            <EditorCardSkeleton />
+          </div>
         </div>
       ) : workflows.length === 0 ? (
         /* Empty State */

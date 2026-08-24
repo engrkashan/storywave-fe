@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, History, CheckCircle2, RotateCcw, Image as ImageIcon, Video as VideoIcon } from "lucide-react";
+import { X, History, CheckCircle2, RotateCcw, Image as ImageIcon, Video as VideoIcon, Download } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const VersionModal = ({ isOpen, onClose, scene, onRevert }) => {
@@ -9,6 +9,34 @@ const VersionModal = ({ isOpen, onClose, scene, onRevert }) => {
 
   const versions = scene.versions || [];
   const activeVersion = scene.activeVersion || 1;
+
+  const handleDownloadVersion = async (ver) => {
+    if (!ver.assetUrl) return;
+    try {
+      const isVideo = ver.assetType === "video" || ver.assetUrl.endsWith(".mp4");
+      const ext = isVideo ? "mp4" : "png";
+      const filename = `scene_${String(scene.index + 1).padStart(2, "0")}_v${ver.version}_${(ver.ratio || scene.ratio || "16:9").replace(":", "_")}.${ext}`;
+
+      const res = await fetch(ver.assetUrl);
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      const a = document.createElement("a");
+      a.href = ver.assetUrl;
+      a.target = "_blank";
+      a.download = `scene_${scene.index + 1}_v${ver.version}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
 
   const handleRevertClick = async (versionNumber) => {
     setRevertingVersion(versionNumber);
@@ -111,18 +139,31 @@ const VersionModal = ({ isOpen, onClose, scene, onRevert }) => {
                         </p>
                       </div>
 
-                      {/* Revert Button */}
-                      {!isActive && (
+                      {/* Action Row */}
+                      <div className="flex items-center gap-2 mt-2">
                         <button
                           type="button"
-                          onClick={() => handleRevertClick(ver.version)}
-                          disabled={isRevertingThis}
-                          className="w-full mt-2 py-1.5 px-3 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                          onClick={() => handleDownloadVersion(ver)}
+                          className="py-1.5 px-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold flex items-center justify-center gap-1 transition-all shadow-xs"
+                          title="Download this version"
                         >
-                          <RotateCcw size={12} />
-                          {isRevertingThis ? "Reverting..." : `Revert to v${ver.version}`}
+                          <Download size={13} />
+                          <span>Download</span>
                         </button>
-                      )}
+
+                        {/* Revert Button */}
+                        {!isActive && (
+                          <button
+                            type="button"
+                            onClick={() => handleRevertClick(ver.version)}
+                            disabled={isRevertingThis}
+                            className="flex-1 py-1.5 px-3 rounded-xl border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                          >
+                            <RotateCcw size={12} />
+                            {isRevertingThis ? "Reverting..." : `Revert to v${ver.version}`}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

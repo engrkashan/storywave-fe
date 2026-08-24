@@ -6,6 +6,8 @@ import {
   fetchEditorWorkflowDetail,
   updateScenePrompt,
   regenerateScene,
+  replaceSceneFrame,
+  uploadCharacterReference,
   revertSceneVersion,
   mergeWorkflow,
   optimisticSetSceneStatus,
@@ -22,9 +24,11 @@ import {
   Eye,
   CheckCircle2,
   AlertCircle,
+  Video,
 } from "lucide-react";
 import SceneCard from "../components/SceneCard";
 import PromptModal from "../components/PromptModal";
+import VideoGenModal from "../components/VideoGenModal";
 import VersionModal from "../components/VersionModal";
 import MediaPreviewModal from "../components/MediaPreviewModal";
 import MergeConfirmModal from "../components/MergeConfirmModal";
@@ -39,6 +43,7 @@ const EditorDetailPage = () => {
 
   // Modals state
   const [selectedPromptScene, setSelectedPromptScene] = useState(null);
+  const [selectedVideoScene, setSelectedVideoScene] = useState(null);
   const [selectedVersionScene, setSelectedVersionScene] = useState(null);
   const [selectedPreviewScene, setSelectedPreviewScene] = useState(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -99,16 +104,120 @@ const EditorDetailPage = () => {
     }
   };
 
+  // Direct 1-Click Regenerate
   const handleRegenerate = async (scene) => {
     try {
-      // Optimistic update
       dispatch(optimisticSetSceneStatus({ sceneId: scene.id, status: "REGENERATING" }));
-      await dispatch(regenerateScene({ workflowId, sceneId: scene.id })).unwrap();
+      await dispatch(
+        regenerateScene({
+          workflowId,
+          sceneId: scene.id,
+          prompt: scene.activePrompt || scene.originalPrompt,
+        })
+      ).unwrap();
       toast.success(`Scene ${scene.index + 1} regeneration queued`);
       dispatch(fetchEditorWorkflowDetail(workflowId));
     } catch (err) {
       toast.error(err || "Failed to trigger regeneration");
       dispatch(fetchEditorWorkflowDetail(workflowId));
+    }
+  };
+
+  // Image Regeneration with custom prompt and character reference
+  const handleRegenerateWithRef = async (scene, promptText, characterRef) => {
+    try {
+      let charRefPayload = characterRef;
+
+      // If user uploaded a new local file for the character reference, upload it first
+      if (characterRef?.file) {
+        toast.loading("Uploading character reference...", { id: "char-upload" });
+        const uploadRes = await dispatch(
+          uploadCharacterReference({
+            workflowId,
+            sceneId: scene.id,
+            file: characterRef.file,
+            name: characterRef.name || "Character Ref",
+          })
+        ).unwrap();
+        toast.dismiss("char-upload");
+        charRefPayload = uploadRes.characterReference;
+      }
+
+      dispatch(optimisticSetSceneStatus({ sceneId: scene.id, status: "REGENERATING" }));
+      await dispatch(
+        regenerateScene({
+          workflowId,
+          sceneId: scene.id,
+          prompt: promptText,
+          characterReference: charRefPayload,
+          generateAsVideo: false,
+        })
+      ).unwrap();
+      toast.success(`Scene ${scene.index + 1} image regeneration queued`);
+      dispatch(fetchEditorWorkflowDetail(workflowId));
+    } catch (err) {
+      toast.dismiss("char-upload");
+      toast.error(err || "Failed to trigger image regeneration");
+      dispatch(fetchEditorWorkflowDetail(workflowId));
+    }
+  };
+
+  // Motion Graphic Video Generation via Veo 3
+  const handleGenerateVideo = async (scene, customPrompt = null, characterRef = null) => {
+    try {
+      const promptToUse = customPrompt || scene.activePrompt || scene.originalPrompt;
+      let charRefPayload = characterRef;
+
+      if (characterRef?.file) {
+        toast.loading("Uploading character reference...", { id: "char-upload" });
+        const uploadRes = await dispatch(
+          uploadCharacterReference({
+            workflowId,
+            sceneId: scene.id,
+            file: characterRef.file,
+            name: characterRef.name || "Character Ref",
+          })
+        ).unwrap();
+        toast.dismiss("char-upload");
+        charRefPayload = uploadRes.characterReference;
+      }
+
+      dispatch(optimisticSetSceneStatus({ sceneId: scene.id, status: "REGENERATING" }));
+      await dispatch(
+        regenerateScene({
+          workflowId,
+          sceneId: scene.id,
+          prompt: promptToUse,
+          characterReference: charRefPayload,
+          generateAsVideo: true,
+        })
+      ).unwrap();
+      toast.success(`Veo 3 video clip generation started for Scene ${scene.index + 1}!`);
+      dispatch(fetchEditorWorkflowDetail(workflowId));
+    } catch (err) {
+      toast.dismiss("char-upload");
+      toast.error(err || "Failed to start Veo 3 video generation");
+      dispatch(fetchEditorWorkflowDetail(workflowId));
+    }
+  };
+
+  // Direct Frame Replacement via File Upload
+  const handleReplaceFrame = async (scene, imageFile) => {
+    try {
+      toast.loading("Uploading custom frame...", { id: "frame-upload" });
+      await dispatch(
+        replaceSceneFrame({
+          workflowId,
+          sceneId: scene.id,
+          file: imageFile,
+        })
+      ).unwrap();
+      toast.dismiss("frame-upload");
+      toast.success(`Scene ${scene.index + 1} frame replaced successfully!`);
+      dispatch(fetchEditorWorkflowDetail(workflowId));
+    } catch (err) {
+      toast.dismiss("frame-upload");
+      toast.error(err || "Failed to replace frame");
     }
   };
 
@@ -168,6 +277,12 @@ const EditorDetailPage = () => {
       : allScenes.filter((s) => s.ratio === activeRatioFilter);
 
   const isDual = currentWorkflow.dualPlatform;
+
+  const storyCharacterReferences =
+    currentWorkflow?.metadata?.characterReferences ||
+    currentWorkflow?.metadata?.uploadedCharacterReferences ||
+    currentWorkflow?.characterReferences ||
+    [];
 
   return (
     <div className="min-h-screen pb-32 px-4 sm:px-8 pt-6 sm:pt-10 max-w-7xl mx-auto space-y-8">
@@ -250,9 +365,7 @@ const EditorDetailPage = () => {
             <Layers size={20} className="text-amber-500" />
             <span>Story Scenes ({filteredScenes.length})</span>
           </h2>
-          <span className="text-xs text-gray-500">
-            Click "Edit Prompt" or "Regenerate" on any scene
-          </span>
+        
         </div>
 
         {filteredScenes.length === 0 ? (
@@ -275,6 +388,8 @@ const EditorDetailPage = () => {
                 scene={scene}
                 onEditPrompt={(sc) => setSelectedPromptScene(sc)}
                 onRegenerate={handleRegenerate}
+                onGenerateVideo={(sc) => setSelectedVideoScene(sc)}
+                onReplaceFrame={(sc, file) => handleReplaceFrame(sc, file)}
                 onOpenVersions={(sc) => setSelectedVersionScene(sc)}
                 onViewFullSize={(sc) => setSelectedPreviewScene(sc)}
                 characterTalk={currentWorkflow.characterTalk}
@@ -294,8 +409,19 @@ const EditorDetailPage = () => {
       <PromptModal
         isOpen={!!selectedPromptScene}
         scene={selectedPromptScene}
+        existingReferences={storyCharacterReferences}
         onClose={() => setSelectedPromptScene(null)}
-        onSave={handleSavePrompt}
+        onSavePromptOnly={handleSavePrompt}
+        onRegenerateImage={handleRegenerateWithRef}
+        onGenerateVideo={handleGenerateVideo}
+      />
+
+      <VideoGenModal
+        isOpen={!!selectedVideoScene}
+        scene={selectedVideoScene}
+        existingReferences={storyCharacterReferences}
+        onClose={() => setSelectedVideoScene(null)}
+        onGenerateVideo={handleGenerateVideo}
       />
 
       <VersionModal
