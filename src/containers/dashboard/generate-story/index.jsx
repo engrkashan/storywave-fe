@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   generateStory,
   getScheduledStories,
@@ -92,6 +93,7 @@ const FeatureCard = ({ icon, title, subtitle, checked, onChange, colorOn, accent
 ───────────────────────────────────────────────────────────────── */
 const GenerateStory = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [lengthLevel, setLengthLevel] = useState(2);
@@ -165,10 +167,14 @@ const GenerateStory = () => {
       .unwrap()
       .then((data) => {
         const m = data.metadata || {};
+        const s = data.story || {};
+        const v = data.voiceover || {};
+
         const rawCharRefs =
           m.characterReferences ||
           m.uploadedCharacterReferences ||
           m.storyMetadata?.characterReferences ||
+          s.characterReferences ||
           [];
         const restoredCharRefs = Array.isArray(rawCharRefs)
           ? rawCharRefs
@@ -176,41 +182,71 @@ const GenerateStory = () => {
               .map((c) => ({
                 name: c.name || "",
                 base64: c.url || c.base64 || "",
-                url: c.url || (c.base64?.startsWith("http") ? c.base64 : ""),
+                url: c.url || (typeof c.base64 === "string" && c.base64.startsWith("http") ? c.base64 : ""),
               }))
           : [];
 
         setFormData({
-          title: data.title || "",
+          title: data.title || s.title || "",
           url: m.url || "",
-          concept: m.textIdea || "",
-          storyGuidelines: m.storyGuidelines || "",
+          concept: m.textIdea || s.content || s.outline || v.script || "",
+          storyGuidelines: m.storyGuidelines || s.storyGuidelines || "",
           tone: m.voiceTone || "",
           imagePrompt: m.imagePrompt || "",
-          storyType: m.storyType || "",
-          voice: m.voice || "",
+          storyType: m.storyType || s.storyType || "",
+          voice: m.voice || v.voice || "",
           mediaType: m.mediaType || "single_image",
           imageCount: m.imageCount || 5,
           backgroundMusic: m.backgroundMusic ?? true,
-          backgroundMusicStyle: m.backgroundMusicStyle || m.storyMetadata?.backgroundMusicStyle || "",
+          backgroundMusicStyle:
+            m.backgroundMusicStyle ||
+            m.storyMetadata?.backgroundMusicStyle ||
+            s.backgroundMusicStyle ||
+            "",
           soundEffects: m.soundEffects ?? false,
           characterTalk: m.characterTalk ?? false,
           aspectRatio: m.aspectRatio || "16:9",
-          series: m.series || "",
-          coverArtPrompt: m.coverArtPrompt || "",
+          dualPlatform: m.dualPlatform ?? false,
+          series: m.series || s.series || "",
+          coverArtPrompt: m.coverArtPrompt || s.coverArtPrompt || "",
           seoMetadata: m.seoContent
             ? JSON.stringify(m.seoContent, null, 2)
+            : s.seoContent
+            ? JSON.stringify(s.seoContent, null, 2)
             : JSON.stringify({ Title: "", Description: "" }, null, 2),
-          visualSuggestions: m.visualSuggestions || "",
+          visualSuggestions: m.visualSuggestions || s.visualSuggestions || "",
           uploadedMediaUrl: m.uploadedMediaUrl || "",
           characterReferences: restoredCharRefs,
+          useOmniAudio: m.useOmniAudio ?? false,
+          autoPublish: m.autoPublish ?? true,
         });
-        if (restoredCharRefs.length > 0) {
-          setVisualMode("reference");
+
+        // Set length level from metadata storyLength (e.g., "10 minutes" -> 1, "20 minutes" -> 2, "30 minutes" -> 3)
+        if (m.storyLength) {
+          const mins = parseInt(m.storyLength, 10);
+          if (mins <= 10) setLengthLevel(1);
+          else if (mins <= 20) setLengthLevel(2);
+          else setLengthLevel(3);
         }
-        setShowImagePrompt(m.shouldGenerateImage || !!m.imagePrompt);
+
+        if (m.uploadedMediaUrl) {
+          setVisualMode("upload");
+        } else if (restoredCharRefs.length > 0) {
+          setVisualMode("reference");
+        } else {
+          setVisualMode("prompt");
+        }
+
+        setShowImagePrompt(
+          m.shouldGenerateImage !== false &&
+            (m.shouldGenerateImage ||
+              !!m.imagePrompt ||
+              m.mediaType === "multi_image" ||
+              m.mediaType === "video")
+        );
+        toast.success("Story data loaded into Story Builder");
       })
-      .catch(() => toast.error("Failed to load workflow"))
+      .catch(() => toast.error("Failed to load story workflow"))
       .finally(() => localStorage.removeItem("editWorkflowId"));
   }, [dispatch]);
 
@@ -324,8 +360,19 @@ const GenerateStory = () => {
   const executeGenerate = async (payload) => {
     try {
       setLoading(true);
-      await dispatch(generateStory(payload)).unwrap();
-      toast.success(scheduleForLater ? "Your Story is Scheduled ⏰" : "Generating Your Story 🎉");
+      const res = await dispatch(generateStory(payload)).unwrap();
+      toast.success(
+        scheduleForLater
+          ? "Your Story is Scheduled ⏰"
+          : "Story generation started! Opening Storywave Editor..."
+      );
+      if (!scheduleForLater) {
+        if (res?.workflowId) {
+          navigate(`/dashboard/editor/${res.workflowId}`);
+        } else {
+          navigate("/dashboard/editor");
+        }
+      }
     } catch (e) {
       toast.error(e?.error || "Something went wrong");
     } finally {

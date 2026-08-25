@@ -22,6 +22,10 @@ import ManageCreators from "./containers/dashboard/manage-users";
 import MyCreations from "./containers/dashboard/my-creations";
 import Publish from "./containers/dashboard/publish";
 
+// Storywave Editor
+const EditorListPage = lazy(() => import("./containers/dashboard/editor"));
+const EditorDetailPage = lazy(() => import("./containers/dashboard/editor/detail"));
+
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -36,6 +40,8 @@ const authRoutes = [{ path: "/auth/login", element: <Login /> }];
 
 const dashboardRoutes = [
   { path: "/overview", element: <Overview /> },
+  { path: "/dashboard/editor", element: <EditorListPage /> },
+  { path: "/dashboard/editor/:id", element: <EditorDetailPage /> },
   { path: "/dashboard/integrations", element: <Integrations /> },
   { path: "/dashboard/manage-workflows", element: <ManageWorkflows /> },
   { path: "/dashboard/manage-users", element: <ManageCreators /> },
@@ -54,6 +60,14 @@ const creatorDashboardRoutes = [
   {
     path: "/creator-dashboard/overview",
     element: <Overview />,
+  },
+  {
+    path: "/creator-dashboard/editor",
+    element: <EditorListPage />,
+  },
+  {
+    path: "/creator-dashboard/editor/:id",
+    element: <EditorDetailPage />,
   },
   { path: "/creator-dashboard/manage-workflows", element: <ManageWorkflows /> },
   {
