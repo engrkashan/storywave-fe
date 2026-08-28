@@ -133,6 +133,7 @@ const GenerateStory = () => {
     backgroundMusicStyle: "",
     soundEffects: false,
     characterTalk: false,
+    subtitles: true,
     aspectRatio: "16:9",
     dualPlatform: false,
     series: "",
@@ -205,6 +206,7 @@ const GenerateStory = () => {
             "",
           soundEffects: m.soundEffects ?? false,
           characterTalk: m.characterTalk ?? false,
+          subtitles: m.subtitles ?? true,
           aspectRatio: m.aspectRatio || "16:9",
           dualPlatform: m.dualPlatform ?? false,
           series: m.series || s.series || "",
@@ -408,6 +410,7 @@ const GenerateStory = () => {
       backgroundMusicStyle: formData.backgroundMusicStyle,
       soundEffects: formData.soundEffects,
       characterTalk: formData.characterTalk,
+      subtitles: formData.subtitles !== undefined ? Boolean(formData.subtitles) : true,
       aspectRatio: formData.aspectRatio,
       dualPlatform: formData.dualPlatform,
       series: formData.series,
@@ -908,6 +911,22 @@ const GenerateStory = () => {
                 onChange={() => setShowImagePrompt(!showImagePrompt)}
                 colorOn="bg-amber-500"
                 accentBg="bg-gradient-to-br from-amber-400 to-orange-500"
+                accentText="text-white"
+              />
+
+              {/* Subtitles & Captions */}
+              <FeatureCard
+                icon={
+                  <svg className={`w-5 h-5 ${formData.subtitles ? "text-cyan-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                  </svg>
+                }
+                title="Subtitles & Captions"
+                subtitle="Burn-in animated viral captions"
+                checked={formData.subtitles}
+                onChange={() => handleInputChange("subtitles", !formData.subtitles)}
+                colorOn="bg-cyan-500"
+                accentBg="bg-gradient-to-br from-cyan-400 to-blue-500"
                 accentText="text-white"
               />
 
