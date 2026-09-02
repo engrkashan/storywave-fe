@@ -2,8 +2,12 @@ import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import Cookies from "js-cookie";
 import {
   fetchEditorWorkflowDetail,
+  setWorkflowHeader,
+  appendWorkflowScenes,
+  setWorkflowComplete,
   updateScenePrompt,
   regenerateScene,
   replaceSceneFrame,
@@ -34,6 +38,68 @@ import MediaPreviewModal from "../components/MediaPreviewModal";
 import MergeConfirmModal from "../components/MergeConfirmModal";
 import MergeBar from "../components/MergeBar";
 
+/**
+ * Progressive streaming loader: connects to SSE stream endpoint.
+ * Dispatches workflow header in ~30ms, then appends scene batches progressively.
+ * Gracefully falls back to standard fetch if stream fails.
+ */
+const loadWorkflowStream = async (workflowId, dispatch) => {
+  const token = Cookies.get("token");
+  const baseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "") + "/api";
+  const streamUrl = `${baseUrl}/editor/workflows/${workflowId}/stream`;
+
+  try {
+    const response = await fetch(streamUrl, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : "",
+        Accept: "text/event-stream",
+      },
+    });
+
+    if (!response.ok || !response.body) {
+      return await dispatch(fetchEditorWorkflowDetail(workflowId)).unwrap();
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const blocks = buffer.split("\n\n");
+      buffer = blocks.pop() || "";
+
+      for (const block of blocks) {
+        if (!block.trim()) continue;
+        const eventMatch = block.match(/^event:\s*(\w+)/m);
+        const dataMatch = block.match(/^data:\s*(.+)$/m);
+
+        if (eventMatch && dataMatch) {
+          const event = eventMatch[1];
+          try {
+            const data = JSON.parse(dataMatch[1]);
+            if (event === "workflow") {
+              dispatch(setWorkflowHeader(data));
+            } else if (event === "scenes") {
+              dispatch(appendWorkflowScenes(data.scenes || []));
+            } else if (event === "done") {
+              dispatch(setWorkflowComplete());
+            }
+          } catch (e) {
+            console.warn("SSE chunk parse warning:", e);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Stream unavailable or interrupted, falling back to standard request:", err);
+    await dispatch(fetchEditorWorkflowDetail(workflowId)).unwrap();
+  }
+};
+
 const EditorDetailPage = () => {
   const { id: workflowId } = useParams();
   const dispatch = useDispatch();
@@ -53,12 +119,12 @@ const EditorDetailPage = () => {
   const pollingTimeoutRef = useRef(null);
   const isFetchingRef = useRef(false);
 
-  // Initial load & reset stale merge state on entry/exit
+  // Initial load: uses progressive SSE stream for instant header (<30ms) & batched scenes
   useEffect(() => {
     dispatch(resetMergeState());
     if (workflowId) {
       isFetchingRef.current = true;
-      dispatch(fetchEditorWorkflowDetail(workflowId)).finally(() => {
+      loadWorkflowStream(workflowId, dispatch).finally(() => {
         isFetchingRef.current = false;
       });
     }

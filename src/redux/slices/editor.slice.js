@@ -212,6 +212,28 @@ const editorSlice = createSlice({
         }
       }
     },
+    setWorkflowHeader: (state, action) => {
+      state.currentWorkflow = {
+        ...action.payload,
+        scenes: state.currentWorkflow?.scenes || [],
+      };
+      state.detailLoading = false;
+      state.detailError = null;
+    },
+    appendWorkflowScenes: (state, action) => {
+      if (state.currentWorkflow) {
+        const existingScenes = state.currentWorkflow.scenes || [];
+        const existingIds = new Set(existingScenes.map((s) => s.id));
+        const newScenes = (action.payload || []).filter((s) => !existingIds.has(s.id));
+        state.currentWorkflow.scenes = [...existingScenes, ...newScenes];
+      }
+    },
+    setWorkflowComplete: (state, action) => {
+      if (action.payload) {
+        state.currentWorkflow = action.payload;
+      }
+      state.detailLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -327,5 +349,12 @@ const editorSlice = createSlice({
   },
 });
 
-export const { clearCurrentWorkflow, resetMergeState, optimisticSetSceneStatus } = editorSlice.actions;
+export const {
+  clearCurrentWorkflow,
+  resetMergeState,
+  optimisticSetSceneStatus,
+  setWorkflowHeader,
+  appendWorkflowScenes,
+  setWorkflowComplete,
+} = editorSlice.actions;
 export default editorSlice.reducer;
