@@ -241,6 +241,15 @@ const PromptModal = ({
               placeholder="Describe the desired visual composition, character action, motion, lighting, and camera angle..."
               className="w-full p-4 rounded-2xl border-2 border-gray-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 text-sm text-gray-900 leading-relaxed outline-none transition-all resize-y shadow-inner font-sans min-h-[140px]"
             />
+
+            {prompt.length > 1500 && (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
+                <span className="text-amber-600 font-bold text-sm leading-none">⚠️</span>
+                <span>
+                  <strong>Prompt is very long ({prompt.length.toLocaleString()} chars):</strong> If this contains multiple scenes or a full script dump, trim it to only describe the visual action and composition for this specific frame. Extra scene text increases AI processing time and diffuses visual focus.
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Character Reference Image Section */}
