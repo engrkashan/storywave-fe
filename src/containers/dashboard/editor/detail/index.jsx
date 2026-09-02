@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import Cookies from "js-cookie";
 import {
   fetchEditorWorkflowDetail,
+  clearCurrentWorkflow,
   setWorkflowHeader,
   appendWorkflowScenes,
   setWorkflowComplete,
@@ -43,10 +44,12 @@ import MergeBar from "../components/MergeBar";
  * Dispatches workflow header in ~30ms, then appends scene batches progressively.
  * Gracefully falls back to standard fetch if stream fails.
  */
-const loadWorkflowStream = async (workflowId, dispatch) => {
+const loadWorkflowStream = async ({ workflowId, dispatch, onFirstChunk, onError }) => {
   const token = Cookies.get("token");
   const baseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "") + "/api";
   const streamUrl = `${baseUrl}/editor/workflows/${workflowId}/stream`;
+
+  let hasEmittedFirstChunk = false;
 
   try {
     const response = await fetch(streamUrl, {
@@ -57,7 +60,12 @@ const loadWorkflowStream = async (workflowId, dispatch) => {
     });
 
     if (!response.ok || !response.body) {
-      return await dispatch(fetchEditorWorkflowDetail(workflowId)).unwrap();
+      const fallbackData = await dispatch(fetchEditorWorkflowDetail(workflowId)).unwrap();
+      if (!hasEmittedFirstChunk && onFirstChunk) {
+        hasEmittedFirstChunk = true;
+        onFirstChunk(fallbackData);
+      }
+      return fallbackData;
     }
 
     const reader = response.body.getReader();
@@ -83,10 +91,16 @@ const loadWorkflowStream = async (workflowId, dispatch) => {
             const data = JSON.parse(dataMatch[1]);
             if (event === "workflow") {
               dispatch(setWorkflowHeader(data));
+              if (!hasEmittedFirstChunk && onFirstChunk) {
+                hasEmittedFirstChunk = true;
+                onFirstChunk(data);
+              }
             } else if (event === "scenes") {
               dispatch(appendWorkflowScenes(data.scenes || []));
             } else if (event === "done") {
               dispatch(setWorkflowComplete());
+            } else if (event === "error") {
+              throw new Error(data.error || "Streaming error");
             }
           } catch (e) {
             console.warn("SSE chunk parse warning:", e);
@@ -96,7 +110,20 @@ const loadWorkflowStream = async (workflowId, dispatch) => {
     }
   } catch (err) {
     console.warn("Stream unavailable or interrupted, falling back to standard request:", err);
-    await dispatch(fetchEditorWorkflowDetail(workflowId)).unwrap();
+    try {
+      const fallbackData = await dispatch(fetchEditorWorkflowDetail(workflowId)).unwrap();
+      if (!hasEmittedFirstChunk && onFirstChunk) {
+        hasEmittedFirstChunk = true;
+        onFirstChunk(fallbackData);
+      }
+      return fallbackData;
+    } catch (fallbackErr) {
+      const errMsg = fallbackErr?.error || fallbackErr?.message || "Failed to load workflow";
+      if (onError) {
+        onError(errMsg);
+      }
+      throw fallbackErr;
+    }
   }
 };
 
@@ -115,17 +142,36 @@ const EditorDetailPage = () => {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [activeRatioFilter, setActiveRatioFilter] = useState("ALL");
 
+  // Loading / Streaming status
+  const [isConnecting, setIsConnecting] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
   // Polling ref & in-flight tracking
   const pollingTimeoutRef = useRef(null);
   const isFetchingRef = useRef(false);
 
-  // Initial load: uses progressive SSE stream for instant header (<30ms) & batched scenes
+  // Initial load: shows loading until first chunk arrives
   useEffect(() => {
     dispatch(resetMergeState());
+    dispatch(clearCurrentWorkflow());
+    setIsConnecting(true);
+    setLoadError(null);
+
     if (workflowId) {
       isFetchingRef.current = true;
-      loadWorkflowStream(workflowId, dispatch).finally(() => {
+      loadWorkflowStream({
+        workflowId,
+        dispatch,
+        onFirstChunk: () => {
+          setIsConnecting(false);
+        },
+        onError: (err) => {
+          setIsConnecting(false);
+          setLoadError(err);
+        },
+      }).finally(() => {
         isFetchingRef.current = false;
+        setIsConnecting(false);
       });
     }
     return () => {
@@ -344,26 +390,67 @@ const EditorDetailPage = () => {
     }
   };
 
-  if (detailLoading && !currentWorkflow) {
+  // 1. Status is FAILED -> Show failed screen
+  if (currentWorkflow?.status === "FAILED") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin" />
-        <p className="text-sm text-gray-500 font-medium">Loading Storywave Editor...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-5 max-w-md mx-auto">
+        <div className="w-16 h-16 rounded-3xl bg-red-100 text-red-600 flex items-center justify-center shadow-inner">
+          <AlertCircle size={36} />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-2xl font-extrabold text-gray-900">Story Generation Failed</h2>
+          <p className="text-sm text-gray-500">
+            {currentWorkflow?.error || "This workflow encountered an error during generation."}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/dashboard/editor"
+            className="px-5 py-2.5 rounded-2xl bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm shadow-md transition-all"
+          >
+            Back to Editor
+          </Link>
+          <Link
+            to="/dashboard/manage-workflows"
+            className="px-5 py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm transition-all"
+          >
+            View Workflows
+          </Link>
+        </div>
       </div>
     );
   }
 
-  if (!currentWorkflow) {
+  // 2. Fatal load error and no workflow data loaded -> Show error screen
+  if (loadError && !currentWorkflow) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-4">
-        <AlertCircle size={40} className="text-red-500" />
-        <h2 className="text-xl font-bold text-gray-900">Story not found or not in review state</h2>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-5 max-w-md mx-auto">
+        <div className="w-16 h-16 rounded-3xl bg-red-100 text-red-600 flex items-center justify-center shadow-inner">
+          <AlertCircle size={36} />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-2xl font-extrabold text-gray-900">Failed to Load Story</h2>
+          <p className="text-sm text-gray-500">{loadError}</p>
+        </div>
         <Link
           to="/dashboard/editor"
-          className="px-5 py-2.5 rounded-xl bg-gray-900 text-white font-semibold text-sm hover:bg-gray-800 transition-colors"
+          className="px-6 py-3 rounded-2xl bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm shadow-md transition-all"
         >
           Back to Editor
         </Link>
+      </div>
+    );
+  }
+
+  // 3. Show loading till first chunk is loaded
+  if (isConnecting || !currentWorkflow) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
+        <div className="w-14 h-14 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin" />
+        <div className="text-center space-y-1">
+          <p className="text-sm text-gray-800 font-semibold">Loading Storywave Editor...</p>
+          <p className="text-xs text-gray-400">Streaming story details & scenes</p>
+        </div>
       </div>
     );
   }
