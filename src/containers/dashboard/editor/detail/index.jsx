@@ -49,49 +49,81 @@ const EditorDetailPage = () => {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [activeRatioFilter, setActiveRatioFilter] = useState("ALL");
 
-  // Polling ref
-  const pollingRef = useRef(null);
+  // Polling ref & in-flight tracking
+  const pollingTimeoutRef = useRef(null);
+  const isFetchingRef = useRef(false);
 
   // Initial load & reset stale merge state on entry/exit
   useEffect(() => {
     dispatch(resetMergeState());
     if (workflowId) {
-      dispatch(fetchEditorWorkflowDetail(workflowId));
+      isFetchingRef.current = true;
+      dispatch(fetchEditorWorkflowDetail(workflowId)).finally(() => {
+        isFetchingRef.current = false;
+      });
     }
     return () => {
       dispatch(resetMergeState());
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
+        pollingTimeoutRef.current = null;
+      }
     };
   }, [dispatch, workflowId]);
 
-  // Polling setup: check if workflow is still generating or any scene is in REGENERATING state
-  useEffect(() => {
-    const isGeneratingOrRegenerating =
-      currentWorkflow?.status === "PENDING" ||
-      currentWorkflow?.status === "PROCESSING" ||
-      currentWorkflow?.scenes?.some((s) => s.status === "REGENERATING");
+  // Determine if polling is necessary (only when pending, processing, or a scene is actively regenerating)
+  const isGeneratingOrRegenerating = Boolean(
+    currentWorkflow?.status === "PENDING" ||
+    currentWorkflow?.status === "PROCESSING" ||
+    currentWorkflow?.scenes?.some((s) => s.status === "REGENERATING")
+  );
 
-    if (isGeneratingOrRegenerating) {
-      if (!pollingRef.current) {
-        pollingRef.current = setInterval(() => {
-          if (workflowId) {
-            dispatch(fetchEditorWorkflowDetail(workflowId));
-          }
-        }, 3000);
+  // Safe polling: sequential timeout that waits for previous response before scheduling next poll
+  useEffect(() => {
+    if (!isGeneratingOrRegenerating || !workflowId) {
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
+        pollingTimeoutRef.current = null;
       }
-    } else {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
+      return;
     }
 
+    let isCancelled = false;
+
+    const scheduleNextPoll = () => {
+      if (isCancelled) return;
+      pollingTimeoutRef.current = setTimeout(async () => {
+        if (isCancelled || !workflowId) return;
+
+        // Prevent overlapping requests
+        if (!isFetchingRef.current) {
+          isFetchingRef.current = true;
+          try {
+            await dispatch(fetchEditorWorkflowDetail(workflowId)).unwrap();
+          } catch (err) {
+            console.error("Editor polling error:", err);
+          } finally {
+            isFetchingRef.current = false;
+          }
+        }
+
+        // Schedule next iteration only after completion
+        if (!isCancelled) {
+          scheduleNextPoll();
+        }
+      }, 5000); // 5s interval AFTER prior request completes
+    };
+
+    scheduleNextPoll();
+
     return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
+      isCancelled = true;
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
+        pollingTimeoutRef.current = null;
       }
     };
-  }, [currentWorkflow, dispatch, workflowId]);
+  }, [isGeneratingOrRegenerating, dispatch, workflowId]);
 
   // Handlers
   const handleSavePrompt = async (sceneId, promptText) => {
