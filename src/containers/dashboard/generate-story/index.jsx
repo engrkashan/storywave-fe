@@ -180,11 +180,16 @@ const GenerateStory = () => {
         const restoredCharRefs = Array.isArray(rawCharRefs)
           ? rawCharRefs
               .filter((c) => c && (c.url || c.base64))
-              .map((c) => ({
-                name: c.name || "",
-                base64: c.url || c.base64 || "",
-                url: c.url || (typeof c.base64 === "string" && c.base64.startsWith("http") ? c.base64 : ""),
-              }))
+              .map((c) => {
+                const remoteUrl = (typeof c.url === "string" && c.url.startsWith("http"))
+                  ? c.url
+                  : (typeof c.base64 === "string" && c.base64.startsWith("http") ? c.base64 : "");
+                return {
+                  name: c.name || "",
+                  url: remoteUrl,
+                  base64: remoteUrl ? "" : (c.base64 || ""),
+                };
+              })
           : [];
 
         setFormData({
@@ -421,14 +426,17 @@ const GenerateStory = () => {
       })(),
       visualSuggestions: formData.visualSuggestions,
       uploadedMediaUrl: formData.uploadedMediaUrl,
-      // Multi-character references — send slots that have name and either base64 or url
+      // Multi-character references — send URL if unchanged, or base64 if user uploaded a new local file
       characterReferences: formData.characterReferences
         .filter(c => c.name.trim() && (c.base64 || c.url))
-        .map(c => ({
-          name: c.name.trim(),
-          base64: c.base64 || c.url,
-          url: c.url || (typeof c.base64 === "string" && c.base64.startsWith("http") ? c.base64 : undefined),
-        })),
+        .map(c => {
+          const hasRemoteUrl = Boolean(c.url && typeof c.url === "string" && c.url.startsWith("http"));
+          return {
+            name: c.name.trim(),
+            url: hasRemoteUrl ? c.url : undefined,
+            base64: (!hasRemoteUrl && c.base64) ? c.base64 : undefined,
+          };
+        }),
       characterReferenceBase64: null,
       autoPublish: formData.autoPublish,
       autoPublishDelayMinutes: parseInt(localStorage.getItem("sw_auto_publish_delay_total_minutes") || "60", 10),
@@ -1249,19 +1257,19 @@ const GenerateStory = () => {
                                 className="sr-only"
                                 onChange={e => handleCharRefUploadForSlot(index, e.target.files[0])}
                               />
-                              <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 flex items-center justify-center transition-all ${slot.base64
+                              <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 flex items-center justify-center transition-all ${(slot.base64 || slot.url)
                                 ? "border-purple-300 bg-purple-50"
                                 : "border-dashed border-gray-300 bg-white hover:border-purple-400 hover:bg-purple-50"
                                 }`}>
                                 {uploadingSlots.has(index) ? (
                                   <span className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                                ) : slot.base64 ? (
-                                  <img src={slot.base64} alt={slot.name || `Char ${index + 1}`} className="w-full h-full object-cover" />
+                                ) : (slot.base64 || slot.url) ? (
+                                  <img src={slot.base64 || slot.url} alt={slot.name || `Char ${index + 1}`} className="w-full h-full object-cover" />
                                 ) : (
                                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
                                 )}
                               </div>
-                              {slot.base64 && (
+                              {(slot.base64 || slot.url) && (
                                 <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-purple-500 flex items-center justify-center">
                                   <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                 </div>
@@ -1277,7 +1285,7 @@ const GenerateStory = () => {
                                 onChange={e => handleCharNameChange(index, e.target.value)}
                                 className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent placeholder:text-gray-400"
                               />
-                              {slot.base64 && !slot.name && (
+                              {(slot.base64 || slot.url) && !slot.name && (
                                 <p className="text-xs text-amber-500 mt-1 pl-1">Add a name so the AI can match this photo to the right character</p>
                               )}
                             </div>
