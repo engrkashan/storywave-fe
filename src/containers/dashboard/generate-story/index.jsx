@@ -12,6 +12,7 @@ import { checkImagePromptSafety } from "../../../utils/promptModerations";
 import {
   fetchOverviewStats,
   fetchWorkflowById,
+  fetchStoryBuilderData,
 } from "../../../redux/slices/overview.slice";
 import axiosInstance from "../../../middleware/axiosInstance";
 
@@ -117,6 +118,7 @@ const GenerateStory = () => {
   const [showPromptWarning, setShowPromptWarning] = useState(false);
   const [blockedWords, setBlockedWords] = useState([]);
   const [pendingPayload, setPendingPayload] = useState(null);
+  const [loadingStoryData, setLoadingStoryData] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -164,7 +166,8 @@ const GenerateStory = () => {
     const editWorkflowId = localStorage.getItem("editWorkflowId");
     if (!editWorkflowId) return;
 
-    dispatch(fetchWorkflowById(editWorkflowId))
+    setLoadingStoryData(true);
+    dispatch(fetchStoryBuilderData(editWorkflowId))
       .unwrap()
       .then((data) => {
         const m = data.metadata || {};
@@ -185,6 +188,7 @@ const GenerateStory = () => {
                   ? c.url
                   : (typeof c.base64 === "string" && c.base64.startsWith("http") ? c.base64 : "");
                 return {
+                  id: c.id,
                   name: c.name || "",
                   url: remoteUrl,
                   base64: remoteUrl ? "" : (c.base64 || ""),
@@ -251,10 +255,13 @@ const GenerateStory = () => {
               m.mediaType === "multi_image" ||
               m.mediaType === "video")
         );
-        toast.success("Story data loaded into Story Builder");
+        toast.success("Story details loaded into Story Builder");
       })
-      .catch(() => toast.error("Failed to load story workflow"))
-      .finally(() => localStorage.removeItem("editWorkflowId"));
+      .catch(() => toast.error("Failed to load story details for regeneration"))
+      .finally(() => {
+        setLoadingStoryData(false);
+        localStorage.removeItem("editWorkflowId");
+      });
   }, [dispatch]);
 
   useEffect(() => {
@@ -467,6 +474,25 @@ const GenerateStory = () => {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50/30 to-pink-50/20 p-6 md:p-8">
+
+      {/* ── LOADING STORY DATA OVERLAY (for regeneration from Manage Workflows) ── */}
+      {loadingStoryData && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex flex-col items-center justify-center p-6 animate-fadeIn">
+          <div className="bg-white/95 backdrop-blur-lg rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/20 flex flex-col items-center text-center">
+            <div className="relative w-20 h-20 mb-6 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-amber-200 animate-ping opacity-25" />
+              <div className="w-16 h-16 rounded-full border-4 border-amber-500 border-t-transparent animate-spin" />
+              <div className="absolute text-2xl">✨</div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Loading Story Details...
+            </h3>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Retrieving story concept, guidelines, character references, and settings into Story Builder.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── WARNING MODAL ── */}
       {showPromptWarning && (

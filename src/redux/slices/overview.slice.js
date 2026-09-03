@@ -40,12 +40,25 @@ export const fetchPublishOptions = createAsyncThunk(
   },
 );
 
-// Async thunk to fetch workflow detail by ID
+// Async thunk to fetch workflow detail by ID (Overview details)
 export const fetchWorkflowById = createAsyncThunk(
   "overview/fetchWorkflowById",
   async (workflowId, thunkAPI) => {
     try {
       const response = await axiosInstance.get(`/overview/${workflowId}`);
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
+
+// Async thunk to fetch complete Story Builder data for story regeneration
+export const fetchStoryBuilderData = createAsyncThunk(
+  "overview/fetchStoryBuilderData",
+  async (workflowId, thunkAPI) => {
+    try {
+      const response = await axiosInstance.get(`/overview/story-builder/${workflowId}`);
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
