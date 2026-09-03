@@ -119,6 +119,7 @@ const GenerateStory = () => {
   const [blockedWords, setBlockedWords] = useState([]);
   const [pendingPayload, setPendingPayload] = useState(null);
   const [loadingStoryData, setLoadingStoryData] = useState(false);
+  const [uploadStatusText, setUploadStatusText] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -328,13 +329,29 @@ const GenerateStory = () => {
     });
   };
 
+  // Helper to convert base64 data URI to a File object for /media multipart upload
+  const dataURLtoFile = (dataurl, filename = "character.jpg") => {
+    try {
+      const arr = dataurl.split(",");
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new File([u8arr], filename, { type: mime });
+    } catch {
+      return null;
+    }
+  };
+
   const handleCharRefUploadForSlot = (index, file) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image is too large! Please select an image under 5MB.");
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("Image is too large! Please select an image under 15MB.");
       return;
     }
-    setUploadingSlots(prev => new Set(prev).add(index));
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
@@ -350,31 +367,128 @@ const GenerateStory = () => {
         canvas.width = width; canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-        const base64Str = canvas.toDataURL("image/jpeg", 0.8);
+        const base64Str = canvas.toDataURL("image/jpeg", 0.85);
         setFormData(prev => {
           const updated = [...prev.characterReferences];
-          updated[index] = { ...updated[index], base64: base64Str };
+          updated[index] = {
+            ...updated[index],
+            file,
+            base64: base64Str,
+            url: "", // will be uploaded to /media on submit
+          };
           return { ...prev, characterReferences: updated };
         });
-        setUploadingSlots(prev => { const s = new Set(prev); s.delete(index); return s; });
-        toast.success("Character reference loaded ✅");
-      };
-      img.onerror = () => {
-        toast.error("Failed to read image data");
-        setUploadingSlots(prev => { const s = new Set(prev); s.delete(index); return s; });
+        toast.success("Character reference image selected ✅");
       };
       img.src = event.target.result;
-    };
-    reader.onerror = () => {
-      toast.error("Failed to read character reference file");
-      setUploadingSlots(prev => { const s = new Set(prev); s.delete(index); return s; });
     };
     reader.readAsDataURL(file);
   };
 
-  const executeGenerate = async (payload) => {
+  const handleGenerate = async () => {
+    if (!formData.concept && !formData.url)
+      return toast.error("Please provide a story concept or URL");
+    if (!formData.title)
+      return toast.error("Please fill all required fields");
+    if (scheduleForLater && !scheduleTime)
+      return toast.error("Please select a schedule time");
+
+    if (showImagePrompt && formData.mediaType === "single_image" && formData.imagePrompt) {
+      const safety = checkImagePromptSafety(formData.imagePrompt);
+      if (!safety.safe) {
+        setBlockedWords(safety.blockedWords || []);
+        setShowPromptWarning(true);
+        return;
+      }
+    }
+
     try {
       setLoading(true);
+
+      // ── Step 1: Upload any pending character references to /media in parallel ──
+      const validChars = formData.characterReferences.filter(
+        c => c.name.trim() && (c.url || c.file || c.base64)
+      );
+
+      let finalCharacterReferences = [];
+      if (validChars.length > 0) {
+        setUploadStatusText("Uploading character references in parallel...");
+
+        finalCharacterReferences = await Promise.all(
+          validChars.map(async (c, idx) => {
+            const charName = c.name.trim();
+
+            // A) Already has hosted Cloudinary / HTTP URL
+            if (c.url && typeof c.url === "string" && c.url.startsWith("http")) {
+              return { name: charName, url: c.url };
+            }
+
+            // B) Local file or base64 data URI to upload
+            let fileToUpload = c.file;
+            if (!fileToUpload && c.base64 && typeof c.base64 === "string" && c.base64.startsWith("data:")) {
+              fileToUpload = dataURLtoFile(c.base64, `${charName.toLowerCase().replace(/[^a-z0-9]/g, "_")}.jpg`);
+            }
+
+            if (fileToUpload) {
+              setUploadStatusText(`Uploading character reference (${charName})...`);
+              const formDataObj = new FormData();
+              formDataObj.append("file", fileToUpload);
+
+              const res = await axiosInstance.post("/media", formDataObj, {
+                headers: { "Content-Type": "multipart/form-data" },
+              });
+
+              if (res.data?.media?.fileUrl) {
+                return { name: charName, url: res.data.media.fileUrl };
+              }
+            }
+
+            return null;
+          })
+        );
+
+        finalCharacterReferences = finalCharacterReferences.filter(Boolean);
+      }
+
+      setUploadStatusText("Starting story generation workflow...");
+
+      // ── Step 2: Build clean payload containing ONLY { name, url } ──
+      const payload = {
+        title: formData.title,
+        textIdea: formData.concept,
+        storyGuidelines: formData.storyGuidelines,
+        url: formData.url,
+        storyType: formData.storyType,
+        voice: formData.voice,
+        voiceTone: formData.tone,
+        shouldGenerateImage: showImagePrompt,
+        imagePrompt: formData.imagePrompt,
+        storyLength: storyLengthStr,
+        scheduledAt: scheduleForLater ? scheduleTime : null,
+        mediaType: formData.mediaType,
+        imageCount: formData.imageCount,
+        backgroundMusic: formData.backgroundMusic,
+        backgroundMusicStyle: formData.backgroundMusicStyle,
+        soundEffects: formData.soundEffects,
+        characterTalk: formData.characterTalk,
+        subtitles: formData.subtitles !== undefined ? Boolean(formData.subtitles) : true,
+        aspectRatio: formData.aspectRatio,
+        dualPlatform: formData.dualPlatform,
+        series: formData.series,
+        coverArtPrompt: formData.coverArtPrompt,
+        seoContent: (() => {
+          try { return JSON.parse(formData.seoMetadata); }
+          catch { return {}; }
+        })(),
+        visualSuggestions: formData.visualSuggestions,
+        uploadedMediaUrl: formData.uploadedMediaUrl,
+        // Send clean { name, url } objects only
+        characterReferences: finalCharacterReferences,
+        characterReferenceBase64: null,
+        autoPublish: formData.autoPublish,
+        autoPublishDelayMinutes: parseInt(localStorage.getItem("sw_auto_publish_delay_total_minutes") || "60", 10),
+      };
+
       const res = await dispatch(generateStory(payload)).unwrap();
       toast.success(
         scheduleForLater
@@ -389,78 +503,12 @@ const GenerateStory = () => {
         }
       }
     } catch (e) {
-      toast.error(e?.error || "Something went wrong");
+      toast.error(e?.error || e?.message || "Something went wrong");
     } finally {
       setLoading(false);
+      setUploadStatusText("");
       setShowPromptWarning(false);
-      setPendingPayload(null);
     }
-  };
-
-  const handleGenerate = () => {
-    if (!formData.concept && !formData.url)
-      return toast.error("Please provide a story concept or URL");
-    if (!formData.title)
-      return toast.error("Please fill all required fields");
-    if (scheduleForLater && !scheduleTime)
-      return toast.error("Please select a schedule time");
-
-    const payload = {
-      title: formData.title,
-      textIdea: formData.concept,
-      storyGuidelines: formData.storyGuidelines,
-      url: formData.url,
-      storyType: formData.storyType,
-      voice: formData.voice,
-      voiceTone: formData.tone,
-      shouldGenerateImage: showImagePrompt,
-      imagePrompt: formData.imagePrompt,
-      storyLength: storyLengthStr,
-      scheduledAt: scheduleForLater ? scheduleTime : null,
-      mediaType: formData.mediaType,
-      imageCount: formData.imageCount,
-      backgroundMusic: formData.backgroundMusic,
-      backgroundMusicStyle: formData.backgroundMusicStyle,
-      soundEffects: formData.soundEffects,
-      characterTalk: formData.characterTalk,
-      subtitles: formData.subtitles !== undefined ? Boolean(formData.subtitles) : true,
-      aspectRatio: formData.aspectRatio,
-      dualPlatform: formData.dualPlatform,
-      series: formData.series,
-      coverArtPrompt: formData.coverArtPrompt,
-      seoContent: (() => {
-        try { return JSON.parse(formData.seoMetadata); }
-        catch { return {}; }
-      })(),
-      visualSuggestions: formData.visualSuggestions,
-      uploadedMediaUrl: formData.uploadedMediaUrl,
-      // Multi-character references — send URL if unchanged, or base64 if user uploaded a new local file
-      characterReferences: formData.characterReferences
-        .filter(c => c.name.trim() && (c.base64 || c.url))
-        .map(c => {
-          const hasRemoteUrl = Boolean(c.url && typeof c.url === "string" && c.url.startsWith("http"));
-          return {
-            name: c.name.trim(),
-            url: hasRemoteUrl ? c.url : undefined,
-            base64: (!hasRemoteUrl && c.base64?.startsWith("data:")) ? c.base64 : undefined,
-          };
-        }),
-      characterReferenceBase64: null,
-      autoPublish: formData.autoPublish,
-      autoPublishDelayMinutes: parseInt(localStorage.getItem("sw_auto_publish_delay_total_minutes") || "60", 10),
-    };
-
-    if (showImagePrompt && formData.mediaType === "single_image" && formData.imagePrompt) {
-      const safety = checkImagePromptSafety(formData.imagePrompt);
-      if (!safety.safe) {
-        setBlockedWords(safety.blockedWords || []);
-        setPendingPayload(payload);
-        setShowPromptWarning(true);
-        return;
-      }
-    }
-
-    executeGenerate(payload);
   };
 
   /* ── input class helper ── */
@@ -666,7 +714,7 @@ const GenerateStory = () => {
           {loading && (
             <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-2xl shadow-md border border-amber-100">
               <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-gray-700 text-sm font-medium">{loadingMessages[currentMessageIndex]}</p>
+              <p className="text-gray-700 text-sm font-medium">{uploadStatusText || loadingMessages[currentMessageIndex]}</p>
             </div>
           )}
         </div>
@@ -1485,7 +1533,7 @@ const GenerateStory = () => {
               {loading ? (
                 <>
                   <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Bringing To Life...
+                  <span>{uploadStatusText || "Bringing To Life..."}</span>
                 </>
               ) : (
                 <>
