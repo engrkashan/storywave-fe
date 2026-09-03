@@ -6,6 +6,7 @@ const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 180000, // 3 minutes timeout for large story workflows
 });
 
 axiosInstance.interceptors.request.use(

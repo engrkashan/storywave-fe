@@ -249,11 +249,12 @@ const GenerateStory = () => {
         }
 
         setShowImagePrompt(
-          m.shouldGenerateImage !== false &&
+          restoredCharRefs.length > 0 ||
+          (m.shouldGenerateImage !== false &&
             (m.shouldGenerateImage ||
               !!m.imagePrompt ||
               m.mediaType === "multi_image" ||
-              m.mediaType === "video")
+              m.mediaType === "video"))
         );
         toast.success("Story details loaded into Story Builder");
       })
