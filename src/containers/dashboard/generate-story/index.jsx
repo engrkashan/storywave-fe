@@ -182,7 +182,7 @@ const GenerateStory = () => {
           [];
         const restoredCharRefs = Array.isArray(rawCharRefs)
           ? rawCharRefs
-              .filter((c) => c && (c.url || c.base64))
+              .filter((c) => c && (c.name || c.url || c.base64))
               .map((c) => {
                 const remoteUrl = (typeof c.url === "string" && c.url.startsWith("http"))
                   ? c.url
@@ -191,7 +191,7 @@ const GenerateStory = () => {
                   id: c.id,
                   name: c.name || "",
                   url: remoteUrl,
-                  base64: remoteUrl ? "" : (c.base64 || ""),
+                  base64: remoteUrl ? "" : (c.base64?.startsWith("data:") ? c.base64 : ""),
                 };
               })
           : [];
@@ -442,7 +442,7 @@ const GenerateStory = () => {
           return {
             name: c.name.trim(),
             url: hasRemoteUrl ? c.url : undefined,
-            base64: (!hasRemoteUrl && c.base64) ? c.base64 : undefined,
+            base64: (!hasRemoteUrl && c.base64?.startsWith("data:")) ? c.base64 : undefined,
           };
         }),
       characterReferenceBase64: null,
