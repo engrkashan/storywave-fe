@@ -147,6 +147,7 @@ const GenerateStory = () => {
     // Multi-character references: [{ name, base64 }]
     characterReferences: [],
     useOmniAudio: false,
+    useStoryGuidelinesOnlyForPrompts: false,
     autoPublish: true,
   });
 
@@ -230,6 +231,7 @@ const GenerateStory = () => {
           uploadedMediaUrl: m.uploadedMediaUrl || "",
           characterReferences: restoredCharRefs,
           useOmniAudio: m.useOmniAudio ?? false,
+          useStoryGuidelinesOnlyForPrompts: m.useStoryGuidelinesOnlyForPrompts ?? false,
           autoPublish: m.autoPublish ?? true,
         });
 
@@ -487,6 +489,8 @@ const GenerateStory = () => {
         characterReferenceBase64: null,
         autoPublish: formData.autoPublish,
         autoPublishDelayMinutes: parseInt(localStorage.getItem("sw_auto_publish_delay_total_minutes") || "60", 10),
+        useOmniAudio: formData.useOmniAudio,
+        useStoryGuidelinesOnlyForPrompts: formData.useStoryGuidelinesOnlyForPrompts,
       };
 
       const res = await dispatch(generateStory(payload)).unwrap();
