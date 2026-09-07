@@ -217,9 +217,9 @@ const PromptModal = ({
                   Reset to this
                 </button>
               </div>
-              <p className="text-xs text-gray-600 leading-relaxed font-mono line-clamp-3">
+              <div className="max-h-44 overflow-y-auto pr-1 text-xs text-gray-700 leading-relaxed font-mono whitespace-pre-wrap break-words bg-white p-3 rounded-xl border border-gray-200/70 select-text">
                 {scene.originalPrompt || "No original prompt available."}
-              </p>
+              </div>
             </div>
           </div>
 
@@ -241,15 +241,7 @@ const PromptModal = ({
               placeholder="Describe the desired visual composition, character action, motion, lighting, and camera angle..."
               className="w-full p-4 rounded-2xl border-2 border-gray-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 text-sm text-gray-900 leading-relaxed outline-none transition-all resize-y shadow-inner font-sans min-h-[140px]"
             />
-
-            {prompt.length > 1500 && (
-              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
-                <span className="text-amber-600 font-bold text-sm leading-none">⚠️</span>
-                <span>
-                  <strong>Prompt is very long ({prompt.length.toLocaleString()} chars):</strong> If this contains multiple scenes or a full script dump, trim it to only describe the visual action and composition for this specific frame. Extra scene text increases AI processing time and diffuses visual focus.
-                </span>
-              </div>
-            )}
+ 
           </div>
 
           {/* Character Reference Image Section */}

@@ -199,16 +199,16 @@ const GenerateStory = () => {
           : [];
 
         setFormData({
-          title: data.title || s.title || "",
+          title: data.title || s.title || m.title || "",
           url: m.url || "",
-          concept: m.textIdea || s.content || s.outline || v.script || "",
-          storyGuidelines: m.storyGuidelines || s.storyGuidelines || "",
-          tone: m.voiceTone || "",
-          imagePrompt: m.imagePrompt || "",
-          storyType: m.storyType || s.storyType || "",
-          voice: m.voice || v.voice || "",
-          mediaType: m.mediaType || "single_image",
-          imageCount: m.imageCount || 5,
+          concept: m.textIdea || m.concept || s.content || s.outline || v.script || "",
+          storyGuidelines: m.storyGuidelines || s.storyGuidelines || m.storyMetadata?.storyGuidelines || "",
+          tone: m.voiceTone || m.tone || m.storyMetadata?.voiceTone || "",
+          imagePrompt: m.imagePrompt || m.storyMetadata?.imagePrompt || "",
+          storyType: m.storyType || s.storyType || m.genre || m.storyMetadata?.genre || "",
+          voice: m.voice || v.voice || m.storyMetadata?.voice || "",
+          mediaType: m.mediaType || (m.imageCount > 1 ? "multi_image" : "single_image"),
+          imageCount: parseInt(m.imageCount || 5, 10),
           backgroundMusic: m.backgroundMusic ?? true,
           backgroundMusicStyle:
             m.backgroundMusicStyle ||
@@ -220,14 +220,14 @@ const GenerateStory = () => {
           subtitles: m.subtitles ?? true,
           aspectRatio: m.aspectRatio || "16:9",
           dualPlatform: m.dualPlatform ?? false,
-          series: m.series || s.series || "",
-          coverArtPrompt: m.coverArtPrompt || s.coverArtPrompt || "",
+          series: m.series || s.series || m.storyMetadata?.series || "",
+          coverArtPrompt: m.coverArtPrompt || s.coverArtPrompt || m.storyMetadata?.coverArtPrompt || "",
           seoMetadata: m.seoContent
-            ? JSON.stringify(m.seoContent, null, 2)
+            ? (typeof m.seoContent === "string" ? m.seoContent : JSON.stringify(m.seoContent, null, 2))
             : s.seoContent
-            ? JSON.stringify(s.seoContent, null, 2)
+            ? (typeof s.seoContent === "string" ? s.seoContent : JSON.stringify(s.seoContent, null, 2))
             : JSON.stringify({ Title: "", Description: "" }, null, 2),
-          visualSuggestions: m.visualSuggestions || s.visualSuggestions || "",
+          visualSuggestions: m.visualSuggestions || s.visualSuggestions || m.storyMetadata?.visualSuggestions || "",
           uploadedMediaUrl: m.uploadedMediaUrl || "",
           characterReferences: restoredCharRefs,
           useOmniAudio: m.useOmniAudio ?? false,
@@ -241,6 +241,14 @@ const GenerateStory = () => {
           if (mins <= 10) setLengthLevel(1);
           else if (mins <= 20) setLengthLevel(2);
           else setLengthLevel(3);
+        }
+
+        // Set scheduled date/time if workflow was scheduled
+        if (data.scheduledAt) {
+          setScheduleForLater(true);
+          const schedDate = new Date(data.scheduledAt);
+          setScheduleTime(schedDate.toISOString());
+          setScheduleInput(schedDate.toISOString().slice(0, 16));
         }
 
         if (m.uploadedMediaUrl) {
@@ -257,7 +265,8 @@ const GenerateStory = () => {
             (m.shouldGenerateImage ||
               !!m.imagePrompt ||
               m.mediaType === "multi_image" ||
-              m.mediaType === "video"))
+              m.mediaType === "video" ||
+              !!m.uploadedMediaUrl))
         );
         toast.success("Story details loaded into Story Builder");
       })

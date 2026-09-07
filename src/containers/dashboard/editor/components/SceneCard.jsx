@@ -263,48 +263,10 @@ const SceneCard = ({
         )}
       </div>
 
-      {/* Details & Prompts */}
-      <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-        {/* Soft Warning if attempts >= 10 */}
-        {/* {attempts >= 10 && (
-          <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
-            <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
-            <span>
-              This scene has been regenerated {attempts} times. Further generations may increase processing time and AI generation costs.
-            </span>
-          </div>
-        )} */}
-
-        {/* Narration Box */}
-        {/* {scene.narration && (
-          <div className="p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100/70">
-            <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-900 uppercase tracking-wider mb-1">
-              <Clock size={11} />
-              <span>Audio Narration (Locked)</span>
-            </div>
-            <p className="text-xs text-indigo-950 italic line-clamp-3">
-              "{scene.narration}"
-            </p>
-          </div>
-        )} */}
-
-        {/* Active Prompt Box */}
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-gray-600">
-            <span>Visual Prompt</span>
-            {scene.userEditedPrompt && (
-              <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                User Edited
-              </span>
-            )}
-          </div>
-          <div className="p-3 rounded-2xl bg-gray-50 border border-gray-200/70 text-xs text-gray-800 max-h-28 overflow-y-auto whitespace-pre-wrap break-words">
-            {scene.activePrompt || scene.originalPrompt || "No prompt recorded."}
-          </div>
-        </div>
-
+      {/* Details & Actions */}
+      <div className="p-4 flex-1 flex flex-col justify-end">
         {/* Action Buttons */}
-        <div className="pt-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center justify-end flex-wrap gap-2">
           {/* Version History Button */}
           {/* <button
             type="button"
