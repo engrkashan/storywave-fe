@@ -30,7 +30,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Video,
+  Download,
 } from "lucide-react";
+import JSZip from "jszip";
 import SceneCard from "../components/SceneCard";
 import PromptModal from "../components/PromptModal";
 import VideoGenModal from "../components/VideoGenModal";
@@ -141,6 +143,7 @@ const EditorDetailPage = () => {
   const [selectedPreviewScene, setSelectedPreviewScene] = useState(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [activeRatioFilter, setActiveRatioFilter] = useState("ALL");
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
   // Loading / Streaming status
   const [isConnecting, setIsConnecting] = useState(true);
@@ -375,6 +378,75 @@ const EditorDetailPage = () => {
     }
   };
 
+  const handleDownloadAllImages = async () => {
+    const scenes = currentWorkflow?.scenes || [];
+    const imageScenes = scenes.filter((s) => {
+      if (!s.assetUrl) return false;
+      const isVideo = s.assetType === "video" || s.mediaType === "video";
+      return !isVideo;
+    });
+
+    if (imageScenes.length === 0) {
+      toast.error("No frame images available to download");
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    const toastId = toast.loading(`Preparing ${imageScenes.length} images...`);
+
+    try {
+      const zip = new JSZip();
+      const rawTitle = currentWorkflow?.title || currentWorkflow?.storyTitle || "story";
+      const folderName = String(rawTitle)
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 80) || "story";
+      const folder = zip.folder(folderName);
+
+      let successCount = 0;
+      const isDual = Boolean(currentWorkflow?.dualPlatform);
+      for (const scene of imageScenes) {
+        const frameNumber = String((scene.index ?? 0) + 1).padStart(2, "0");
+        const ratioSuffix = isDual && scene.ratio ? `_${String(scene.ratio).replace(":", "x")}` : "";
+        const mimeExt = scene.assetUrl?.match(/\.(jpe?g|png|webp|gif)(\?|$)/i)?.[1]?.toLowerCase();
+        const ext = mimeExt === "jpg" || mimeExt === "jpeg" ? "jpg" : mimeExt === "webp" ? "webp" : mimeExt === "gif" ? "gif" : "png";
+        const fileName = `Scene_${frameNumber}${ratioSuffix}.${ext}`;
+        try {
+          const res = await fetch(scene.assetUrl);
+          if (!res.ok) throw new Error(`Failed to fetch scene ${frameNumber}`);
+          const blob = await res.blob();
+          folder.file(fileName, blob);
+          successCount += 1;
+        } catch (err) {
+          console.warn(`Skipping scene ${frameNumber}:`, err);
+        }
+      }
+
+      if (successCount === 0) {
+        toast.error("Could not download any images (check network/CORS)", { id: toastId });
+        return;
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const blobUrl = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${folderName}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+
+      toast.success(`Downloaded ${successCount} image${successCount === 1 ? "" : "s"}`, { id: toastId });
+    } catch (err) {
+      console.error("Bulk download failed:", err);
+      toast.error("Failed to download images", { id: toastId });
+    } finally {
+      setIsDownloadingAll(false);
+    }
+  };
+
   const handleOpenMergeModal = () => {
     setIsConfirmModalOpen(true);
   };
@@ -545,12 +617,21 @@ const EditorDetailPage = () => {
 
       {/* Sequential Scenes List */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
             <Layers size={20} className="text-amber-500" />
             <span>Story Scenes ({filteredScenes.length})</span>
           </h2>
-        
+          <button
+            type="button"
+            onClick={handleDownloadAllImages}
+            disabled={isDownloadingAll || allScenes.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold shadow-sm disabled:opacity-50 transition-all"
+            title="Download all frame images as a zip folder"
+          >
+            <Download size={14} className={isDownloadingAll ? "animate-bounce" : ""} />
+            <span>{isDownloadingAll ? "Downloading..." : "Download All Images"}</span>
+          </button>
         </div>
 
         {filteredScenes.length === 0 ? (

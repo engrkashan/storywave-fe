@@ -289,7 +289,7 @@ const SceneCard = ({
         )} */}
 
         {/* Active Prompt Box */}
-        {/* <div className="space-y-1">
+        <div className="space-y-1">
           <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-gray-600">
             <span>Visual Prompt</span>
             {scene.userEditedPrompt && (
@@ -298,10 +298,10 @@ const SceneCard = ({
               </span>
             )}
           </div>
-          <div className="p-3 rounded-2xl bg-gray-50 border border-gray-200/70 text-xs text-gray-800 line-clamp-3">
+          <div className="p-3 rounded-2xl bg-gray-50 border border-gray-200/70 text-xs text-gray-800 max-h-28 overflow-y-auto whitespace-pre-wrap break-words">
             {scene.activePrompt || scene.originalPrompt || "No prompt recorded."}
           </div>
-        </div> */}
+        </div>
 
         {/* Action Buttons */}
         <div className="pt-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
