@@ -53,11 +53,17 @@ export const updateScenePrompt = createAsyncThunk(
 // Request regeneration of a scene (Image or Veo 3 Video)
 export const regenerateScene = createAsyncThunk(
   "editor/regenerateScene",
-  async ({ workflowId, sceneId, prompt, characterReference, generateAsVideo }, thunkAPI) => {
+  async ({ workflowId, sceneId, prompt, characterReference, characterReferences, generateAsVideo }, thunkAPI) => {
     try {
+      const refs = characterReferences || (characterReference ? (Array.isArray(characterReference) ? characterReference : [characterReference]) : []);
       const response = await axiosInstance.post(
         `/editor/workflows/${workflowId}/scenes/${sceneId}/regenerate`,
-        { prompt, characterReference, generateAsVideo }
+        {
+          prompt,
+          characterReference: refs[0] || characterReference || null,
+          characterReferences: refs,
+          generateAsVideo,
+        }
       );
       return { sceneId, generateAsVideo, data: response.data };
     } catch (error) {

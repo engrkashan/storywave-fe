@@ -13,6 +13,8 @@ import {
   Film,
   Camera,
   Layers,
+  Users,
+  CheckCircle2,
 } from "lucide-react";
 
 /**
@@ -51,23 +53,24 @@ const VideoGenModal = ({
   onGenerateVideo,
 }) => {
   const [prompt, setPrompt] = useState("");
-  const [characterRefImage, setCharacterRefImage] = useState(null);
-  const [selectedExistingRef, setSelectedExistingRef] = useState(null);
+  const [customRefImages, setCustomRefImages] = useState([]);
+  const [selectedExistingRefs, setSelectedExistingRefs] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (scene && isOpen) {
       setPrompt(buildDefaultVideoPrompt(scene));
-      setCharacterRefImage(null);
-      setSelectedExistingRef(null);
+      setCustomRefImages([]);
       setIsSubmitting(false);
 
       if (scene.selectedRefs && Array.isArray(scene.selectedRefs) && scene.selectedRefs.length > 0) {
-        const first = scene.selectedRefs[0];
-        if (first?.url) {
-          setSelectedExistingRef(first.url);
-        }
+        const urls = scene.selectedRefs
+          .map((r) => (typeof r === "string" ? r : r.url || r.secureUrl || r.imageUrl))
+          .filter(Boolean);
+        setSelectedExistingRefs(urls);
+      } else {
+        setSelectedExistingRefs([]);
       }
     }
   }, [scene, isOpen]);
@@ -83,49 +86,88 @@ const VideoGenModal = ({
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    if (!file.type.startsWith("image/")) {
-      alert("Please upload a valid image file (PNG, JPG, WEBP).");
-      return;
+    const validImages = files.filter((f) => f.type.startsWith("image/"));
+    if (validImages.length < files.length) {
+      alert("Some files were skipped because they are not valid image files (PNG, JPG, WEBP).");
     }
 
-    const previewUrl = URL.createObjectURL(file);
-    setCharacterRefImage({
+    const newCustomRefs = validImages.map((file) => ({
+      id: `custom_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       file,
-      previewUrl,
-      name: file.name,
-    });
-    setSelectedExistingRef(null);
-  };
+      previewUrl: URL.createObjectURL(file),
+      name: file.name.replace(/\.[^/.]+$/, ""),
+    }));
 
-  const handleRemoveCustomRef = () => {
-    if (characterRefImage?.previewUrl && characterRefImage.previewUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(characterRefImage.previewUrl);
-    }
-    setCharacterRefImage(null);
+    setCustomRefImages((prev) => [...prev, ...newCustomRefs]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const getActiveCharacterRef = () => {
-    if (characterRefImage) {
-      return characterRefImage;
-    }
-    if (selectedExistingRef) {
-      const match = existingReferences.find((r) => r.url === selectedExistingRef);
-      return match || { url: selectedExistingRef, name: "Character Reference" };
-    }
-    return null;
+  const handleRemoveCustomRef = (idToRemove) => {
+    setCustomRefImages((prev) => {
+      const target = prev.find((r) => r.id === idToRemove);
+      if (target?.previewUrl && target.previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      return prev.filter((r) => r.id !== idToRemove);
+    });
   };
+
+  const handleCustomRefNameChange = (id, newName) => {
+    setCustomRefImages((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, name: newName } : r))
+    );
+  };
+
+  const handleToggleExistingRef = (url) => {
+    setSelectedExistingRefs((prev) =>
+      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+    );
+  };
+
+  const handleSelectAllExisting = () => {
+    const allUrls = existingReferences.map((r) => r.url).filter(Boolean);
+    setSelectedExistingRefs(allUrls);
+  };
+
+  const handleClearAllExisting = () => {
+    setSelectedExistingRefs([]);
+  };
+
+  const getActiveCharacterRefs = () => {
+    const matchedExisting = existingReferences
+      .filter((r) => selectedExistingRefs.includes(r.url))
+      .map((r) => ({
+        id: r.id || `char_ref_${r.name || "ref"}`,
+        name: r.name || "Character Reference",
+        url: r.url,
+        isCustomOverride: true,
+        isExplicit: true,
+      }));
+
+    const customs = customRefImages.map((r) => ({
+      id: r.id,
+      name: r.name || "Custom Character Ref",
+      file: r.file,
+      url: r.url || r.previewUrl,
+      previewUrl: r.previewUrl,
+      isCustomOverride: true,
+      isExplicit: true,
+    }));
+
+    return [...matchedExisting, ...customs];
+  };
+
+  const activeRefs = getActiveCharacterRefs();
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setIsSubmitting(true);
     try {
-      const charRef = getActiveCharacterRef();
       if (onGenerateVideo) {
-        await onGenerateVideo(scene, prompt.trim(), charRef);
+        await onGenerateVideo(scene, prompt.trim(), activeRefs);
       }
       onClose();
     } finally {
@@ -158,7 +200,7 @@ const VideoGenModal = ({
                 <span>•</span>
                 <span>Ratio: <strong className="text-gray-700">{scene.ratio}</strong></span>
                 <span>•</span>
-                <span>Version: <strong className="text-gray-700">v{scene.activeVersion || 1}</strong></span>
+                <span>Active Version: <strong className="text-gray-700">v{scene.activeVersion || 1}</strong></span>
               </p>
             </div>
           </div>
@@ -171,82 +213,59 @@ const VideoGenModal = ({
         </div>
 
         {/* Body */}
-        <div className="p-6 sm:p-8 overflow-y-auto space-y-6">
-          {/* Top Row: Visual Frame Anchor Preview & Timeframe Lock Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Frame Thumbnail */}
-            <div className="sm:col-span-1 p-3 rounded-2xl bg-gray-950 border border-gray-800 flex flex-col justify-between space-y-2">
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Film size={12} className="text-indigo-400" />
-                Visual Motion Anchor
-              </span>
-              <div className="h-32 w-full rounded-xl overflow-hidden bg-black flex items-center justify-center">
-                {scene.assetUrl ? (
-                  <img
-                    src={scene.assetUrl}
-                    alt="Current Scene Frame"
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  <span className="text-xs text-gray-500">No image frame</span>
-                )}
+        <div className="p-6 sm:p-8 overflow-y-auto space-y-5">
+          {/* Source Image / Previous Frame Context */}
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100">
+            {scene.assetUrl ? (
+              <img
+                src={scene.assetUrl}
+                alt="Source Frame"
+                className="w-20 h-14 object-cover rounded-xl border border-indigo-200 shadow-sm shrink-0"
+              />
+            ) : (
+              <div className="w-20 h-14 bg-indigo-200 rounded-xl flex items-center justify-center shrink-0 text-indigo-700">
+                <Film size={24} />
               </div>
-              <span className="text-[10px] text-gray-400 italic text-center">
-                Veo 3 will animate from this frame
-              </span>
-            </div>
-
-            {/* Timeframe & Audio Lock Details */}
-            <div className="sm:col-span-2 p-4 rounded-2xl bg-indigo-50/80 border border-indigo-100 flex flex-col justify-between space-y-2.5">
-              <div>
-                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-900 uppercase tracking-wider mb-1">
-                  <Clock size={14} className="text-indigo-600" />
-                  <span>Exact Timeframe Sync (Locked)</span>
-                </div>
-                <p className="text-xs text-indigo-950 leading-relaxed">
-                  The generated video clip will match this scene slot's duration (<strong>{durationText}</strong>, from <strong>{scene.startSec?.toFixed(1)}s</strong> to <strong>{scene.endSec?.toFixed(1)}s</strong>) perfectly to preserve audio synchronization.
-                </p>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-900 uppercase tracking-wider mb-0.5">
+                <Sparkles size={14} className="text-indigo-600" />
+                <span>Image-to-Video Synthesis</span>
               </div>
-
-              {scene.narration && (
-                <div className="p-2.5 rounded-xl bg-white/80 border border-indigo-200/60 text-xs text-indigo-900 italic">
-                  "{scene.narration}"
-                </div>
-              )}
+              <p className="text-xs text-indigo-950 leading-relaxed">
+                Google Veo 3 will synthesize realistic cinematic camera motion and dynamic character action based on your active frame and prompt.
+              </p>
             </div>
           </div>
 
-          {/* Editable Motion Graphic Prompt Section */}
+          {/* Editable Motion Graphic Prompt */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Camera size={15} className="text-indigo-600" />
-                <span>Motion Graphic Scene Prompt (Editable)</span>
+              <label className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wider block">
+                Veo 3 Motion Graphic Prompt
               </label>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleResetPrompt}
-                  className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 transition-colors"
-                >
-                  <RotateCcw size={12} />
-                  Reset to Auto-Built Prompt
-                </button>
-                <span className="text-xs text-gray-400">{prompt.length} chars</span>
-              </div>
+              <button
+                type="button"
+                onClick={handleResetPrompt}
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors"
+              >
+                <RotateCcw size={12} />
+                <span>Regenerate Default Prompt</span>
+              </button>
             </div>
 
             <textarea
-              rows={5}
+              rows={4}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe camera motion, action dynamics, lighting shifts, and character movement for this video clip..."
-              className="w-full p-4 rounded-2xl border-2 border-indigo-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm text-gray-900 leading-relaxed outline-none transition-all resize-y shadow-inner font-sans min-h-[140px]"
+              placeholder="Describe camera movement, physical action, atmospheric lighting, depth of field..."
+              className="w-full p-4 rounded-2xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm text-gray-900 leading-relaxed outline-none transition-all resize-y font-sans shadow-inner min-h-[120px]"
             />
 
-            {/* Quick Motion Presets */}
-            <div className="flex items-center flex-wrap gap-2 pt-1">
-              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mr-1">
+            {/* Motion Presets Chips */}
+            <div className="flex items-center flex-wrap gap-1.5 pt-1">
+              <span className="text-xs font-bold text-gray-500 mr-1 flex items-center gap-1">
+                <Camera size={13} />
                 Add Motion Style:
               </span>
               {MOTION_PRESETS.map((preset, i) => (
@@ -262,17 +281,24 @@ const VideoGenModal = ({
             </div>
           </div>
 
-          {/* Character Reference Section (Optional) */}
+          {/* Character Reference Section (Multi-Select & Multi-Upload) */}
           <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/80 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-gray-800 text-white">
-                  <User size={14} />
+                <div className="p-1.5 rounded-lg bg-indigo-600 text-white">
+                  <Users size={14} />
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-gray-900">
-                    Character Reference Likeness (Optional)
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs sm:text-sm font-bold text-gray-900">
+                      Character Reference Images (Multiple Selection)
+                    </h4>
+                    {activeRefs.length > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[11px] font-bold border border-indigo-200">
+                        {activeRefs.length} Selected
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-gray-500">
                     Lock facial likeness and wardrobe identity during video synthesis.
                   </p>
@@ -284,6 +310,7 @@ const VideoGenModal = ({
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 accept="image/png,image/jpeg,image/webp"
+                multiple
                 className="hidden"
               />
 
@@ -293,65 +320,115 @@ const VideoGenModal = ({
                 className="px-3 py-1.5 rounded-xl bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all"
               >
                 <Upload size={12} />
-                <span>Upload Char Image</span>
+                <span>Upload Char Image(s)</span>
               </button>
             </div>
 
-            {characterRefImage && (
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-gray-200 shadow-2xs">
-                <div className="flex items-center gap-2.5">
-                  <img
-                    src={characterRefImage.previewUrl || characterRefImage.url}
-                    alt="Character Ref"
-                    className="w-10 h-10 rounded-lg object-cover border"
-                  />
-                  <div>
-                    <span className="text-xs font-bold text-gray-900 block">
-                      {characterRefImage.name || "Custom Character Reference"}
-                    </span>
-                    <span className="text-[10px] text-emerald-600 font-semibold">
-                      Attached to Veo 3 Prompt
-                    </span>
-                  </div>
+            {/* Custom Uploaded References List */}
+            {customRefImages.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-gray-700 block">
+                  Uploaded Custom References:
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {customRefImages.map((customRef) => (
+                    <div
+                      key={customRef.id}
+                      className="flex items-center justify-between p-2 rounded-xl bg-white border border-indigo-200 shadow-2xs"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img
+                          src={customRef.previewUrl || customRef.url}
+                          alt={customRef.name}
+                          className="w-9 h-9 rounded-lg object-cover border border-indigo-200 flex-shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <input
+                            type="text"
+                            value={customRef.name}
+                            onChange={(e) => handleCustomRefNameChange(customRef.id, e.target.value)}
+                            className="text-xs font-bold text-gray-900 bg-transparent border-b border-dashed border-gray-300 focus:border-indigo-500 outline-none w-full truncate"
+                            placeholder="Character name"
+                          />
+                          <span className="text-[10px] text-emerald-600 font-medium block">
+                            Attached
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCustomRef(customRef.id)}
+                        className="p-1 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors ml-1"
+                        title="Remove reference"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleRemoveCustomRef}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 size={15} />
-                </button>
               </div>
             )}
 
-            {existingReferences.length > 0 && !characterRefImage && (
-              <div className="flex items-center gap-2 overflow-x-auto pt-1">
-                <span className="text-[11px] text-gray-500 shrink-0">Cast:</span>
-                {existingReferences.map((ref, idx) => {
-                  const isSelected = selectedExistingRef === ref.url;
-                  return (
+            {/* Existing Story Cast Reference Picker */}
+            {existingReferences.length > 0 && (
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-gray-600">
+                    Story Cast References ({selectedExistingRefs.length}/{existingReferences.length} active):
+                  </span>
+                  <div className="flex items-center gap-2">
                     <button
-                      key={ref.id || idx}
                       type="button"
-                      onClick={() =>
-                        setSelectedExistingRef(isSelected ? null : ref.url)
-                      }
-                      className={`flex items-center gap-1.5 p-1 pr-2.5 rounded-lg border text-xs font-semibold transition-all ${
-                        isSelected
-                          ? "bg-indigo-600 text-white border-indigo-700"
-                          : "bg-white text-gray-700 border-gray-200 hover:border-indigo-300"
-                      }`}
+                      onClick={handleSelectAllExisting}
+                      className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold underline"
                     >
-                      <img
-                        src={ref.url}
-                        alt="Ref"
-                        className="w-6 h-6 rounded-md object-cover"
-                      />
-                      <span>{ref.name || `Char ${idx + 1}`}</span>
-                      {isSelected && <Check size={11} />}
+                      Select All
                     </button>
-                  );
-                })}
+                    <span className="text-gray-300">•</span>
+                    <button
+                      type="button"
+                      onClick={handleClearAllExisting}
+                      className="text-[11px] text-gray-500 hover:text-gray-700 font-semibold underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
+                  {existingReferences.map((ref, idx) => {
+                    const isSelected = selectedExistingRefs.includes(ref.url);
+                    return (
+                      <button
+                        key={ref.id || ref.url || idx}
+                        type="button"
+                        onClick={() => handleToggleExistingRef(ref.url)}
+                        className={`flex items-center gap-1.5 p-1 pr-2.5 rounded-lg border text-xs font-semibold transition-all flex-shrink-0 ${
+                          isSelected
+                            ? "bg-indigo-600 text-white border-indigo-700 ring-2 ring-indigo-300 shadow-xs"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30"
+                        }`}
+                      >
+                        <img
+                          src={ref.url}
+                          alt="Ref"
+                          className="w-6 h-6 rounded-md object-cover"
+                        />
+                        <span>{ref.name || `Char ${idx + 1}`}</span>
+                        {isSelected && <Check size={11} className="text-white ml-0.5" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {activeRefs.length > 0 && (
+              <div className="flex items-center gap-1.5 text-[11px] text-indigo-900 bg-indigo-50/90 p-2 rounded-lg border border-indigo-100">
+                <CheckCircle2 size={13} className="text-indigo-600 shrink-0" />
+                <span>
+                  <strong>{activeRefs.length} character reference image{activeRefs.length > 1 ? "s" : ""}</strong> ({activeRefs.map((r) => r.name).join(", ")}) attached to Veo 3 prompt.
+                </span>
               </div>
             )}
           </div>

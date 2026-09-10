@@ -315,7 +315,7 @@ const GenerateStory = () => {
 
   /* ── Multi-character reference slot management ── */
 
-  const MAX_CHAR_SLOTS = 10;
+  const MAX_CHAR_SLOTS = 20;
 
   const handleAddCharacter = () => {
     if (formData.characterReferences.length >= MAX_CHAR_SLOTS) return;

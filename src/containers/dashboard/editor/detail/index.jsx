@@ -270,25 +270,44 @@ const EditorDetailPage = () => {
     }
   };
 
-  // Image Regeneration with custom prompt and character reference
-  const handleRegenerateWithRef = async (scene, promptText, characterRef) => {
-    try {
-      let charRefPayload = characterRef;
+  // Helper to resolve character references (uploading local files in parallel/sequence if needed)
+  const resolveCharacterReferences = async (sceneId, characterRefs) => {
+    if (!characterRefs) return [];
+    const refsList = Array.isArray(characterRefs) ? characterRefs : [characterRefs];
+    const resolved = [];
 
-      // If user uploaded a new local file for the character reference, upload it first
-      if (characterRef?.file) {
-        toast.loading("Uploading character reference...", { id: "char-upload" });
-        const uploadRes = await dispatch(
-          uploadCharacterReference({
-            workflowId,
-            sceneId: scene.id,
-            file: characterRef.file,
-            name: characterRef.name || "Character Ref",
-          })
-        ).unwrap();
-        toast.dismiss("char-upload");
-        charRefPayload = uploadRes?.characterReference || uploadRes?.data?.characterReference || uploadRes;
+    for (const ref of refsList) {
+      if (!ref) continue;
+      if (ref.file) {
+        const toastId = `char-upload-${ref.id || ref.name || Math.random()}`;
+        toast.loading(`Uploading character reference (${ref.name || "Custom"})...`, { id: toastId });
+        try {
+          const uploadRes = await dispatch(
+            uploadCharacterReference({
+              workflowId,
+              sceneId,
+              file: ref.file,
+              name: ref.name || "Character Ref",
+            })
+          ).unwrap();
+          toast.dismiss(toastId);
+          const uploadedRef = uploadRes?.characterReference || uploadRes?.data?.characterReference || uploadRes;
+          resolved.push(uploadedRef);
+        } catch (uploadErr) {
+          toast.dismiss(toastId);
+          throw uploadErr;
+        }
+      } else {
+        resolved.push(ref);
       }
+    }
+    return resolved;
+  };
+
+  // Image Regeneration with custom prompt and character references
+  const handleRegenerateWithRef = async (scene, promptText, characterRefs) => {
+    try {
+      const resolvedRefs = await resolveCharacterReferences(scene.id, characterRefs);
 
       dispatch(optimisticSetSceneStatus({ sceneId: scene.id, status: "REGENERATING" }));
       await dispatch(
@@ -296,38 +315,24 @@ const EditorDetailPage = () => {
           workflowId,
           sceneId: scene.id,
           prompt: promptText,
-          characterReference: charRefPayload,
+          characterReferences: resolvedRefs,
+          characterReference: resolvedRefs[0] || null,
           generateAsVideo: false,
         })
       ).unwrap();
       toast.success(`Scene ${scene.index + 1} image regeneration queued`);
       dispatch(fetchEditorWorkflowDetail(workflowId));
     } catch (err) {
-      toast.dismiss("char-upload");
       toast.error(err || "Failed to trigger image regeneration");
       dispatch(fetchEditorWorkflowDetail(workflowId));
     }
   };
 
   // Motion Graphic Video Generation via Veo 3
-  const handleGenerateVideo = async (scene, customPrompt = null, characterRef = null) => {
+  const handleGenerateVideo = async (scene, customPrompt = null, characterRefs = null) => {
     try {
       const promptToUse = customPrompt || scene.activePrompt || scene.originalPrompt;
-      let charRefPayload = characterRef;
-
-      if (characterRef?.file) {
-        toast.loading("Uploading character reference...", { id: "char-upload" });
-        const uploadRes = await dispatch(
-          uploadCharacterReference({
-            workflowId,
-            sceneId: scene.id,
-            file: characterRef.file,
-            name: characterRef.name || "Character Ref",
-          })
-        ).unwrap();
-        toast.dismiss("char-upload");
-        charRefPayload = uploadRes?.characterReference || uploadRes?.data?.characterReference || uploadRes;
-      }
+      const resolvedRefs = await resolveCharacterReferences(scene.id, characterRefs);
 
       dispatch(optimisticSetSceneStatus({ sceneId: scene.id, status: "REGENERATING" }));
       await dispatch(
@@ -335,14 +340,14 @@ const EditorDetailPage = () => {
           workflowId,
           sceneId: scene.id,
           prompt: promptToUse,
-          characterReference: charRefPayload,
+          characterReferences: resolvedRefs,
+          characterReference: resolvedRefs[0] || null,
           generateAsVideo: true,
         })
       ).unwrap();
       toast.success(`Veo 3 video clip generation started for Scene ${scene.index + 1}!`);
       dispatch(fetchEditorWorkflowDetail(workflowId));
     } catch (err) {
-      toast.dismiss("char-upload");
       toast.error(err || "Failed to start Veo 3 video generation");
       dispatch(fetchEditorWorkflowDetail(workflowId));
     }

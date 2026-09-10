@@ -14,6 +14,7 @@ import {
   Image as ImageIcon,
   CheckCircle2,
   HelpCircle,
+  Users,
 } from "lucide-react";
 
 const PromptModal = ({
@@ -26,8 +27,8 @@ const PromptModal = ({
   onGenerateVideo,
 }) => {
   const [prompt, setPrompt] = useState("");
-  const [characterRefImage, setCharacterRefImage] = useState(null); // { file, previewUrl, url, name }
-  const [selectedExistingRef, setSelectedExistingRef] = useState(null);
+  const [customRefImages, setCustomRefImages] = useState([]); // [{ id, file, previewUrl, url, name }]
+  const [selectedExistingRefs, setSelectedExistingRefs] = useState([]); // [url1, url2, ...]
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionType, setActionType] = useState(null); // 'save' | 'image' | 'video'
   const fileInputRef = useRef(null);
@@ -35,17 +36,18 @@ const PromptModal = ({
   useEffect(() => {
     if (scene) {
       setPrompt(scene.userEditedPrompt || scene.activePrompt || scene.originalPrompt || "");
-      setCharacterRefImage(null);
-      setSelectedExistingRef(null);
+      setCustomRefImages([]);
       setIsSubmitting(false);
       setActionType(null);
 
-      // Check if scene has any pre-selected character ref
+      // Populate pre-selected character references if present on scene
       if (scene.selectedRefs && Array.isArray(scene.selectedRefs) && scene.selectedRefs.length > 0) {
-        const first = scene.selectedRefs[0];
-        if (first?.url) {
-          setSelectedExistingRef(first.url);
-        }
+        const urls = scene.selectedRefs
+          .map((r) => (typeof r === "string" ? r : r.url || r.secureUrl || r.imageUrl))
+          .filter(Boolean);
+        setSelectedExistingRefs(urls);
+      } else {
+        setSelectedExistingRefs([]);
       }
     }
   }, [scene, isOpen]);
@@ -57,41 +59,81 @@ const PromptModal = ({
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    if (!file.type.startsWith("image/")) {
-      alert("Please upload a valid image file (PNG, JPG, WEBP).");
-      return;
+    const validImages = files.filter((f) => f.type.startsWith("image/"));
+    if (validImages.length < files.length) {
+      alert("Some files were skipped because they are not valid image files (PNG, JPG, WEBP).");
     }
 
-    const previewUrl = URL.createObjectURL(file);
-    setCharacterRefImage({
+    const newCustomRefs = validImages.map((file) => ({
+      id: `custom_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       file,
-      previewUrl,
-      name: file.name,
-    });
-    setSelectedExistingRef(null);
-  };
+      previewUrl: URL.createObjectURL(file),
+      name: file.name.replace(/\.[^/.]+$/, ""),
+    }));
 
-  const handleRemoveCustomRef = () => {
-    if (characterRefImage?.previewUrl && characterRefImage.previewUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(characterRefImage.previewUrl);
-    }
-    setCharacterRefImage(null);
+    setCustomRefImages((prev) => [...prev, ...newCustomRefs]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const getActiveCharacterRef = () => {
-    if (characterRefImage) {
-      return characterRefImage; // has .file or .url
-    }
-    if (selectedExistingRef) {
-      const match = existingReferences.find((r) => r.url === selectedExistingRef);
-      return match || { url: selectedExistingRef, name: "Character Reference" };
-    }
-    return null;
+  const handleRemoveCustomRef = (idToRemove) => {
+    setCustomRefImages((prev) => {
+      const target = prev.find((r) => r.id === idToRemove);
+      if (target?.previewUrl && target.previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(target.previewUrl);
+      }
+      return prev.filter((r) => r.id !== idToRemove);
+    });
   };
+
+  const handleCustomRefNameChange = (id, newName) => {
+    setCustomRefImages((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, name: newName } : r))
+    );
+  };
+
+  const handleToggleExistingRef = (url) => {
+    setSelectedExistingRefs((prev) =>
+      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+    );
+  };
+
+  const handleSelectAllExisting = () => {
+    const allUrls = existingReferences.map((r) => r.url).filter(Boolean);
+    setSelectedExistingRefs(allUrls);
+  };
+
+  const handleClearAllExisting = () => {
+    setSelectedExistingRefs([]);
+  };
+
+  const getActiveCharacterRefs = () => {
+    const matchedExisting = existingReferences
+      .filter((r) => selectedExistingRefs.includes(r.url))
+      .map((r) => ({
+        id: r.id || `char_ref_${r.name || "ref"}`,
+        name: r.name || "Character Reference",
+        url: r.url,
+        isCustomOverride: true,
+        isExplicit: true,
+      }));
+
+    const customs = customRefImages.map((r) => ({
+      id: r.id,
+      name: r.name || "Custom Character Ref",
+      file: r.file,
+      url: r.url || r.previewUrl,
+      previewUrl: r.previewUrl,
+      isCustomOverride: true,
+      isExplicit: true,
+    }));
+
+    return [...matchedExisting, ...customs];
+  };
+
+  const activeRefs = getActiveCharacterRefs();
 
   const handleSaveOnly = async () => {
     if (!prompt.trim()) return;
@@ -113,9 +155,8 @@ const PromptModal = ({
     setIsSubmitting(true);
     setActionType("image");
     try {
-      const charRef = getActiveCharacterRef();
       if (onRegenerateImage) {
-        await onRegenerateImage(scene, prompt.trim(), charRef);
+        await onRegenerateImage(scene, prompt.trim(), activeRefs);
       }
       onClose();
     } finally {
@@ -129,9 +170,8 @@ const PromptModal = ({
     setIsSubmitting(true);
     setActionType("video");
     try {
-      const charRef = getActiveCharacterRef();
       if (onGenerateVideo) {
-        await onGenerateVideo(scene, prompt.trim(), charRef);
+        await onGenerateVideo(scene, prompt.trim(), activeRefs);
       }
       onClose();
     } finally {
@@ -241,22 +281,28 @@ const PromptModal = ({
               placeholder="Describe the desired visual composition, character action, motion, lighting, and camera angle..."
               className="w-full p-4 rounded-2xl border-2 border-gray-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 text-sm text-gray-900 leading-relaxed outline-none transition-all resize-y shadow-inner font-sans min-h-[140px]"
             />
- 
           </div>
 
-          {/* Character Reference Image Section */}
+          {/* Character Reference Images Section (Multi-Select & Multi-Upload) */}
           <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/5 via-orange-500/5 to-transparent border border-amber-200/80 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-amber-500 text-white shadow-sm">
-                  <User size={16} />
+                  <Users size={16} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900">
-                    Character Reference Likeness (Optional)
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Character Reference Images (Multiple Selection)
+                    </h4>
+                    {activeRefs.length > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300">
+                        {activeRefs.length} Selected
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500">
-                    Upload or select a character reference image to lock identity & facial structure during regeneration.
+                    Select one or more character images from the cast or upload new ones to anchor likeness in this scene prompt.
                   </p>
                 </div>
               </div>
@@ -267,6 +313,7 @@ const PromptModal = ({
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 accept="image/png,image/jpeg,image/webp"
+                multiple
                 className="hidden"
               />
 
@@ -276,78 +323,122 @@ const PromptModal = ({
                 className="px-3.5 py-1.5 rounded-xl bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 text-xs font-bold flex items-center gap-1.5 shadow-sm hover:shadow transition-all"
               >
                 <Upload size={13} />
-                <span>Upload New Character Image</span>
+                <span>Upload Character Image(s)</span>
               </button>
             </div>
 
-            {/* Custom Uploaded Ref Preview */}
-            {characterRefImage && (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-amber-200 shadow-sm animate-fadeIn">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={characterRefImage.previewUrl || characterRefImage.url}
-                    alt="Custom Character Ref"
-                    className="w-12 h-12 rounded-lg object-cover border border-gray-200"
-                  />
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-gray-900">
-                        {characterRefImage.name || "Custom Character Reference"}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                        Attached
-                      </span>
+            {/* Custom Uploaded References List */}
+            {customRefImages.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-xs font-semibold text-gray-700 block">
+                  Uploaded Custom References:
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {customRefImages.map((customRef) => (
+                    <div
+                      key={customRef.id}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-amber-200 shadow-sm animate-fadeIn"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={customRef.previewUrl || customRef.url}
+                          alt={customRef.name}
+                          className="w-10 h-10 rounded-lg object-cover border border-amber-300 flex-shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <input
+                            type="text"
+                            value={customRef.name}
+                            onChange={(e) => handleCustomRefNameChange(customRef.id, e.target.value)}
+                            className="text-xs font-bold text-gray-900 bg-transparent border-b border-dashed border-gray-300 focus:border-amber-500 outline-none w-full truncate"
+                            placeholder="Character name"
+                          />
+                          <span className="text-[10px] text-emerald-600 font-medium block">
+                            Attached for prompt
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCustomRef(customRef.id)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0 ml-2"
+                        title="Remove reference"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
-                      Will be sent directly to AI prompt engine for likeness continuity.
-                    </p>
-                  </div>
+                  ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleRemoveCustomRef}
-                  className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                  title="Remove reference"
-                >
-                  <Trash2 size={16} />
-                </button>
               </div>
             )}
 
-            {/* Existing Reference Picker (if available from story) */}
-            {existingReferences.length > 0 && !characterRefImage && (
+            {/* Existing Story Cast Reference Picker */}
+            {existingReferences.length > 0 && (
               <div className="space-y-2 pt-2 border-t border-amber-100">
-                <span className="text-xs font-semibold text-gray-600 block">
-                  Or select from Story Cast References:
-                </span>
-                <div className="flex items-center gap-3 overflow-x-auto pb-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-700 block">
+                    Select from Story Cast ({selectedExistingRefs.length}/{existingReferences.length} active):
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSelectAllExisting}
+                      className="text-[11px] text-amber-700 hover:text-amber-900 font-semibold underline"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-gray-300">•</span>
+                    <button
+                      type="button"
+                      onClick={handleClearAllExisting}
+                      className="text-[11px] text-gray-500 hover:text-gray-700 font-semibold underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 overflow-x-auto pb-1 pt-0.5">
                   {existingReferences.map((ref, idx) => {
-                    const isSelected = selectedExistingRef === ref.url;
+                    const isSelected = selectedExistingRefs.includes(ref.url);
                     return (
                       <button
-                        key={ref.id || idx}
+                        key={ref.id || ref.url || idx}
                         type="button"
-                        onClick={() =>
-                          setSelectedExistingRef(isSelected ? null : ref.url)
-                        }
-                        className={`flex items-center gap-2 p-1.5 pr-3 rounded-xl border transition-all ${isSelected
-                            ? "bg-amber-500 text-white border-amber-600 shadow-md scale-[1.02]"
-                            : "bg-white text-gray-700 border-gray-200 hover:border-amber-300"
-                          }`}
+                        onClick={() => handleToggleExistingRef(ref.url)}
+                        className={`flex items-center gap-2 p-1.5 pr-3 rounded-xl border transition-all flex-shrink-0 ${
+                          isSelected
+                            ? "bg-amber-500 text-white border-amber-600 shadow-md scale-[1.02] ring-2 ring-amber-400"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-amber-300 hover:bg-amber-50/50"
+                        }`}
                       >
                         <img
                           src={ref.url}
-                          alt={ref.name || "Ref"}
+                          alt={ref.name || `Ref ${idx + 1}`}
                           className="w-8 h-8 rounded-lg object-cover"
                         />
                         <span className="text-xs font-semibold">
                           {ref.name || `Character ${idx + 1}`}
                         </span>
-                        {isSelected && <Check size={12} className="ml-1" />}
+                        {isSelected && <Check size={13} className="ml-1 text-white" />}
                       </button>
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* Active References Summary */}
+            {activeRefs.length > 0 ? (
+              <div className="flex items-center gap-2 text-[11px] text-amber-900 bg-amber-100/70 p-2.5 rounded-xl border border-amber-200">
+                <CheckCircle2 size={14} className="text-emerald-600 flex-shrink-0" />
+                <span>
+                  <strong>{activeRefs.length} character reference image{activeRefs.length > 1 ? "s" : ""}</strong> ({activeRefs.map((r) => r.name).join(", ")}) will be passed into the prompt generation engine.
+                </span>
+              </div>
+            ) : (
+              <div className="text-[11px] text-gray-400 italic">
+                No character reference selected. The AI will generate visuals based purely on the text prompt.
               </div>
             )}
           </div>
@@ -408,4 +499,3 @@ const PromptModal = ({
 };
 
 export default PromptModal;
-
